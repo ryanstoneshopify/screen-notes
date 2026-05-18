@@ -1,0 +1,3062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screen Notes</title>
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="/client/quick.js"></script>
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       Claude Theme — Academic Journal on Vellum
+       Soft, tactile precision. Light editorial interface.
+       ════════════════════════════════════════════════════════════════ */
+    :root {
+      --vellum-white: #faf9f5;
+      --ink-black: #141413;
+      --onyx: #1f1e1d;
+      --graphite: #3d3d3a;
+      --dusty-gray: #73726c;
+      --stone: #9c9a92;
+      --parchment: #dedcd1;
+      --snow-white: #ffffff;
+      --pale-azure: #ccdbe8;
+      --terra-cotta: #d97757;
+
+      --bg: var(--vellum-white);
+      --surface: var(--vellum-white);
+      --surface-hover: #f2f0ea;
+      --surface-raised: var(--snow-white);
+      --border: var(--parchment);
+      --border-soft: rgba(31, 30, 29, 0.15);
+      --border-strong: rgba(31, 30, 29, 0.3);
+      --text: var(--ink-black);
+      --text-dim: var(--dusty-gray);
+      --text-muted: var(--stone);
+      --accent: var(--terra-cotta);
+      --accent-soft: #f0d8cc;
+      --red: var(--terra-cotta);
+      --red-hover: #c56548;
+      --green: #557f62;
+
+      --font-serif: 'Lora', ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+      --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --radius: 9.6px;
+      --radius-sm: 9.6px;
+      --radius-lg: 16px;
+      --radius-hero: 24px;
+      --shadow-soft: 0 1px 0 rgba(20,20,19,0.04), 0 8px 24px rgba(20,20,19,0.045);
+      --shadow-pop: 0 16px 40px rgba(20,20,19,0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--vellum-white);
+      color: var(--ink-black);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ── Header ── */
+    header {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: rgba(250, 249, 245, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--parchment);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink-black);
+      cursor: pointer;
+      border-radius: 9.6px;
+      padding: 4px 6px;
+      margin-left: -6px;
+      transition: background 160ms ease;
+    }
+    .logo:hover {
+      background: #f2f0ea;
+    }
+
+    .logo-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--terra-cotta);
+      flex-shrink: 0;
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      vertical-align: -3px;
+      flex-shrink: 0;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .icon-filled { fill: currentColor; stroke: none; }
+    .icon-sm { width: 12px; height: 12px; vertical-align: -2px; }
+
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--graphite);
+      font-size: 14px;
+      font-weight: 400;
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      object-fit: cover;
+      border: 1px solid var(--parchment);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 9px 20px;
+      border-radius: 9.6px;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 400;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--ink-black);
+      color: var(--snow-white);
+      border-color: var(--ink-black);
+    }
+    .btn-primary:hover { background: var(--onyx); transform: translateY(-1px); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--ink-black);
+      border-color: var(--onyx);
+    }
+    .btn-danger:hover { background: #eee9e1; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink-black);
+      border-color: var(--border-strong);
+    }
+    .btn-ghost:hover { background: var(--surface-hover); }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-icon { font-size: 14px; line-height: 1; }
+    .kbd-hint { color: rgba(255,255,255,0.7); font-size: 12px; }
+
+    /* ── Layout ── */
+    .app-layout {
+      display: flex;
+      height: 100vh;
+      background: var(--vellum-white);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 300px;
+      min-width: 300px;
+      background: var(--vellum-white);
+      border-right: 1px solid var(--parchment);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 20px 12px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-home-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      color: var(--ink-black);
+      cursor: pointer;
+      font-family: var(--font-serif);
+      font-size: 18px;
+      line-height: 1.33;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .sidebar-home-btn .logo-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--terra-cotta);
+      flex: 0 0 auto;
+    }
+
+    .sidebar-new-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 9.6px;
+      border: none;
+      background: transparent;
+      color: var(--ink-black);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 160ms ease;
+    }
+    .sidebar-new-btn:hover {
+      background: #f2f0ea;
+    }
+
+    .session-tabs {
+      position: relative;
+      display: flex;
+      gap: 0;
+      margin: 8px 12px 16px;
+      padding: 4px;
+      background: #f2f0ea;
+      border: 1px solid var(--parchment);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .session-tabs::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: calc((100% - 12px) / 2);
+      background: var(--snow-white);
+      border: 1px solid rgba(31,30,29,0.12);
+      border-radius: 9.6px;
+      box-shadow: 0 1px 2px rgba(20,20,19,.04);
+      transition: left 180ms ease;
+      z-index: 0;
+    }
+    .session-tabs[data-active="others"]::before {
+      left: calc(50% + 2px);
+    }
+    .session-tab {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 9.6px;
+      border: none;
+      background: transparent;
+      color: var(--graphite);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      cursor: pointer;
+      transition: color 180ms ease;
+    }
+    .session-tab.active {
+      color: var(--ink-black);
+    }
+
+    .session-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 20px;
+    }
+
+    .session-empty-state {
+      padding: 32px 12px;
+      color: var(--dusty-gray);
+      font-size: 14px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .session-item {
+      padding: 14px 12px;
+      border-radius: 9.6px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease;
+    }
+    .session-item:hover { background: #f2f0ea; }
+    .session-item.active {
+      background: var(--snow-white);
+      border-color: var(--pale-azure);
+    }
+
+    .session-item-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-black);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-item-meta {
+      font-size: 12px;
+      color: var(--dusty-gray);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .session-meta-separator {
+      color: var(--stone);
+    }
+
+    .session-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+    .session-item:hover .session-actions { opacity: 1; }
+    .session-actions .btn { padding: 5px 10px; font-size: 12px; }
+
+    /* ── Main ── */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--vellum-white);
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px;
+      text-align: center;
+      color: var(--graphite);
+    }
+    .empty-state::before { content: none; }
+    .empty-state > * { max-width: 640px; }
+
+    .empty-state-icon {
+      font-size: 40px;
+      color: var(--terra-cotta);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .empty-state-icon .logo-icon,
+    .empty-state-icon .icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    .empty-state h2 {
+      font-family: var(--font-serif);
+      font-size: 56px;
+      line-height: 1.2;
+      font-weight: 400;
+      color: var(--ink-black);
+      letter-spacing: 0;
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--graphite);
+      margin-bottom: 40px;
+      white-space: nowrap;
+    }
+
+    /* ── Recording ── */
+    .recording-view,
+    .review-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--vellum-white);
+    }
+
+    .recording-header,
+    .review-header {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--parchment);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--vellum-white);
+      z-index: 10;
+    }
+
+    .recording-status,
+    .review-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rec-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--terra-cotta);
+      animation: pulse 1.6s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.38} }
+
+    .rec-timer {
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-black);
+    }
+    .rec-status-label {
+      font-size: 12px;
+      color: var(--dusty-gray);
+    }
+
+    .recording-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .video-panel {
+      flex: 1;
+      min-width: 0;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: #f4f2ec;
+      border-right: 1px solid var(--parchment);
+    }
+
+    video {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 16px;
+      background: #000;
+      object-fit: contain;
+      border: 1px solid rgba(31,30,29,0.18);
+      box-shadow: var(--shadow-soft);
+    }
+
+    canvas { display: none; }
+
+    .video-overlay-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--snow-white);
+      color: var(--graphite);
+      padding: 8px 12px;
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .notes-panel {
+      width: 390px;
+      min-width: 390px;
+      background: var(--vellum-white);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notes-panel-header {
+      padding: 20px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .notes-panel-header h3 {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      line-height: 1.33;
+      font-weight: 400;
+      color: var(--ink-black);
+    }
+    .note-count-label {
+      color: var(--dusty-gray);
+      font-size: 13px;
+    }
+
+    .note-input-area { padding: 0 20px 20px; flex-shrink: 0; }
+    .note-input-wrapper { position: relative; }
+
+    .note-input {
+      width: 100%;
+      min-height: 100px;
+      max-height: 200px;
+      background: var(--snow-white);
+      border: 1px solid var(--border-soft);
+      border-radius: 9.6px;
+      color: var(--ink-black);
+      padding: 12px 14px;
+      font-size: 15px;
+      line-height: 1.45;
+      font-family: var(--font-sans);
+      resize: vertical;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .note-input:focus {
+      outline: none;
+      border-color: var(--pale-azure);
+      box-shadow: 0 0 0 3px rgba(204, 219, 232, 0.5);
+    }
+    .note-input::placeholder { color: var(--stone); }
+
+    .note-input-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .screenshot-indicator {
+      color: var(--graphite);
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 160ms ease;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .screenshot-indicator.visible { opacity: 1; }
+
+    .notes-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 20px;
+    }
+
+    .note-card {
+      background: var(--snow-white);
+      border: 1px solid var(--parchment);
+      border-radius: 9.6px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .note-card-screenshot {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+      cursor: zoom-in;
+      background: #eee;
+    }
+    .note-card-body { padding: 14px; }
+    .note-card-text,
+    .recording-note-edit {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ink-black);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .recording-note-edit {
+      width: 100%;
+      min-height: 24px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 4px 6px;
+      margin: -4px -6px 0;
+      resize: none;
+      overflow: hidden;
+      font-family: var(--font-sans);
+    }
+    .recording-note-edit:focus {
+      outline: none;
+      background: var(--snow-white);
+      border-color: var(--pale-azure);
+      box-shadow: 0 0 0 3px rgba(204,219,232,.5);
+    }
+    .note-card-meta {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--dusty-gray);
+    }
+    .note-card-actions { display: flex; gap: 4px; }
+    .note-card-actions button {
+      background: transparent;
+      border: none;
+      color: var(--graphite);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .note-card-actions button:hover { background: #f2f0ea; color: var(--ink-black); }
+
+    .loading-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--graphite);
+      background: var(--vellum-white);
+      text-align: center;
+    }
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 2px solid var(--parchment);
+      border-top-color: var(--terra-cotta);
+      animation: spin 900ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Review header ── */
+    .review-title-input {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      line-height: 1.33;
+      font-weight: 400;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 9.6px;
+      color: var(--ink-black);
+      padding: 4px 8px;
+      outline: none;
+      width: 340px;
+    }
+    .review-title-input:hover { background: #f2f0ea; }
+    .review-title-input:focus {
+      background: var(--snow-white);
+      border-color: var(--pale-azure);
+      box-shadow: 0 0 0 3px rgba(204,219,232,.5);
+    }
+    .review-header-right {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .review-meta {
+      font-size: 13px;
+      color: var(--dusty-gray);
+    }
+
+    .review-delete-btn,
+    .review-share-btn {
+      padding: 7px 12px;
+      font-size: 13px;
+    }
+    .review-share-btn.copied {
+      background: var(--ink-black);
+      border-color: var(--ink-black);
+      color: var(--snow-white);
+    }
+
+    /* ── Canvas ── */
+    .canvas-viewport {
+      --grid-size: 32px;
+      --grid-dot: 1.25px;
+      --grid-x: 0px;
+      --grid-y: 0px;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background-color: #f4f2ec;
+      background-image: radial-gradient(circle, rgba(31,30,29,0.18) var(--grid-dot), transparent calc(var(--grid-dot) + 0.35px));
+      background-size: var(--grid-size) var(--grid-size);
+      background-position: var(--grid-x) var(--grid-y);
+      cursor: default;
+      user-select: none;
+    }
+    .canvas-viewport.panning { cursor: default; }
+
+    .canvas-world {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      z-index: 1;
+    }
+
+    .canvas-item { position: absolute; cursor: pointer; box-sizing: border-box; }
+    .canvas-item.selected {
+      outline: 2px solid var(--terra-cotta);
+      outline-offset: 0;
+      border-radius: 9.6px;
+    }
+
+    .ci-screenshot {
+      background: var(--vellum-white);
+      border: 1px solid var(--parchment);
+      border-radius: 9.6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-soft);
+    }
+    .ci-screenshot .ci-screenshot-img-wrap {
+      width: 100%;
+      background: #ebe8df;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ci-screenshot .ci-screenshot-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+    }
+
+    .ci-note {
+      padding: 14px;
+      border-top: 1px solid var(--parchment);
+      background: var(--vellum-white);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ci-note-text {
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--ink-black);
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 4px 6px;
+      margin: -4px -6px;
+      cursor: text;
+      min-height: 22px;
+    }
+    .ci-note-text:hover { border-color: var(--parchment); }
+    .ci-note-text[contenteditable="true"] {
+      background: var(--snow-white);
+      border-color: var(--pale-azure);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(204,219,232,.5);
+    }
+    .ci-note-text:empty::before {
+      content: 'Add note';
+      color: var(--stone);
+      font-style: normal;
+      pointer-events: none;
+    }
+    .ci-note-time {
+      width: fit-content;
+      font-size: 12px;
+      color: var(--dusty-gray);
+      background: #f2f0ea;
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+
+    .ci-text {
+      padding: 10px 12px;
+      color: var(--ink-black);
+      background: var(--vellum-white);
+      border: 1px solid var(--parchment);
+      border-radius: 9.6px;
+      font-size: 16px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-width: 120px;
+      min-height: 36px;
+      box-shadow: var(--shadow-soft);
+    }
+    .ci-text[contenteditable="true"] {
+      cursor: text;
+      background: var(--snow-white);
+      border-color: var(--pale-azure);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(204,219,232,.5);
+    }
+
+    .ci-image {
+      border-radius: 9.6px;
+      overflow: hidden;
+      border: 1px solid var(--parchment);
+      background: var(--snow-white);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+    }
+    .ci-image-img-wrap {
+      width: 100%;
+      background: var(--snow-white);
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ci-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Let selected resize handles render outside the card instead of being clipped. */
+    .ci-screenshot.selected,
+    .ci-image.selected {
+      overflow: visible;
+    }
+
+    .resize-handle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: var(--ink-black);
+      border: 2px solid var(--vellum-white);
+      border-radius: 999px;
+      bottom: -7px;
+      right: -7px;
+      cursor: nwse-resize;
+      z-index: 10;
+    }
+
+    .group-selection-box {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      border: 2px solid var(--terra-cotta);
+      border-radius: 9.6px;
+      z-index: 9;
+      box-sizing: border-box;
+    }
+    .group-selection-box .resize-handle {
+      pointer-events: auto;
+      background: var(--terra-cotta);
+      border-color: var(--vellum-white);
+    }
+
+    .canvas-toolbar {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: var(--vellum-white);
+      border: 1px solid var(--parchment);
+      border-radius: 16px;
+      padding: 6px;
+      display: flex;
+      gap: 4px;
+      z-index: 20;
+      box-shadow: var(--shadow-pop);
+    }
+    .tb-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--graphite);
+      padding: 8px 12px;
+      border-radius: 9.6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 160ms ease, border-color 160ms ease;
+      font-family: var(--font-sans);
+    }
+    .tb-btn:hover {
+      background: var(--snow-white);
+      border-color: var(--border-soft);
+      color: var(--ink-black);
+    }
+    .tb-icon { color: var(--terra-cotta); }
+    .tb-divider { width: 1px; background: var(--parchment); margin: 6px 4px; }
+
+    .zoom-indicator,
+    .canvas-help {
+      position: absolute;
+      background: rgba(250,249,245,.94);
+      border: 1px solid var(--parchment);
+      border-radius: 9.6px;
+      color: var(--graphite);
+      z-index: 20;
+      box-shadow: var(--shadow-soft);
+      pointer-events: none;
+    }
+    .zoom-indicator {
+      top: 16px;
+      right: 16px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .canvas-help {
+      right: 24px;
+      bottom: 84px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.8;
+      max-width: 300px;
+      display: none;
+      pointer-events: auto;
+    }
+    .canvas-help.visible { display: block; }
+    .canvas-help kbd {
+      background: var(--snow-white);
+      border: 1px solid var(--parchment);
+      border-radius: 5px;
+      padding: 1px 5px;
+      color: var(--ink-black);
+      font-size: 11px;
+      font-family: var(--font-sans);
+    }
+
+    .help-fab {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--parchment);
+      background: var(--vellum-white);
+      color: var(--graphite);
+      font-size: 22px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 21;
+      cursor: pointer;
+      box-shadow: var(--shadow-pop);
+      font-family: var(--font-serif);
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    .help-fab:hover {
+      background: var(--snow-white);
+      border-color: var(--border-soft);
+      color: var(--ink-black);
+    }
+
+    .alignment-guide {
+      position: absolute;
+      pointer-events: none;
+      z-index: 18;
+      display: none;
+      background: rgba(217, 119, 87, 0.72);
+      box-shadow: 0 0 0 1px rgba(250, 249, 245, 0.75);
+    }
+    .alignment-guide.vertical {
+      top: 0;
+      bottom: 0;
+      width: 1px;
+    }
+    .alignment-guide.horizontal {
+      left: 0;
+      right: 0;
+      height: 1px;
+    }
+
+    .selection-rect {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      z-index: 19;
+      border: 1px solid rgba(31, 30, 29, 0.55);
+      background: rgba(204, 219, 232, 0.28);
+      border-radius: 4px;
+    }
+
+    .canvas-viewport.space-down,
+    .canvas-viewport.space-down * {
+      cursor: grab !important;
+    }
+    .canvas-viewport.space-down.panning,
+    .canvas-viewport.space-down.panning * {
+      cursor: grabbing !important;
+    }
+
+    .canvas-drop-overlay {
+      position: absolute;
+      inset: 16px;
+      background: rgba(250,249,245,.86);
+      border: 1.5px dashed var(--onyx);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--ink-black);
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+    .canvas-drop-overlay.visible { opacity: 1; }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(20,20,19,.78);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      cursor: zoom-out;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+    .lightbox.show { opacity: 1; }
+    .lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      border-radius: 16px;
+      object-fit: contain;
+      background: var(--vellum-white);
+      box-shadow: var(--shadow-pop);
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--parchment);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background-color: var(--stone); }
+
+    .app-layout.recording-active .sidebar {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .app-layout.session-active .sidebar {
+        display: none;
+      }
+      .notes-panel { width: 320px; min-width: 320px; }
+      .empty-state h2 { font-size: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout" id="appLayout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <button class="sidebar-home-btn" onclick="goHome()" title="Home">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 4H6.4C5.1 4 4 5.1 4 6.4V8"/>
+            <path d="M16 4h1.6C18.9 4 20 5.1 20 6.4V8"/>
+            <path d="M20 16v1.6c0 1.3-1.1 2.4-2.4 2.4H16"/>
+            <path d="M8 20H6.4C5.1 20 4 18.9 4 17.6V16"/>
+            <path d="M8.2 16.1l.7-2.6 5.3-5.3 2 2-5.3 5.3-2.7.6Z"/>
+            <path d="M13.1 9.3l2 2"/>
+          </svg>
+          <span>Screen Notes</span>
+        </button>
+        <button class="sidebar-new-btn" id="newSessionBtn" title="New session">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 5v14"/><path d="M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+      <div class="session-tabs" id="sessionTabs" data-active="yours">
+        <button class="session-tab active" id="sessionsTabYours" onclick="setSessionListTab('yours')">Yours</button>
+        <button class="session-tab" id="sessionsTabOthers" onclick="setSessionListTab('others')">Others</button>
+      </div>
+      <div class="session-list" id="sessionList"></div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content" id="mainContent">
+      <!-- Default: empty state -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 4H6.4C5.1 4 4 5.1 4 6.4V8"/>
+            <path d="M16 4h1.6C18.9 4 20 5.1 20 6.4V8"/>
+            <path d="M20 16v1.6c0 1.3-1.1 2.4-2.4 2.4H16"/>
+            <path d="M8 20H6.4C5.1 20 4 18.9 4 17.6V16"/>
+            <path d="M8.2 16.1l.7-2.6 5.3-5.3 2 2-5.3 5.3-2.7.6Z"/>
+            <path d="M13.1 9.3l2 2"/>
+          </svg>
+        </div>
+        <h2>Screen Notes</h2>
+        <p>Get automatic screenshots with every note</p>
+        <button class="btn btn-primary" id="emptyStartBtn">
+          <svg class="icon icon-filled" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg> New session
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden canvas for screenshots -->
+  <canvas id="screenshotCanvas"></canvas>
+
+  <script>
+    // ── Icons ──
+    function icon(name, className = 'icon') {
+      const icons = {
+        camera: '<path d="M8 4H6.4C5.1 4 4 5.1 4 6.4V8"/><path d="M16 4h1.6C18.9 4 20 5.1 20 6.4V8"/><path d="M20 16v1.6c0 1.3-1.1 2.4-2.4 2.4H16"/><path d="M8 20H6.4C5.1 20 4 18.9 4 17.6V16"/><path d="M8.2 16.1l.7-2.6 5.3-5.3 2 2-5.3 5.3-2.7.6Z"/><path d="M13.1 9.3l2 2"/>',
+        record: '<circle cx="12" cy="12" r="5" class="icon-filled"/>',
+        stop: '<rect x="7" y="7" width="10" height="10" rx="1.5" class="icon-filled"/>',
+        trash: '<path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 14h10l1-14"/><path d="M9 7V4h6v3"/>',
+        image: '<rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M7 17l4-4 3 3 2-2 3 3"/>',
+        text: '<path d="M5 6h14"/><path d="M12 6v12"/><path d="M9 18h6"/>',
+        arrange: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+        fit: '<path d="M8 4H4v4"/><path d="M16 4h4v4"/><path d="M8 20H4v-4"/><path d="M16 20h4v-4"/>',
+        pin: '<path d="M12 21s6-5.3 6-11a6 6 0 1 0-12 0c0 5.7 6 11 6 11z"/><circle cx="12" cy="10" r="2"/>',
+        check: '<path d="M5 12.5l4 4L19 6"/>',
+        warning: '<path d="M12 4l9 16H3L12 4z"/><path d="M12 9v5"/><path d="M12 17h.01"/>',
+      };
+      return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
+    }
+
+    // ── State ──
+    let currentUser = null;
+    let allSessions = [];
+    let sessions = [];
+    let sharedSessions = [];
+    let sessionListTab = 'yours';
+    let activeSessionId = null;
+    let mediaStream = null;
+    let mediaRecorder = null;
+    let recordingStartTime = null;
+    let timerInterval = null;
+    let currentNotes = [];
+    let screenshotCaptured = null; // data URL of screenshot taken on focus
+    let isRecording = false;
+
+    // ── Init ──
+    function blurActiveFieldIfClickedOutside(event) {
+      const active = document.activeElement;
+      if (!active || active === document.body) return;
+
+      const isTextInput = active.matches?.('input, textarea, [contenteditable="true"]');
+      if (!isTextInput) return;
+      if (active === event.target || active.contains(event.target)) return;
+
+      active.blur();
+      if (active.isContentEditable) {
+        window.getSelection()?.removeAllRanges();
+      }
+    }
+
+    document.addEventListener('mousedown', blurActiveFieldIfClickedOutside, true);
+
+    async function init() {
+      try {
+        currentUser = await quick.id.waitForUser();
+        renderUserInfo();
+      } catch(e) {
+        console.log('Could not get user info');
+      }
+      await loadSessions();
+
+      const sessionId = getSessionIdFromUrl();
+      if (sessionId && allSessions.some(s => s.id === sessionId)) {
+        rememberSharedSessionIfNeeded(sessionId);
+        await loadSessions();
+        viewSession(sessionId, { updateUrl: false });
+      } else {
+        render();
+      }
+    }
+
+    window.addEventListener('hashchange', async () => {
+      const sessionId = getSessionIdFromUrl();
+      if (sessionId && allSessions.some(s => s.id === sessionId)) {
+        rememberSharedSessionIfNeeded(sessionId);
+        await loadSessions();
+        viewSession(sessionId, { updateUrl: false });
+      } else if (!sessionId) {
+        activeSessionId = null;
+        currentNotes = [];
+        render();
+      }
+    });
+
+    function renderUserInfo() {
+      const el = document.getElementById('userInfo');
+      if (!currentUser) return;
+      el.innerHTML = `
+        ${currentUser.slackImageUrl ? `<img class="user-avatar" src="${currentUser.slackImageUrl}" alt="">` : ''}
+        <span>${currentUser.fullName || currentUser.email}</span>
+      `;
+    }
+
+    function getSessionIdFromUrl() {
+      const hash = window.location.hash || '';
+      const match = hash.match(/^#session=(.+)$/);
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+
+    function setSessionUrl(id) {
+      const next = id ? `#session=${encodeURIComponent(id)}` : window.location.pathname;
+      if (id) history.pushState(null, '', next);
+      else history.pushState(null, '', window.location.pathname + window.location.search);
+    }
+
+    async function goHome() {
+      if (isRecording) {
+        if (!confirm('Stop current recording and return home?')) return;
+        await stopRecording();
+      }
+      activeSessionId = null;
+      currentNotes = [];
+      setSelectedItems?.([]);
+      setSessionUrl(null);
+      render();
+    }
+
+    // ── DB ──
+    const sessionsDb = quick.db.collection('sessions');
+
+    function currentUserEmail() {
+      return (currentUser?.email || '').toLowerCase();
+    }
+
+    function sessionOwnerEmail(session) {
+      return (session?.ownerEmail || session?.userEmail || session?.createdByEmail || '').toLowerCase();
+    }
+
+    function isMySession(session) {
+      const owner = sessionOwnerEmail(session);
+      // Legacy sessions did not have ownerEmail. Keep them visible for the
+      // creator's existing data rather than orphaning old work.
+      if (!owner) return true;
+      return owner === currentUserEmail();
+    }
+
+    function sharedSessionIds() {
+      try { return JSON.parse(localStorage.getItem('screenNotesSharedSessionIds') || '[]'); }
+      catch(_) { return []; }
+    }
+
+    function setSharedSessionIds(ids) {
+      localStorage.setItem('screenNotesSharedSessionIds', JSON.stringify([...new Set(ids)]));
+    }
+
+    function rememberSharedSessionIfNeeded(id) {
+      const session = allSessions.find(s => s.id === id);
+      if (!session || isMySession(session)) return;
+      setSharedSessionIds([id, ...sharedSessionIds()]);
+    }
+
+    async function loadSessions() {
+      try {
+        const result = await sessionsDb.find();
+        allSessions = (result || []).sort((a, b) =>
+          new Date(b.created_at) - new Date(a.created_at)
+        );
+        const sharedIds = new Set(sharedSessionIds());
+        sessions = allSessions.filter(isMySession);
+        sharedSessions = allSessions.filter(s => sharedIds.has(s.id) && !isMySession(s));
+      } catch(e) {
+        allSessions = [];
+        sessions = [];
+        sharedSessions = [];
+      }
+    }
+
+    // Strip any inline base64 data URLs from a session before persisting.
+    // Old sessions may have these stored under note.screenshot — we drop them
+    // (the screenshotUrl is what we actually rely on).
+    function sanitizeForPersist(session) {
+      const clone = JSON.parse(JSON.stringify(session));
+      if (Array.isArray(clone.notes)) {
+        clone.notes.forEach(n => {
+          if (typeof n.screenshot === 'string' && n.screenshot.startsWith('data:')) {
+            delete n.screenshot;
+          }
+          // If screenshotUrl is somehow a data URL (legacy), drop it too
+          if (typeof n.screenshotUrl === 'string' && n.screenshotUrl.startsWith('data:')) {
+            delete n.screenshotUrl;
+          }
+        });
+      }
+      if (clone.canvas && Array.isArray(clone.canvas.items)) {
+        clone.canvas.items.forEach(it => {
+          if (it.type === 'image' && typeof it.url === 'string' && it.url.startsWith('data:')) {
+            // Keep only items whose images we actually managed to upload
+            it.url = null;
+          }
+        });
+        clone.canvas.items = clone.canvas.items.filter(it => it.type !== 'image' || it.url);
+      }
+      return clone;
+    }
+
+    async function saveSession(session) {
+      try {
+        const payload = sanitizeForPersist(session);
+        if (session.id) {
+          await sessionsDb.update(session.id, payload);
+        } else {
+          const saved = await sessionsDb.create(payload);
+          session.id = saved.id;
+        }
+        await loadSessions();
+        renderSidebar();
+      } catch(e) {
+        console.error('Failed to save session:', e);
+      }
+    }
+
+    async function shareSession(id) {
+      const url = `${window.location.origin}${window.location.pathname}#session=${encodeURIComponent(id)}`;
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch (_) {
+        const input = document.createElement('input');
+        input.value = url;
+        input.style.position = 'fixed';
+        input.style.left = '-9999px';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        input.remove();
+      }
+      const button = document.getElementById('shareSessionBtn');
+      if (button) {
+        button.textContent = 'Link copied';
+        button.classList.add('copied');
+        clearTimeout(button._resetTimer);
+        button._resetTimer = setTimeout(() => {
+          button.textContent = 'Share';
+          button.classList.remove('copied');
+        }, 1600);
+      }
+    }
+
+    async function deleteSession(id) {
+      if (!confirm('Delete this session and all its notes?')) return;
+      try {
+        await sessionsDb.delete(id);
+        if (activeSessionId === id) {
+          activeSessionId = null;
+          isRecording = false;
+        }
+        await loadSessions();
+        render();
+      } catch(e) {
+        console.error('Failed to delete:', e);
+      }
+    }
+
+    // ── Recording ──
+    async function startRecording() {
+      try {
+        // Request highest possible resolution. Browsers will clamp to what the source supports.
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            cursor: 'always',
+            width:    { ideal: 7680, max: 7680 },
+            height:   { ideal: 4320, max: 4320 },
+            frameRate:{ ideal: 30 },
+          },
+          audio: false
+        });
+        // After acquisition, try to push the track to its native resolution
+        // (some browsers won't honor constraints in getDisplayMedia itself).
+        const track = mediaStream.getVideoTracks()[0];
+        try {
+          const caps = track.getCapabilities ? track.getCapabilities() : null;
+          if (caps && caps.width && caps.height) {
+            await track.applyConstraints({
+              width:  { ideal: caps.width.max  || 7680 },
+              height: { ideal: caps.height.max || 4320 },
+            });
+          }
+        } catch(_) { /* not all UAs support this; fine */ }
+      } catch(e) {
+        // User cancelled
+        return;
+      }
+
+      isRecording = true;
+      recordingStartTime = Date.now();
+      currentNotes = [];
+      screenshotCaptured = null;
+
+      // Create a new session immediately
+      const session = {
+        title: 'Untitled Session',
+        ownerEmail: currentUser?.email || null,
+        ownerName: currentUser?.fullName || currentUser?.email || null,
+        notes: [],
+        duration: 0,
+      };
+      await saveSession(session);
+      activeSessionId = session.id;
+
+      // Handle stream ending (user clicks "Stop sharing")
+      mediaStream.getVideoTracks()[0].onended = () => {
+        stopRecording();
+      };
+
+      render();
+      startTimer();
+    }
+
+    async function stopRecording() {
+      const stoppedSessionId = activeSessionId;
+      isRecording = false;
+
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+
+      clearInterval(timerInterval);
+      renderLoadingState('Preparing your session…');
+
+      if (stoppedSessionId) {
+        let session = allSessions.find(s => s.id === stoppedSessionId);
+        if (session) {
+          session.duration = Date.now() - recordingStartTime;
+          session.notes = [...currentNotes];
+          // If the canvas had not yet been created, create it now so stop lands
+          // directly on a populated canvas without requiring refresh/navigation.
+          if (!session.canvas || !session.canvas.items || session.canvas.items.length === 0) {
+            session.canvas = {
+              viewport: { x: 0, y: 0, scale: 1 },
+              items: generateInitialLayout(session.notes),
+            };
+          }
+          await saveSession(session);
+          await loadSessions();
+          session = allSessions.find(s => s.id === stoppedSessionId) || session;
+          activeSessionId = stoppedSessionId;
+          currentNotes = session.notes || [];
+          setSessionUrl(stoppedSessionId);
+          render();
+          requestAnimationFrame(() => {
+            initCanvas(session);
+            // Let images/text render, then measure actual heights and arrange once.
+            setTimeout(() => {
+              autoArrangeCanvas();
+              fitToScreen();
+            }, 100);
+          });
+          return;
+        }
+      }
+
+      render();
+    }
+
+    function renderLoadingState(message = 'Loading…') {
+      const main = document.getElementById('mainContent');
+      if (!main) return;
+      main.innerHTML = `
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <div>${escapeHtml(message)}</div>
+        </div>
+      `;
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const el = document.getElementById('recTimer');
+        if (el) el.textContent = formatDuration(Date.now() - recordingStartTime);
+      }, 1000);
+    }
+
+    // ── Screenshot ──
+    // Simple, proven path: draw the <video> tag onto a canvas and produce a
+    // JPEG. JPEG keeps file size tiny (typ. <500 KB) which avoids any quick.fs
+    // size limits while still looking great for screenshots.
+    const MAX_DIM = 2560; // longest-edge cap, in CSS pixels of the source
+
+    async function captureScreenshotBlob() {
+      const video = document.getElementById('screenVideo');
+      if (!video || !video.videoWidth) {
+        console.warn('[screen-notes] no video frame available');
+        return null;
+      }
+      // Ensure a fresh frame is rendered
+      await new Promise(r => requestAnimationFrame(r));
+
+      const srcW = video.videoWidth;
+      const srcH = video.videoHeight;
+      const longest = Math.max(srcW, srcH);
+      const scale = longest > MAX_DIM ? MAX_DIM / longest : 1;
+      const dstW = Math.round(srcW * scale);
+      const dstH = Math.round(srcH * scale);
+
+      const c = document.getElementById('screenshotCanvas');
+      c.width  = dstW;
+      c.height = dstH;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(video, 0, 0, dstW, dstH);
+
+      // High-quality JPEG. ~92% looks visually identical to the source for
+      // screenshots and stays well under any reasonable upload size limit.
+      const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.92));
+      return blob;
+    }
+
+    // Quick low-cost preview of the current frame for the "captured" indicator.
+    // We DON'T persist this — only the uploaded URL goes into the DB.
+    function captureScreenshotPreview() {
+      const video = document.getElementById('screenVideo');
+      if (!video || !video.videoWidth) return null;
+      const c = document.getElementById('screenshotCanvas');
+      c.width  = video.videoWidth;
+      c.height = video.videoHeight;
+      c.getContext('2d').drawImage(video, 0, 0);
+      return c.toDataURL('image/png');
+    }
+
+    // ── Notes ──
+    // When user focuses the note box we IMMEDIATELY grab a high-res blob and
+    // start uploading it. The upload promise is stored on `screenshotCaptured`
+    // so by the time they click Save Note the URL is usually already ready.
+    let pendingScreenshot = null; // { blob, previewDataUrl, uploadPromise }
+
+    async function beginNoteScreenshotCapture() {
+      if (!isRecording || pendingScreenshot) return pendingScreenshot;
+      // Quick preview for indicator (not persisted)
+      const preview = captureScreenshotPreview();
+      if (!preview) return null;
+
+      const indicator = document.getElementById('screenshotIndicator');
+      if (indicator) {
+        indicator.classList.add('visible');
+        indicator.innerHTML = `${icon('camera', 'icon icon-sm')} Screenshot captured · uploading…`;
+      }
+
+      // Grab the blob and start uploading it in the background
+      const blob = await captureScreenshotBlob();
+      if (!blob) {
+        if (indicator) indicator.innerHTML = `${icon('warning', 'icon icon-sm')} Capture failed (no frame)`;
+        return null;
+      }
+      const file = new File([blob], `screenshot-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      console.log(`[screen-notes] captured ${(blob.size/1024).toFixed(1)} KB ${blob.type}`);
+
+      const uploadPromise = (async () => {
+        try {
+          const r = await quick.fs.uploadFile(file);
+          console.log('[screen-notes] upload response:', r);
+          // Handle multiple known response shapes
+          const f = r?.files?.[0] || r?.[0] || r?.file || null;
+          const url = f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+          if (!url) {
+            const msg = 'No URL in response: ' + JSON.stringify(r).slice(0, 200);
+            console.error('[screen-notes] ' + msg);
+            if (indicator) indicator.innerHTML = `${icon('warning', 'icon icon-sm')} ${escapeHtml(msg)}`;
+            return null;
+          }
+          return url;
+        } catch(err) {
+          console.error('[screen-notes] upload threw:', err);
+          const msg = err?.message || err?.toString() || 'Unknown error';
+          if (indicator) indicator.innerHTML = `${icon('warning', 'icon icon-sm')} ${escapeHtml(msg)}`;
+          return null;
+        }
+      })();
+
+      pendingScreenshot = { previewDataUrl: preview, uploadPromise };
+
+      uploadPromise.then(url => {
+        if (!indicator || pendingScreenshot?.uploadPromise !== uploadPromise) return;
+        if (url) indicator.innerHTML = `${icon('check', 'icon icon-sm')} Screenshot ready`;
+      });
+
+      return pendingScreenshot;
+    }
+
+    function onNoteFocus() {
+      // Preserve existing behaviour: clicking into the box captures the moment.
+      beginNoteScreenshotCapture();
+    }
+
+    function onNoteInput() {
+      // Important after saving: the textarea remains focused, so focus won't fire
+      // again. The next screenshot should be captured when typing starts.
+      const input = document.getElementById('noteInput');
+      if (input?.value.trim()) beginNoteScreenshotCapture();
+    }
+
+    async function addNote() {
+      const input = document.getElementById('noteInput');
+      const text = input.value.trim();
+      if (!text) return;
+      if (!pendingScreenshot) {
+        await beginNoteScreenshotCapture();
+      }
+      if (!pendingScreenshot) {
+        alert('Could not capture a screenshot yet. Please try again.');
+        return;
+      }
+
+      // Wait for the in-flight upload
+      const url = await pendingScreenshot.uploadPromise;
+      if (!url) {
+        alert('Screenshot upload failed — please try the note again.');
+        return;
+      }
+
+      const note = {
+        text,
+        screenshotUrl: url,    // ONLY the URL is persisted — never the data URL
+        timestamp: Date.now() - recordingStartTime,
+        createdAt: new Date().toISOString(),
+      };
+
+      currentNotes.push(note);
+      input.value = '';
+      pendingScreenshot = null;
+
+      const indicator = document.getElementById('screenshotIndicator');
+      if (indicator) indicator.classList.remove('visible');
+
+      // Save to DB (no data URLs included)
+      const session = allSessions.find(s => s.id === activeSessionId);
+      if (session) {
+        session.notes = [...currentNotes];
+        session.duration = Date.now() - recordingStartTime;
+        await saveSession(session);
+      }
+
+      renderNotesList();
+    }
+
+    function deleteNote(index) {
+      currentNotes.splice(index, 1);
+      const session = allSessions.find(s => s.id === activeSessionId);
+      if (session) {
+        session.notes = [...currentNotes];
+        // Canvas is not created during recording, but if it exists later, keep
+        // screenshot items aligned to the remaining note indexes.
+        if (session.canvas?.items) {
+          session.canvas.items = session.canvas.items
+            .filter(item => item.type !== 'screenshot' || item.noteIndex !== index)
+            .map(item => item.type === 'screenshot' && item.noteIndex > index
+              ? { ...item, noteIndex: item.noteIndex - 1 }
+              : item);
+        }
+        saveSession(session);
+      }
+      renderNotesList();
+    }
+
+    async function updateRecordingNote(index, value) {
+      if (!currentNotes[index]) return;
+      currentNotes[index].text = value;
+      const session = allSessions.find(s => s.id === activeSessionId);
+      if (session) {
+        session.notes = [...currentNotes];
+        await saveSession(session);
+      }
+    }
+
+    function autoGrowTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+
+    // ── Lightbox ──
+    function openLightbox(src) {
+      const lb = document.createElement('div');
+      lb.className = 'lightbox';
+      lb.innerHTML = `<img src="${src}" alt="Screenshot">`;
+      lb.onclick = () => {
+        lb.classList.remove('show');
+        setTimeout(() => lb.remove(), 200);
+      };
+      document.body.appendChild(lb);
+      requestAnimationFrame(() => lb.classList.add('show'));
+    }
+
+    // ── Rendering ──
+    function render() {
+      const appLayout = document.getElementById('appLayout');
+      appLayout?.classList.toggle('recording-active', isRecording);
+      appLayout?.classList.toggle('session-active', !!activeSessionId && !isRecording);
+      document.body.classList.toggle('recording-active', isRecording);
+      renderSidebar();
+      renderMain();
+    }
+
+    function ownerLabel(session) {
+      if (isMySession(session)) return session.ownerName || currentUser?.fullName || currentUser?.email || 'You';
+      return session.ownerName || session.ownerEmail || 'Unknown owner';
+    }
+
+    function setSessionListTab(tab) {
+      sessionListTab = tab;
+      renderSidebar();
+    }
+
+    function renderSidebar() {
+      document.getElementById('sessionTabs')?.setAttribute('data-active', sessionListTab);
+      document.getElementById('sessionsTabYours')?.classList.toggle('active', sessionListTab === 'yours');
+      document.getElementById('sessionsTabOthers')?.classList.toggle('active', sessionListTab === 'others');
+
+      const renderSessionItem = (s) => `
+        <div class="session-item ${s.id === activeSessionId ? 'active' : ''}"
+             onclick="viewSession('${s.id}')">
+          <div class="session-item-title">${escapeHtml(s.title)}</div>
+          <div class="session-item-meta">
+            ${sessionListTab === 'others' ? `
+              <span>${escapeHtml(ownerLabel(s))}</span>
+              <span class="session-meta-separator">•</span>
+            ` : ''}
+            <span>${formatSessionDateOnly(s.created_at)}</span>
+          </div>
+        </div>
+      `;
+
+      const list = document.getElementById('sessionList');
+      const visibleSessions = sessionListTab === 'others' ? sharedSessions : sessions;
+      if (sessionListTab === 'others' && visibleSessions.length === 0) {
+        list.innerHTML = '<div class="session-empty-state">No sessions shared with you</div>';
+        return;
+      }
+      list.innerHTML = visibleSessions.map(renderSessionItem).join('');
+    }
+
+    function renderMain() {
+      const main = document.getElementById('mainContent');
+
+      if (isRecording) {
+        main.innerHTML = renderRecordingView();
+        setupRecordingVideo();
+        return;
+      }
+
+      if (activeSessionId && !isRecording) {
+        const session = allSessions.find(s => s.id === activeSessionId);
+        if (session) {
+          main.innerHTML = renderReviewView(session);
+          return;
+        }
+      }
+
+      // Empty state
+      main.innerHTML = `
+        <div class="empty-state" id="emptyState">
+          <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
+          <h2>Screen Notes</h2>
+          <p>Get automatic screenshots with every note</p>
+          <button class="btn btn-primary" onclick="startRecording()">
+            ${icon('record', 'icon icon-filled')} New session
+          </button>
+        </div>
+      `;
+    }
+
+    function renderRecordingView() {
+      return `
+        <div class="recording-view">
+          <div class="recording-header">
+            <div class="recording-status">
+              <div class="rec-dot"></div>
+              <span class="rec-timer" id="recTimer">00:00</span>
+              <span style="color:var(--text-dim);font-size:13px;">Recording</span>
+            </div>
+            <div>
+              <button class="btn btn-danger" onclick="stopRecording()">
+                ${icon('stop', 'icon icon-filled')} Stop Recording
+              </button>
+            </div>
+          </div>
+          <div class="recording-body">
+            <div class="video-panel">
+              <video id="screenVideo" autoplay playsinline muted></video>
+              <div class="video-overlay-hint" id="videoHint">Click the note box to capture a screenshot →</div>
+            </div>
+            <div class="notes-panel">
+              <div class="notes-panel-header">
+                <h3>Notes</h3>
+                <span style="font-size:12px;color:var(--text-dim);" id="noteCountLabel">${currentNotes.length} notes</span>
+              </div>
+              <div class="note-input-area">
+                <div class="note-input-wrapper">
+                  <textarea
+                    id="noteInput"
+                    class="note-input"
+                    placeholder="Click here to capture a screenshot and write a note..."
+                    onfocus="onNoteFocus()"
+                    oninput="onNoteInput()"
+                    onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();addNote()}"
+                  ></textarea>
+                </div>
+                <div class="note-input-actions">
+                  <div class="screenshot-indicator" id="screenshotIndicator">
+                    ${icon('camera', 'icon icon-sm')} Screenshot captured
+                  </div>
+                  <button class="btn btn-primary" onclick="addNote()" style="padding:6px 12px;font-size:13px;">
+                    Save Note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
+                  </button>
+                </div>
+              </div>
+              <div class="notes-list" id="notesList"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setupRecordingVideo() {
+      const video = document.getElementById('screenVideo');
+      if (video && mediaStream) {
+        video.srcObject = mediaStream;
+      }
+      renderNotesList();
+
+      // Hide hint after first note
+      setTimeout(() => {
+        const hint = document.getElementById('videoHint');
+        if (hint && currentNotes.length > 0) hint.style.opacity = '0';
+      }, 100);
+    }
+
+    function renderNotesList() {
+      const list = document.getElementById('notesList');
+      if (!list) return;
+
+      const label = document.getElementById('noteCountLabel');
+      if (label) label.textContent = `${currentNotes.length} note${currentNotes.length !== 1 ? 's' : ''}`;
+
+      list.innerHTML = [...currentNotes].reverse().map((note, i) => {
+        const realIndex = currentNotes.length - 1 - i;
+        const imgSrc = note.screenshotUrl || note.screenshot;
+        return `
+          <div class="note-card">
+            <img class="note-card-screenshot"
+                 src="${imgSrc}"
+                 alt="Screenshot"
+                 onclick="openLightbox('${imgSrc}')"
+                 loading="lazy">
+            <div class="note-card-body">
+              <textarea class="recording-note-edit"
+                        rows="1"
+                        oninput="autoGrowTextarea(this)"
+                        onfocus="autoGrowTextarea(this)"
+                        onblur="updateRecordingNote(${realIndex}, this.value)">${escapeHtml(note.text)}</textarea>
+              <div class="note-card-meta">
+                <span>${formatDuration(note.timestamp)}</span>
+                <div class="note-card-actions">
+                  <button class="delete-btn" onclick="deleteNote(${realIndex})" title="Delete note">${icon('trash', 'icon icon-sm')}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderReviewView(session) {
+      const notes = session.notes || [];
+      return `
+        <div class="review-view">
+          <div class="review-header">
+            <div class="review-header-left">
+              <input class="review-title-input"
+                     value="${escapeHtml(session.title)}"
+                     onchange="renameSession('${session.id}', this.value)"
+                     placeholder="Untitled session">
+            </div>
+            <div class="review-header-right">
+              <button class="btn btn-ghost review-share-btn" id="shareSessionBtn" onclick="shareSession('${session.id}')" title="Copy session link">
+                Share
+              </button>
+              ${isMySession(session) ? `
+                <button class="btn btn-ghost review-delete-btn" onclick="deleteSession('${session.id}')" title="Delete session">
+                  Delete
+                </button>
+              ` : ''}
+
+            </div>
+          </div>
+          <div class="canvas-viewport" id="canvasViewport">
+            <div class="canvas-world" id="canvasWorld"></div>
+
+            <div class="canvas-help" id="canvasHelp">
+              <div><kbd>space</kbd> + <kbd>drag</kbd> to pan</div>
+              <div><kbd>⌘</kbd> + <kbd>scroll</kbd> to zoom</div>
+              <div><kbd>drag empty</kbd> to select</div>
+              <div><kbd>shift</kbd> + <kbd>click</kbd> multi-select</div>
+              <div><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> nudge layers</div>
+              <div><kbd>⌘</kbd> + <kbd>Z</kbd> undo</div>
+              <div>Drop images anywhere</div>
+            </div>
+            <button class="help-fab" onclick="toggleCanvasHelp(event)" title="Canvas help">?</button>
+            <div class="zoom-indicator" id="zoomIndicator">100%</div>
+            <div class="alignment-guide vertical" id="guideVertical"></div>
+            <div class="alignment-guide horizontal" id="guideHorizontal"></div>
+            <div class="selection-rect" id="selectionRect"></div>
+            <div class="canvas-drop-overlay" id="dropOverlay">Drop image to add to canvas</div>
+
+            <div class="canvas-toolbar">
+              <button class="tb-btn" onclick="addTextItem()" title="Add text">${icon('text')} Text</button>
+              <button class="tb-btn" onclick="document.getElementById('imageUploadInput').click()" title="Add image">${icon('image')} Image</button>
+              <input type="file" id="imageUploadInput" accept="image/*" multiple style="display:none;" onchange="onImageUpload(event)">
+              <button class="tb-btn" onclick="autoArrangeCanvas()" title="Auto-arrange screenshots">${icon('arrange')} Arrange</button>
+              <button class="tb-btn" onclick="fitToScreen()" title="Fit all to screen">${icon('fit')} Fit</button>
+              <button class="tb-btn" onclick="resetView()" title="Reset zoom to 100%">100%</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function renameSession(id, newTitle) {
+      const session = allSessions.find(s => s.id === id);
+      if (session) {
+        session.title = newTitle.trim() || 'Untitled Session';
+        await saveSession(session);
+      }
+    }
+
+    async function viewSession(id, options = {}) {
+      if (isRecording && id !== activeSessionId) {
+        if (!confirm('Stop current recording to view this session?')) return;
+        await stopRecording();
+      }
+      activeSessionId = id;
+      if (options.updateUrl !== false) setSessionUrl(id);
+      const session = allSessions.find(s => s.id === id);
+      if (session) {
+        sessionListTab = isMySession(session) ? 'yours' : 'others';
+        currentNotes = session.notes || [];
+      }
+      render();
+      // Initialize canvas after DOM is ready
+      requestAnimationFrame(() => initCanvas(session));
+    }
+
+    // ════════════════════════════════════════════
+    // ── Canvas (pan / zoom / items) ──
+    // ════════════════════════════════════════════
+    const canvas = {
+      x: 0, y: 0, scale: 1,
+      items: [],          // {id, type, x, y, w, h, ...}
+      selectedId: null,
+      selectedIds: [],
+      session: null,
+      saveTimer: null,
+      undoStack: [],
+    };
+
+    function snapshotCanvasState() {
+      return {
+        x: canvas.x,
+        y: canvas.y,
+        scale: canvas.scale,
+        items: JSON.parse(JSON.stringify(canvas.items)),
+      };
+    }
+
+    function pushUndoState() {
+      canvas.undoStack.push(snapshotCanvasState());
+      if (canvas.undoStack.length > 80) canvas.undoStack.shift();
+    }
+
+    function undoCanvasAction() {
+      const prev = canvas.undoStack.pop();
+      if (!prev) return;
+      canvas.x = prev.x;
+      canvas.y = prev.y;
+      canvas.scale = prev.scale;
+      canvas.items = JSON.parse(JSON.stringify(prev.items));
+      canvas.selectedId = null;
+      canvas.selectedIds = [];
+      renderCanvas();
+      saveCanvasDebounced();
+    }
+
+    function initCanvas(session) {
+      const viewport = document.getElementById('canvasViewport');
+      if (!viewport) return;
+      canvas.session = session;
+
+      // Load existing canvas state OR auto-generate from notes
+      if (session.canvas && session.canvas.items && session.canvas.items.length) {
+        canvas.items = JSON.parse(JSON.stringify(session.canvas.items));
+        canvas.x = session.canvas.viewport?.x ?? 0;
+        canvas.y = session.canvas.viewport?.y ?? 0;
+        canvas.scale = session.canvas.viewport?.scale ?? 1;
+      } else {
+        canvas.items = generateInitialLayout(session.notes || []);
+        canvas.x = 0; canvas.y = 0; canvas.scale = 1;
+        // Center initial layout
+        setTimeout(fitToScreen, 50);
+      }
+      canvas.selectedId = null;
+      canvas.selectedIds = [];
+      canvas.undoStack = [];
+
+      renderCanvas();
+      attachCanvasListeners(viewport);
+    }
+
+    function estimateScreenshotCardHeight(note, cardW, imageH) {
+      // Screenshot cards are auto-height: image + note region. Before the DOM
+      // exists we estimate the note block so first-load layouts don't overlap.
+      const text = (note?.text || '').trim();
+      const charsPerLine = Math.max(24, Math.floor((cardW - 28) / 8));
+      const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
+      const noteTextH = lines * 22;
+      const noteChromeH = 14 + 14 + 26 + 8; // padding + time badge + gap
+      return imageH + noteTextH + noteChromeH;
+    }
+
+    function generateInitialLayout(notes) {
+      // Masonry-arrange screenshots from the start so auto-height note sections
+      // don't overlap when the session first opens after recording stops.
+      const items = [];
+      const cardW = 960, cardH = 640, gap = 64;
+      const cols = Math.max(1, Math.ceil(Math.sqrt(notes.length || 1)));
+      const colHeights = Array(cols).fill(0);
+
+      notes.forEach((note, i) => {
+        let col = 0;
+        for (let c = 1; c < cols; c++) {
+          if (colHeights[c] < colHeights[col]) col = c;
+        }
+
+        const x = col * (cardW + gap);
+        const y = colHeights[col];
+        const estimatedH = estimateScreenshotCardHeight(note, cardW, cardH);
+
+        items.push({
+          id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
+          type: 'screenshot',
+          noteIndex: i,
+          x,
+          y,
+          w: cardW,
+          h: cardH,
+        });
+
+        colHeights[col] += estimatedH + gap;
+      });
+      return items;
+    }
+
+    function renderCanvas() {
+      const world = document.getElementById('canvasWorld');
+      if (!world) return;
+      world.style.transform = `translate(${canvas.x}px, ${canvas.y}px) scale(${canvas.scale})`;
+
+      world.innerHTML = canvas.items.map(item => renderCanvasItem(item)).join('') + '<div class="group-selection-box" id="groupSelectionBox"><div class="resize-handle" data-group-handle="true"></div></div>';
+      updateZoomIndicator();
+      updateCanvasGrid();
+      updateGroupSelectionBox();
+    }
+
+    function renderCanvasItem(item) {
+      const selected = isItemSelected(item.id);
+      const sel = selected ? 'selected' : '';
+      const baseStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;height:${item.h}px;`;
+      const handle = selected && canvas.selectedIds.length <= 1 ? `<div class="resize-handle" data-handle="${item.id}"></div>` : '';
+
+      if (item.type === 'screenshot') {
+        const note = (canvas.session?.notes || [])[item.noteIndex];
+        if (!note) return '';
+        const src = note.screenshotUrl || note.screenshot;
+        // Screenshot cards are AUTO-HEIGHT: image is item.h, note grows below
+        const cardStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+        return `
+          <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
+            <div class="ci-screenshot-img-wrap" style="height:${item.h}px;">
+              <img src="${src}" alt="" draggable="false">
+            </div>
+            <div class="ci-note">
+              <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
+              <div class="ci-note-time">${icon('pin', 'icon icon-sm')} ${formatDuration(note.timestamp)}</div>
+            </div>
+            ${handle}
+          </div>
+        `;
+      }
+      if (item.type === 'text') {
+        const fontSize = item.fontSize || 16;
+        // Text boxes are AUTO-HEIGHT: item.h is a minimum height only.
+        // The container should never clip or be smaller than its text.
+        const textStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+        return `
+          <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
+            <div class="ci-text" data-text-id="${item.id}" style="font-size:${fontSize}px;min-height:${item.h}px;">${escapeHtml(item.text || 'Text')}</div>
+            ${handle}
+          </div>
+        `;
+      }
+      if (item.type === 'image') {
+        // Dropped images are AUTO-HEIGHT too: item.h controls image height;
+        // the optional note field grows below it.
+        const imageStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+        return `
+          <div class="canvas-item ci-image ${sel}" data-id="${item.id}" style="${imageStyle}">
+            <div class="ci-image-img-wrap" style="height:${item.h}px;">
+              <img src="${item.url}" alt="" draggable="false">
+            </div>
+            <div class="ci-note">
+              <div class="ci-note-text" data-image-note-id="${item.id}">${escapeHtml(item.note || '')}</div>
+            </div>
+            ${handle}
+          </div>
+        `;
+      }
+      return '';
+    }
+
+    function updateZoomIndicator() {
+      const el = document.getElementById('zoomIndicator');
+      if (el) el.textContent = Math.round(canvas.scale * 100) + '%';
+    }
+
+    function updateCanvasGrid() {
+      const viewport = document.getElementById('canvasViewport');
+      if (!viewport) return;
+      const base = 32;
+      const size = Math.max(8, base * canvas.scale);
+      const dot = Math.max(0.65, Math.min(2.25, 1.25 * Math.sqrt(canvas.scale)));
+      viewport.style.setProperty('--grid-size', `${size}px`);
+      viewport.style.setProperty('--grid-dot', `${dot}px`);
+      viewport.style.setProperty('--grid-x', `${canvas.x % size}px`);
+      viewport.style.setProperty('--grid-y', `${canvas.y % size}px`);
+    }
+
+    // ── Canvas event handlers ──
+    let isPanning = false, isDraggingItem = false, isResizing = false, isResizingGroup = false, isSelecting = false;
+    let dragStart = { x: 0, y: 0, itemX: 0, itemY: 0, itemW: 0, itemH: 0 };
+    let selectionStart = { x: 0, y: 0, worldX: 0, worldY: 0 };
+    let spaceDown = false;
+    const SNAP_THRESHOLD_PX = 8;
+
+    function attachCanvasListeners(viewport) {
+      // Mouse down — start pan or item drag
+      viewport.addEventListener('mousedown', onCanvasMouseDown);
+      viewport.addEventListener('wheel', onCanvasWheel, { passive: false });
+      viewport.addEventListener('dblclick', onCanvasDblClick);
+
+      // Drag-and-drop image files — use enter/leave counter so child elements
+      // don't make the overlay flicker
+      let dragDepth = 0;
+      viewport.addEventListener('dragenter', e => {
+        e.preventDefault();
+        dragDepth++;
+        document.getElementById('dropOverlay')?.classList.add('visible');
+      });
+      viewport.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      });
+      viewport.addEventListener('dragleave', e => {
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) document.getElementById('dropOverlay')?.classList.remove('visible');
+      });
+      viewport.addEventListener('drop', e => {
+        dragDepth = 0;
+        document.getElementById('dropOverlay')?.classList.remove('visible');
+        onCanvasDrop(e);
+      });
+
+      // Window-level for drag continuity
+      window.addEventListener('mousemove', onWindowMouseMove);
+      window.addEventListener('mouseup', onWindowMouseUp);
+      window.addEventListener('keydown', onCanvasKeyDown);
+      window.addEventListener('keyup', onCanvasKeyUp);
+    }
+
+    function onCanvasMouseDown(e) {
+      const viewport = document.getElementById('canvasViewport');
+
+      // Never start a drag or re-render if the user clicked into an editable
+      // text area — but do select/focus the parent layer first.
+      const noteText = e.target.closest('.ci-note-text');
+      if (noteText) {
+        const parentItem = noteText.closest('.canvas-item');
+        if (parentItem) setSelectedItem(parentItem.dataset.id);
+        return;
+      }
+      if (e.target.closest('.ci-text[contenteditable="true"]')) {
+        const parentItem = e.target.closest('.canvas-item');
+        if (parentItem) setSelectedItem(parentItem.dataset.id);
+        return;
+      }
+
+      // Space + drag pans the canvas. This works even if the pointer starts on an item.
+      if ((spaceDown && e.button === 0) || e.button === 1) {
+        isPanning = true;
+        dragStart = { x: e.clientX, y: e.clientY, canvasX: canvas.x, canvasY: canvas.y };
+        viewport.classList.add('panning');
+        e.preventDefault();
+        return;
+      }
+
+      // Resize handle?
+      if (e.target.classList.contains('resize-handle')) {
+        if (e.target.dataset.groupHandle === 'true') {
+          const bounds = getSelectionBounds();
+          if (bounds) {
+            pushUndoState();
+            isResizingGroup = true;
+            dragStart = {
+              x: e.clientX, y: e.clientY,
+              bounds,
+              itemSnapshots: canvas.selectedIds.map(id => {
+                const selected = canvas.items.find(i => i.id === id);
+                return selected ? { id, x: selected.x, y: selected.y, w: selected.w, h: selected.h } : null;
+              }).filter(Boolean),
+            };
+            e.preventDefault();
+            return;
+          }
+        }
+
+        const id = e.target.dataset.handle;
+        const item = canvas.items.find(i => i.id === id);
+        if (item) {
+          pushUndoState();
+          isResizing = true;
+          dragStart = {
+            x: e.clientX, y: e.clientY,
+            itemW: item.w, itemH: item.h, itemId: id,
+          };
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // Click on item?
+      const itemEl = e.target.closest('.canvas-item');
+      if (itemEl && e.button === 0) {
+        const id = itemEl.dataset.id;
+        const item = canvas.items.find(i => i.id === id);
+        if (!item) return;
+
+        // Shift-click toggles layers into/out of the current selection.
+        if (e.shiftKey) {
+          const next = new Set(canvas.selectedIds);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          setSelectedItems([...next]);
+          e.preventDefault();
+          return;
+        }
+
+        if (!isItemSelected(id)) setSelectedItem(id);
+
+        pushUndoState();
+        isDraggingItem = true;
+        dragStart = {
+          x: e.clientX, y: e.clientY,
+          itemX: item.x, itemY: item.y, itemId: id,
+          itemPositions: canvas.selectedIds.map(selectedId => {
+            const selected = canvas.items.find(i => i.id === selectedId);
+            return selected ? { id: selected.id, x: selected.x, y: selected.y } : null;
+          }).filter(Boolean),
+        };
+        e.preventDefault();
+        return;
+      }
+
+      // Empty-canvas drag creates a marquee selection. Panning requires Space.
+      if (e.button === 0) {
+        const rect = viewport.getBoundingClientRect();
+        isSelecting = true;
+        setSelectedItems([]);
+        selectionStart = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          worldX: (e.clientX - rect.left - canvas.x) / canvas.scale,
+          worldY: (e.clientY - rect.top - canvas.y) / canvas.scale,
+        };
+        updateSelectionRect(selectionStart.x, selectionStart.y, selectionStart.x, selectionStart.y);
+        e.preventDefault();
+      }
+    }
+
+    function isItemSelected(id) {
+      return canvas.selectedIds.includes(id);
+    }
+
+    function setSelectedItem(id) {
+      setSelectedItems(id ? [id] : []);
+    }
+
+    // Toggle selected classes + resize handle without full re-rendering.
+    function setSelectedItems(ids) {
+      const uniqueIds = [...new Set(ids.filter(Boolean))];
+      canvas.selectedIds = uniqueIds;
+      canvas.selectedId = uniqueIds[0] || null;
+
+      document.querySelectorAll('.canvas-item').forEach(el => {
+        const id = el.dataset.id;
+        const selected = uniqueIds.includes(id);
+        el.classList.toggle('selected', selected);
+        el.querySelector(':scope > .resize-handle')?.remove();
+
+        if (selected && uniqueIds.length === 1) {
+          const handle = document.createElement('div');
+          handle.className = 'resize-handle';
+          handle.dataset.handle = id;
+          el.appendChild(handle);
+        }
+      });
+      updateGroupSelectionBox();
+    }
+
+    function updateSelectionRect(x1, y1, x2, y2) {
+      const el = document.getElementById('selectionRect');
+      if (!el) return;
+      const left = Math.min(x1, x2);
+      const top = Math.min(y1, y2);
+      const width = Math.abs(x2 - x1);
+      const height = Math.abs(y2 - y1);
+      el.style.display = 'block';
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
+    }
+
+    function clearSelectionRect() {
+      const el = document.getElementById('selectionRect');
+      if (el) el.style.display = 'none';
+    }
+
+    function rectsIntersect(a, b) {
+      return a.x1 <= b.x2 && a.x2 >= b.x1 && a.y1 <= b.y2 && a.y2 >= b.y1;
+    }
+
+    function getSelectionBounds() {
+      if (canvas.selectedIds.length < 2) return null;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      canvas.selectedIds.forEach(id => {
+        const item = canvas.items.find(i => i.id === id);
+        if (!item) return;
+        const b = getRenderedItemBounds(item);
+        minX = Math.min(minX, b.x1);
+        minY = Math.min(minY, b.y1);
+        maxX = Math.max(maxX, b.x2);
+        maxY = Math.max(maxY, b.y2);
+      });
+      if (!Number.isFinite(minX)) return null;
+      return { x1: minX, y1: minY, x2: maxX, y2: maxY, w: maxX - minX, h: maxY - minY };
+    }
+
+    function updateGroupSelectionBox() {
+      const box = document.getElementById('groupSelectionBox');
+      if (!box) return;
+      const bounds = getSelectionBounds();
+      if (!bounds) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      box.style.left = bounds.x1 + 'px';
+      box.style.top = bounds.y1 + 'px';
+      box.style.width = bounds.w + 'px';
+      box.style.height = bounds.h + 'px';
+    }
+
+    function onWindowMouseMove(e) {
+      if (isPanning) {
+        canvas.x = dragStart.canvasX + (e.clientX - dragStart.x);
+        canvas.y = dragStart.canvasY + (e.clientY - dragStart.y);
+        applyTransform();
+      } else if (isDraggingItem) {
+        const item = canvas.items.find(i => i.id === dragStart.itemId);
+        if (item) {
+          const dx = (e.clientX - dragStart.x) / canvas.scale;
+          const dy = (e.clientY - dragStart.y) / canvas.scale;
+          const rawX = dragStart.itemX + dx;
+          const rawY = dragStart.itemY + dy;
+          const snapped = getSnappedDragPosition(item, rawX, rawY);
+          const snapDx = snapped.x - rawX;
+          const snapDy = snapped.y - rawY;
+
+          dragStart.itemPositions.forEach(pos => {
+            const selected = canvas.items.find(i => i.id === pos.id);
+            if (!selected) return;
+            selected.x = pos.x + dx + snapDx;
+            selected.y = pos.y + dy + snapDy;
+            updateItemPosition(selected);
+          });
+          updateAlignmentGuides(snapped.guideX, snapped.guideY);
+          updateGroupSelectionBox();
+        }
+      } else if (isSelecting) {
+        const viewport = document.getElementById('canvasViewport');
+        if (!viewport) return;
+        const rect = viewport.getBoundingClientRect();
+        const sx = selectionStart.x;
+        const sy = selectionStart.y;
+        const ex = e.clientX - rect.left;
+        const ey = e.clientY - rect.top;
+        updateSelectionRect(sx, sy, ex, ey);
+
+        const worldRect = {
+          x1: Math.min(selectionStart.worldX, (ex - canvas.x) / canvas.scale),
+          y1: Math.min(selectionStart.worldY, (ey - canvas.y) / canvas.scale),
+          x2: Math.max(selectionStart.worldX, (ex - canvas.x) / canvas.scale),
+          y2: Math.max(selectionStart.worldY, (ey - canvas.y) / canvas.scale),
+        };
+        const selected = canvas.items
+          .filter(item => rectsIntersect(worldRect, getRenderedItemBounds(item)))
+          .map(item => item.id);
+        setSelectedItems(selected);
+      } else if (isResizingGroup) {
+        const { bounds, itemSnapshots } = dragStart;
+        if (bounds && itemSnapshots) {
+          const minW = 24;
+          const minH = 24;
+          const newW = Math.max(minW, bounds.w + (e.clientX - dragStart.x) / canvas.scale);
+          const newH = Math.max(minH, bounds.h + (e.clientY - dragStart.y) / canvas.scale);
+          const sx = newW / bounds.w;
+          const sy = newH / bounds.h;
+
+          itemSnapshots.forEach(snapshot => {
+            const item = canvas.items.find(i => i.id === snapshot.id);
+            if (!item) return;
+            item.x = bounds.x1 + (snapshot.x - bounds.x1) * sx;
+            item.y = bounds.y1 + (snapshot.y - bounds.y1) * sy;
+            item.w = Math.max(40, snapshot.w * sx);
+            item.h = Math.max(24, snapshot.h * sy);
+            updateItemPosition(item);
+            updateItemSize(item);
+          });
+          updateGroupSelectionBox();
+        }
+      } else if (isResizing) {
+        const item = canvas.items.find(i => i.id === dragStart.itemId);
+        if (item) {
+          item.w = Math.max(60, dragStart.itemW + (e.clientX - dragStart.x) / canvas.scale);
+          item.h = Math.max(40, dragStart.itemH + (e.clientY - dragStart.y) / canvas.scale);
+          updateItemSize(item);
+        }
+      }
+    }
+
+    function onWindowMouseUp() {
+      const viewport = document.getElementById('canvasViewport');
+      if (viewport) viewport.classList.remove('panning');
+      const wasInteracting = isPanning || isDraggingItem || isResizing || isResizingGroup || isSelecting;
+      isPanning = isDraggingItem = isResizing = isResizingGroup = isSelecting = false;
+      clearAlignmentGuides();
+      clearSelectionRect();
+      if (wasInteracting && !isSelecting) saveCanvasDebounced();
+    }
+
+    function onCanvasWheel(e) {
+      e.preventDefault();
+
+      if (e.ctrlKey || e.metaKey) {
+        // Zoom
+        const viewport = document.getElementById('canvasViewport');
+        const rect = viewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const oldScale = canvas.scale;
+        const delta = -e.deltaY * 0.01;
+        const newScale = Math.min(4, Math.max(0.1, oldScale * (1 + delta)));
+        const ratio = newScale / oldScale;
+
+        canvas.x = mouseX - (mouseX - canvas.x) * ratio;
+        canvas.y = mouseY - (mouseY - canvas.y) * ratio;
+        canvas.scale = newScale;
+        applyTransform();
+        saveCanvasDebounced();
+      } else {
+        // Pan with wheel/trackpad two-finger
+        canvas.x -= e.deltaX;
+        canvas.y -= e.deltaY;
+        applyTransform();
+        saveCanvasDebounced();
+      }
+    }
+
+    function onCanvasDblClick(e) {
+      // 1) Editable note attached to a screenshot or dropped image
+      const noteEl = e.target.closest('.ci-note-text');
+      if (noteEl) {
+        if (noteEl.dataset.imageNoteId) startEditingImageNoteText(noteEl);
+        else startEditingNoteText(noteEl);
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      // 2) Free-floating text item on the canvas
+      const textEl = e.target.closest('.ci-text');
+      if (textEl) {
+        startEditingText(textEl);
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+
+    // Generic helper: turn an element into a contenteditable, run onCommit on blur
+    function makeEditable(el, onCommit) {
+      el.contentEditable = 'true';
+      el.focus();
+      // Select all text
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      const finish = () => {
+        el.contentEditable = 'false';
+        el.removeEventListener('blur', finish);
+        el.removeEventListener('keydown', onKey);
+        onCommit(el.textContent);
+      };
+      const onKey = (ev) => {
+        if (ev.key === 'Escape') { ev.preventDefault(); el.blur(); }
+      };
+      el.addEventListener('blur', finish);
+      el.addEventListener('keydown', onKey);
+    }
+
+    function startEditingText(textEl) {
+      const id = textEl.dataset.textId;
+      const item = canvas.items.find(i => i.id === id);
+      if (!item) return;
+      pushUndoState();
+      makeEditable(textEl, (newText) => {
+        item.text = newText;
+        // Persist at least the rendered height so future renders never shrink
+        // below what the text currently needs.
+        item.h = Math.max(item.h || 0, textEl.scrollHeight);
+        saveCanvasDebounced();
+      });
+    }
+
+    function startEditingNoteText(noteEl) {
+      const idx = parseInt(noteEl.dataset.noteIndex, 10);
+      if (isNaN(idx) || !canvas.session?.notes?.[idx]) return;
+      makeEditable(noteEl, (newText) => {
+        canvas.session.notes[idx].text = newText;
+        // Keep the in-memory currentNotes in sync if this is the active session
+        if (activeSessionId === canvas.session.id) {
+          currentNotes = canvas.session.notes;
+        }
+        // Save the session itself (notes live there, not on the canvas item)
+        saveSession(canvas.session);
+      });
+    }
+
+    function startEditingImageNoteText(noteEl) {
+      const id = noteEl.dataset.imageNoteId;
+      const item = canvas.items.find(i => i.id === id);
+      if (!item) return;
+      pushUndoState();
+      makeEditable(noteEl, (newText) => {
+        item.note = newText;
+        saveCanvasDebounced();
+      });
+    }
+
+    function onCanvasKeyDown(e) {
+      // Ignore if typing
+      if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (document.activeElement?.isContentEditable) return;
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        undoCanvasAction();
+        e.preventDefault();
+        return;
+      }
+
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && canvas.selectedIds.length) {
+        pushUndoState();
+        const step = e.shiftKey ? 10 : 1;
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+        const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+        canvas.selectedIds.forEach(id => {
+          const item = canvas.items.find(i => i.id === id);
+          if (!item) return;
+          item.x += dx;
+          item.y += dy;
+          updateItemPosition(item);
+        });
+        updateGroupSelectionBox();
+        saveCanvasDebounced();
+        e.preventDefault();
+        return;
+      }
+
+      if (e.code === 'Space') {
+        spaceDown = true;
+        document.getElementById('canvasViewport')?.classList.add('space-down');
+        e.preventDefault();
+      }
+
+      if (e.key.toLowerCase() === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        addTextItem();
+        e.preventDefault();
+        return;
+      }
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && canvas.selectedIds.length) {
+        pushUndoState();
+        const toDelete = new Set(canvas.selectedIds);
+        canvas.items = canvas.items.filter(i => !toDelete.has(i.id));
+        canvas.selectedId = null;
+        canvas.selectedIds = [];
+        renderCanvas();
+        saveCanvasDebounced();
+        e.preventDefault();
+      }
+    }
+
+    function onCanvasKeyUp(e) {
+      if (e.code === 'Space') {
+        spaceDown = false;
+        document.getElementById('canvasViewport')?.classList.remove('space-down');
+      }
+    }
+
+    function toggleCanvasHelp(event) {
+      event?.stopPropagation();
+      document.getElementById('canvasHelp')?.classList.toggle('visible');
+    }
+
+    document.addEventListener('mousedown', (event) => {
+      const help = document.getElementById('canvasHelp');
+      if (!help?.classList.contains('visible')) return;
+      if (event.target.closest('.canvas-help') || event.target.closest('.help-fab')) return;
+      help.classList.remove('visible');
+    }, true);
+
+    async function onCanvasDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('dropOverlay')?.classList.remove('visible');
+
+      const allFiles = Array.from(e.dataTransfer?.files || []);
+      console.log(`[screen-notes] drop received ${allFiles.length} files:`,
+        allFiles.map(f => `${f.name} (${f.type})`));
+
+      const files = allFiles.filter(f => f.type.startsWith('image/'));
+      if (!files.length) {
+        if (allFiles.length) alert('Only image files are supported.');
+        return;
+      }
+
+      const viewport = document.getElementById('canvasViewport');
+      const rect = viewport.getBoundingClientRect();
+      const dropX = (e.clientX - rect.left - canvas.x) / canvas.scale;
+      const dropY = (e.clientY - rect.top - canvas.y) / canvas.scale;
+
+      let offset = 0;
+      for (const file of files) {
+        await addImageItem(file, dropX + offset, dropY + offset);
+        offset += 30;
+      }
+    }
+
+    async function onImageUpload(e) {
+      const files = Array.from(e.target.files || []);
+      const viewport = document.getElementById('canvasViewport');
+      const rect = viewport.getBoundingClientRect();
+      const cx = (rect.width / 2 - canvas.x) / canvas.scale;
+      const cy = (rect.height / 2 - canvas.y) / canvas.scale;
+      let offset = 0;
+      for (const file of files) {
+        await addImageItem(file, cx + offset - 150, cy + offset - 100);
+        offset += 30;
+      }
+      e.target.value = '';
+    }
+
+    async function addImageItem(file, x, y) {
+      console.log(`[screen-notes] adding image: ${file.name} ${(file.size/1024).toFixed(1)} KB ${file.type}`);
+      let url = null;
+      try {
+        const result = await quick.fs.uploadFile(file);
+        console.log('[screen-notes] image upload response:', result);
+        const f = result?.files?.[0] || result?.[0] || result?.file || null;
+        url = f?.fullUrl || f?.url || result?.url || result?.fullUrl || null;
+      } catch(err) {
+        console.error('[screen-notes] image upload threw:', err);
+        alert('Image upload failed: ' + (err?.message || err));
+        return;
+      }
+      if (!url) {
+        alert('Image upload returned no URL. Check console for response shape.');
+        return;
+      }
+      // Get natural dimensions
+      const dims = await new Promise(r => {
+        const img = new Image();
+        img.onload  = () => r({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => r({ w: 300, h: 200 });
+        img.src = url;
+      });
+      const maxW = 800;
+      const ratio = dims.w > maxW ? maxW / dims.w : 1;
+      pushUndoState();
+      canvas.items.push({
+        id: 'img-' + Math.random().toString(36).slice(2, 9),
+        type: 'image',
+        url,
+        note: '',
+        x, y,
+        w: dims.w * ratio,
+        h: dims.h * ratio,
+      });
+      renderCanvas();
+      saveCanvasDebounced();
+    }
+
+    function addTextItem() {
+      const viewport = document.getElementById('canvasViewport');
+      const rect = viewport.getBoundingClientRect();
+      const cx = (rect.width / 2 - canvas.x) / canvas.scale;
+      const cy = (rect.height / 2 - canvas.y) / canvas.scale;
+      const id = 'text-' + Math.random().toString(36).slice(2, 9);
+      pushUndoState();
+      canvas.items.push({
+        id, type: 'text', text: 'Double-click to edit',
+        x: cx - 100, y: cy - 20,
+        w: 200, h: 60,
+        fontSize: 16,
+      });
+      setSelectedItem(id);
+      renderCanvas();
+      saveCanvasDebounced();
+      // Auto-edit
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-text-id="${id}"]`);
+        if (el) startEditingText(el);
+      });
+    }
+
+    function applyTransform() {
+      const world = document.getElementById('canvasWorld');
+      if (world) world.style.transform = `translate(${canvas.x}px, ${canvas.y}px) scale(${canvas.scale})`;
+      updateZoomIndicator();
+      updateCanvasGrid();
+    }
+
+    function updateItemPosition(item) {
+      const el = document.querySelector(`.canvas-item[data-id="${item.id}"]`);
+      if (el) {
+        el.style.left = item.x + 'px';
+        el.style.top = item.y + 'px';
+      }
+    }
+    function updateItemSize(item) {
+      const el = document.querySelector(`.canvas-item[data-id="${item.id}"]`);
+      if (!el) return;
+      el.style.width = item.w + 'px';
+      if (item.type === 'screenshot') {
+        // For screenshot cards, item.h controls image height; card height is auto
+        const wrap = el.querySelector('.ci-screenshot-img-wrap');
+        if (wrap) wrap.style.height = item.h + 'px';
+        el.style.height = '';
+      } else if (item.type === 'image') {
+        // For dropped image cards, item.h controls image height; note height is auto.
+        const wrap = el.querySelector('.ci-image-img-wrap');
+        if (wrap) wrap.style.height = item.h + 'px';
+        el.style.height = '';
+      } else if (item.type === 'text') {
+        // Text item height is a minimum. Actual rendered height is content-driven.
+        const textEl = el.querySelector('.ci-text');
+        if (textEl) textEl.style.minHeight = item.h + 'px';
+        el.style.height = '';
+      } else {
+        el.style.height = item.h + 'px';
+      }
+    }
+
+    function getRenderedItemSize(item) {
+      const el = document.querySelector(`.canvas-item[data-id="${item.id}"]`);
+      if (el) {
+        return {
+          w: el.offsetWidth || item.w,
+          h: el.offsetHeight || item.h,
+        };
+      }
+      return { w: item.w || 1, h: item.h || 1 };
+    }
+
+    function getRenderedItemBounds(item) {
+      const size = getRenderedItemSize(item);
+      return {
+        x1: item.x,
+        y1: item.y,
+        x2: item.x + size.w,
+        y2: item.y + size.h,
+        w: size.w,
+        h: size.h,
+      };
+    }
+
+    function getSnappedDragPosition(item, rawX, rawY) {
+      const size = getRenderedItemSize(item);
+      const threshold = SNAP_THRESHOLD_PX / canvas.scale;
+
+      const movingX = [
+        { value: rawX, offset: 0 },
+        { value: rawX + size.w / 2, offset: size.w / 2 },
+        { value: rawX + size.w, offset: size.w },
+      ];
+      const movingY = [
+        { value: rawY, offset: 0 },
+        { value: rawY + size.h / 2, offset: size.h / 2 },
+        { value: rawY + size.h, offset: size.h },
+      ];
+
+      let bestX = null;
+      let bestY = null;
+
+      const selectedSet = new Set(canvas.selectedIds);
+      canvas.items.forEach(other => {
+        if (other.id === item.id || selectedSet.has(other.id)) return;
+        const b = getRenderedItemBounds(other);
+        const targetX = [b.x1, b.x1 + b.w / 2, b.x2];
+        const targetY = [b.y1, b.y1 + b.h / 2, b.y2];
+
+        movingX.forEach(m => {
+          targetX.forEach(t => {
+            const diff = t - m.value;
+            const abs = Math.abs(diff);
+            if (abs <= threshold && (!bestX || abs < bestX.abs)) {
+              bestX = { abs, diff, target: t };
+            }
+          });
+        });
+
+        movingY.forEach(m => {
+          targetY.forEach(t => {
+            const diff = t - m.value;
+            const abs = Math.abs(diff);
+            if (abs <= threshold && (!bestY || abs < bestY.abs)) {
+              bestY = { abs, diff, target: t };
+            }
+          });
+        });
+      });
+
+      return {
+        x: rawX + (bestX ? bestX.diff : 0),
+        y: rawY + (bestY ? bestY.diff : 0),
+        guideX: bestX ? bestX.target : null,
+        guideY: bestY ? bestY.target : null,
+      };
+    }
+
+    function updateAlignmentGuides(worldX, worldY) {
+      const vertical = document.getElementById('guideVertical');
+      const horizontal = document.getElementById('guideHorizontal');
+
+      if (vertical) {
+        if (worldX == null) {
+          vertical.style.display = 'none';
+        } else {
+          vertical.style.display = 'block';
+          vertical.style.left = `${canvas.x + worldX * canvas.scale}px`;
+        }
+      }
+
+      if (horizontal) {
+        if (worldY == null) {
+          horizontal.style.display = 'none';
+        } else {
+          horizontal.style.display = 'block';
+          horizontal.style.top = `${canvas.y + worldY * canvas.scale}px`;
+        }
+      }
+    }
+
+    function clearAlignmentGuides() {
+      const vertical = document.getElementById('guideVertical');
+      const horizontal = document.getElementById('guideHorizontal');
+      if (vertical) vertical.style.display = 'none';
+      if (horizontal) horizontal.style.display = 'none';
+    }
+
+    function autoArrangeCanvas() {
+      if (!canvas.items.length) return;
+      pushUndoState();
+
+      const gap = 48;
+
+      // Preserve every layer's current size. Arrange only changes x/y.
+      // Render once first so auto-height notes/text/images can be measured accurately.
+      renderCanvas();
+
+      const items = canvas.items;
+      const measured = new Map(items.map(item => [item.id, getRenderedItemSize(item)]));
+      const maxItemW = Math.max(...items.map(item => measured.get(item.id).w || item.w || 960));
+      const cols = Math.max(1, Math.ceil(Math.sqrt(items.length)));
+      const colW = maxItemW + gap;
+      const colHeights = Array(cols).fill(0);
+
+      items.forEach(item => {
+        const size = measured.get(item.id) || { w: item.w, h: item.h };
+        let col = 0;
+        for (let i = 1; i < cols; i++) {
+          if (colHeights[i] < colHeights[col]) col = i;
+        }
+
+        item.x = col * colW;
+        item.y = colHeights[col];
+        colHeights[col] += size.h + gap;
+      });
+
+      renderCanvas();
+      fitToScreen(false);
+      saveCanvasDebounced();
+    }
+
+    function fitToScreen(recordUndo = true) {
+      if (recordUndo) pushUndoState();
+      if (!canvas.items.length) { resetView(false); return; }
+      const viewport = document.getElementById('canvasViewport');
+      if (!viewport) return;
+      const rect = viewport.getBoundingClientRect();
+      const padding = 60;
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      canvas.items.forEach(it => {
+        const b = getRenderedItemBounds(it);
+        minX = Math.min(minX, b.x1);
+        minY = Math.min(minY, b.y1);
+        maxX = Math.max(maxX, b.x2);
+        maxY = Math.max(maxY, b.y2);
+      });
+      const contentW = Math.max(1, maxX - minX);
+      const contentH = Math.max(1, maxY - minY);
+      const scaleX = (rect.width - padding * 2) / contentW;
+      const scaleY = (rect.height - padding * 2) / contentH;
+      canvas.scale = Math.min(1, scaleX, scaleY);
+      canvas.x = padding - minX * canvas.scale + (rect.width - padding * 2 - contentW * canvas.scale) / 2;
+      canvas.y = padding - minY * canvas.scale + (rect.height - padding * 2 - contentH * canvas.scale) / 2;
+      applyTransform();
+      saveCanvasDebounced();
+    }
+
+    function resetView(recordUndo = true) {
+      if (recordUndo) pushUndoState();
+      canvas.scale = 1;
+      canvas.x = 0;
+      canvas.y = 0;
+      applyTransform();
+      saveCanvasDebounced();
+    }
+
+    function saveCanvasDebounced() {
+      clearTimeout(canvas.saveTimer);
+      canvas.saveTimer = setTimeout(async () => {
+        if (!canvas.session) return;
+        canvas.session.canvas = {
+          viewport: { x: canvas.x, y: canvas.y, scale: canvas.scale },
+          items: canvas.items,
+        };
+        await saveSession(canvas.session);
+      }, 500);
+    }
+
+    // ── Utilities ──
+    function formatDuration(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      const pad = n => String(n).padStart(2, '0');
+      if (h > 0) return `${pad(h)}:${pad(m % 60)}:${pad(s % 60)}`;
+      return `${pad(m)}:${pad(s % 60)}`;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+    }
+
+    function formatSessionDateOnly(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Event listeners ──
+    document.getElementById('newSessionBtn').addEventListener('click', startRecording);
+
+    // ── Boot ──
+    init();
+  </script>
+</body>
+</html>
