@@ -2710,7 +2710,23 @@
 
       // Load existing canvas state OR auto-generate from notes
       if (session.canvas && session.canvas.items && session.canvas.items.length) {
-        canvas.items = JSON.parse(JSON.stringify(session.canvas.items));
+        canvas.items = JSON.parse(JSON.stringify(session.canvas.items)).map(item => {
+          if (item.type === 'screenshot') {
+            const note = (session.notes || [])[item.noteIndex];
+            const hasScreenshot = !!(note?.screenshotUrl || note?.screenshot);
+            if (!hasScreenshot) {
+              return {
+                ...item,
+                type: 'text',
+                text: note?.text || item.text || '',
+                fontSize: item.fontSize || 24,
+                h: 120,
+                noteIndex: undefined,
+              };
+            }
+          }
+          return item;
+        });
         canvas.x = session.canvas.viewport?.x ?? 0;
         canvas.y = session.canvas.viewport?.y ?? 0;
         canvas.scale = session.canvas.viewport?.scale ?? 1;
@@ -2811,6 +2827,18 @@
         const note = (canvas.session?.notes || [])[item.noteIndex];
         if (!note) return '';
         const src = note.screenshotUrl || note.screenshot;
+        if (!src) {
+          // Notes with no screenshot should behave like plain text boxes on canvas,
+          // not like empty screenshot cards.
+          const fontSize = item.fontSize || 24;
+          const textStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+          return `
+            <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
+              <div class="ci-text" data-note-index="${item.noteIndex}" style="font-size:${fontSize}px;min-height:120px;">${escapeHtml(note.text || 'Text')}</div>
+              ${handle}
+            </div>
+          `;
+        }
         // Screenshot cards are AUTO-HEIGHT: image is item.h, note grows below
         const cardStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
         return `
