@@ -2169,6 +2169,7 @@
                      value="${escapeHtml(session.title)}"
                      onchange="renameSession('${session.id}', this.value)"
                      onblur="renameSession('${session.id}', this.value)"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                      placeholder="Untitled session">
             </div>
             <div class="review-header-right">
