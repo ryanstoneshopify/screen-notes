@@ -2230,10 +2230,6 @@
                 <div class="screenshot-preview" id="screenshotPreview">
                   <img id="screenshotPreviewImg" alt="Screenshot preview">
                   <div class="screenshot-preview-empty">
-                    ${icon('image')}
-                    <div class="screenshot-preview-empty-copy">
-                      <span>Or start typing to capture screenshot automatically</span>
-                    </div>
                     <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
                   </div>
                   <div class="screenshot-preview-actions">
@@ -2246,7 +2242,7 @@
                   <textarea
                     id="noteInput"
                     class="note-input"
-                    placeholder="Click here to capture a screenshot and write a note..."
+                    placeholder="Or start typing to capture screenshot automatically"
                     onfocus="onNoteFocus()"
                     oninput="onNoteInput()"
                     onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();addNote()}"
