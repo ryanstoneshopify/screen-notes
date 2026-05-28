@@ -1869,9 +1869,10 @@
     // start uploading it. The upload promise is stored on `screenshotCaptured`
     // so by the time they click Save Note the URL is usually already ready.
     let pendingScreenshot = null; // { blob, previewDataUrl, uploadPromise }
+    let screenshotRemoved = false; // user explicitly removed pending screenshot
 
     async function beginNoteScreenshotCapture() {
-      if (!isRecording || pendingScreenshot) return pendingScreenshot;
+      if (!isRecording || pendingScreenshot || screenshotRemoved) return pendingScreenshot;
       // Quick preview for indicator (not persisted)
       const preview = captureScreenshotPreview();
       if (!preview) return null;
@@ -1935,6 +1936,7 @@
 
     function retakeScreenshot() {
       pendingScreenshot = null;
+      screenshotRemoved = false;
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.innerHTML = '';
       const previewEl = document.getElementById('screenshotPreview');
@@ -1946,6 +1948,7 @@
 
     function removeScreenshot() {
       pendingScreenshot = null;
+      screenshotRemoved = true;
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) {
         indicator.classList.remove('visible');
@@ -1973,24 +1976,24 @@
       const input = document.getElementById('noteInput');
       const text = input.value.trim();
       if (!text) return;
-      if (!pendingScreenshot) {
-        await beginNoteScreenshotCapture();
-      }
-      if (!pendingScreenshot) {
-        alert('Could not capture a screenshot yet. Please try again.');
-        return;
-      }
 
-      // Wait for the in-flight upload
-      const url = await pendingScreenshot.uploadPromise;
-      if (!url) {
-        alert('Screenshot upload failed — please try the note again.');
-        return;
+      let url = null;
+      if (!screenshotRemoved) {
+        if (!pendingScreenshot) {
+          await beginNoteScreenshotCapture();
+        }
+        if (pendingScreenshot) {
+          url = await pendingScreenshot.uploadPromise;
+          if (!url) {
+            alert('Screenshot upload failed — please try the note again.');
+            return;
+          }
+        }
       }
 
       const note = {
         text,
-        screenshotUrl: url,    // ONLY the URL is persisted — never the data URL
+        screenshotUrl: url,    // null = text-only note (no screenshot)
         timestamp: Date.now() - recordingStartTime,
         createdAt: new Date().toISOString(),
       };
@@ -1998,6 +2001,7 @@
       currentNotes.push(note);
       input.value = '';
       pendingScreenshot = null;
+      screenshotRemoved = false;
 
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.classList.remove('visible');
@@ -2243,12 +2247,12 @@
         const realIndex = currentNotes.length - 1 - i;
         const imgSrc = note.screenshotUrl || note.screenshot;
         return `
-          <div class="note-card">
-            <img class="note-card-screenshot"
+          <div class="note-card${imgSrc ? '' : ' note-card-text-only'}">
+            ${imgSrc ? `<img class="note-card-screenshot"
                  src="${imgSrc}"
                  alt="Screenshot"
                  onclick="openLightbox('${imgSrc}')"
-                 loading="lazy">
+                 loading="lazy">` : ''}
             <div class="note-card-body">
               <textarea class="recording-note-edit"
                         rows="1"
@@ -2640,19 +2644,36 @@
 
         const x = col * (cardW + gap);
         const y = colHeights[col];
-        const estimatedH = estimateScreenshotCardHeight(note, cardW, cardH);
+        const hasScreenshot = !!(note.screenshotUrl || note.screenshot);
 
-        items.push({
-          id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
-          type: 'screenshot',
-          noteIndex: i,
-          x,
-          y,
-          w: cardW,
-          h: cardH,
-        });
-
-        colHeights[col] += estimatedH + gap;
+        if (hasScreenshot) {
+          const estimatedH = estimateScreenshotCardHeight(note, cardW, cardH);
+          items.push({
+            id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
+            type: 'screenshot',
+            noteIndex: i,
+            x,
+            y,
+            w: cardW,
+            h: cardH,
+          });
+          colHeights[col] += estimatedH + gap;
+        } else {
+          // Text-only note → standalone text box on canvas
+          const textW = cardW;
+          const textH = 120;
+          items.push({
+            id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
+            type: 'text',
+            text: note.text || '',
+            fontSize: 24,
+            x,
+            y,
+            w: textW,
+            h: textH,
+          });
+          colHeights[col] += textH + gap;
+        }
       });
       return items;
     }

@@ -643,18 +643,37 @@
       border-radius: 9.6px;
       overflow: hidden;
       background: var(--snow-white);
-      border: 1px solid var(--border-soft);
-      display: none;
-    }
-    .screenshot-preview.visible { display: block; }
-    .screenshot-preview img {
+      border: 1px dashed var(--border-soft);
       display: block;
+      min-height: 120px;
+    }
+    .screenshot-preview.has-image { border-style: solid; }
+    .screenshot-preview img {
+      display: none;
       width: 100%;
       height: auto;
       max-height: 220px;
       object-fit: cover;
       object-position: top center;
     }
+    .screenshot-preview.has-image img { display: block; }
+    .screenshot-preview-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 120px;
+      color: var(--stone);
+      font-size: 13px;
+      text-align: center;
+      padding: 16px;
+      pointer-events: none;
+    }
+    .screenshot-preview.has-image .screenshot-preview-empty { display: none; }
+    .screenshot-preview-empty .icon { width: 22px; height: 22px; opacity: 0.7; }
+    .screenshot-preview.has-image .screenshot-preview-actions { display: flex; }
+    .screenshot-preview .screenshot-preview-actions { display: none; }
     .screenshot-preview-actions {
       position: absolute;
       top: 8px;
@@ -1886,7 +1905,7 @@
       const previewImg = document.getElementById('screenshotPreviewImg');
       if (previewEl && previewImg) {
         previewImg.src = preview;
-        previewEl.classList.add('visible');
+        previewEl.classList.add('has-image');
       }
 
       // Grab the blob and start uploading it in the background
@@ -1940,7 +1959,7 @@
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.innerHTML = '';
       const previewEl = document.getElementById('screenshotPreview');
-      if (previewEl) previewEl.classList.remove('visible');
+      if (previewEl) previewEl.classList.remove('has-image');
       beginNoteScreenshotCapture();
       const input = document.getElementById('noteInput');
       input?.focus();
@@ -1956,7 +1975,7 @@
       }
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');
-      if (previewEl) previewEl.classList.remove('visible');
+      if (previewEl) previewEl.classList.remove('has-image');
       if (previewImg) previewImg.src = '';
     }
 
@@ -2007,7 +2026,7 @@
       if (indicator) indicator.classList.remove('visible');
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');
-      if (previewEl) previewEl.classList.remove('visible');
+      if (previewEl) previewEl.classList.remove('has-image');
       if (previewImg) previewImg.src = '';
 
       // Save to DB (no data URLs included)
@@ -2191,6 +2210,10 @@
               <div class="note-input-area">
                 <div class="screenshot-preview" id="screenshotPreview">
                   <img id="screenshotPreviewImg" alt="Screenshot preview">
+                  <div class="screenshot-preview-empty">
+                    ${icon('image')}
+                    <span>Screenshot will appear here when you start typing</span>
+                  </div>
                   <div class="screenshot-preview-actions">
                     <button type="button" class="screenshot-preview-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
                     <button type="button" class="screenshot-preview-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
