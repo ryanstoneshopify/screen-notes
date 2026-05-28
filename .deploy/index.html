@@ -671,7 +671,7 @@
       position: absolute;
       inset: 0;
       z-index: 2;
-      animation: screenshotSaveOut 200ms cubic-bezier(0.17, 0.84, 0.44, 1) forwards;
+      animation: screenshotSaveOut 250ms cubic-bezier(0.17, 0.84, 0.44, 1) forwards;
     }
     .screenshot-preview.saving-out .screenshot-preview-actions,
     .screenshot-preview.saving-out .screenshot-preview-timestamp {
@@ -2089,7 +2089,7 @@
       if (!previewEl?.classList.contains('has-image')) return Promise.resolve();
       previewEl.classList.remove('capturing-image');
       previewEl.classList.add('saving-out');
-      return new Promise(resolve => window.setTimeout(resolve, 200));
+      return new Promise(resolve => window.setTimeout(resolve, 250));
     }
 
     async function addNote() {
