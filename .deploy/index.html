@@ -2717,8 +2717,9 @@
                 ...item,
                 type: 'text',
                 text: note?.text || item.text || '',
-                fontSize: item.fontSize || 24,
-                h: 120,
+                fontSize: item.fontSize || 16,
+                w: Math.min(item.w || 280, 320),
+                h: 60,
                 noteIndex: undefined,
               };
             }
@@ -2785,13 +2786,13 @@
           colHeights[col] += estimatedH + gap;
         } else {
           // Text-only note → standalone text box on canvas
-          const textW = cardW;
-          const textH = 120;
+          const textW = 280;
+          const textH = 60;
           items.push({
             id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
             type: 'text',
             text: note.text || '',
-            fontSize: 24,
+            fontSize: 16,
             x,
             y,
             w: textW,
@@ -2828,11 +2829,12 @@
         if (!src) {
           // Notes with no screenshot should behave like plain text boxes on canvas,
           // not like empty screenshot cards.
-          const fontSize = item.fontSize || 24;
-          const textStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+          const fontSize = item.fontSize || 16;
+          const textW = Math.min(item.w || 280, 320);
+          const textStyle = `left:${item.x}px;top:${item.y}px;width:${textW}px;`;
           return `
             <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
-              <div class="ci-text" data-note-index="${item.noteIndex}" style="font-size:${fontSize}px;min-height:120px;">${escapeHtml(note.text || 'Text')}</div>
+              <div class="ci-text" data-note-index="${item.noteIndex}" style="font-size:${fontSize}px;min-height:60px;">${escapeHtml(note.text || 'Text')}</div>
               ${handle}
             </div>
           `;
