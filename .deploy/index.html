@@ -1987,7 +1987,7 @@
         window.setTimeout(() => previewEl.classList.remove('capturing-image'), 320);
       }
       if (previewTimestamp) {
-        previewTimestamp.innerHTML = `${icon('check', 'icon icon-sm')} <span>${escapeHtml(timeStr)}</span>`;
+        previewTimestamp.innerHTML = `<span>${escapeHtml(timeStr)}</span>`;
       }
 
       // Grab the blob and start uploading it in the background
@@ -2945,7 +2945,7 @@
             </div>
             <div class="ci-note">
               <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
-              <div class="ci-note-time">${icon('pin', 'icon icon-sm')} ${formatDuration(note.timestamp)}</div>
+              <div class="ci-note-time">${formatDuration(note.timestamp)}</div>
             </div>
             ${handle}
           </div>
