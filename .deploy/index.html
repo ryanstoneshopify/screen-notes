@@ -601,7 +601,7 @@
     .note-input-actions {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 12px;
       margin-top: 12px;
     }
@@ -1917,10 +1917,6 @@
       const capturedAt = new Date();
       const timeStr = capturedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
       const indicator = document.getElementById('screenshotIndicator');
-      if (indicator) {
-        indicator.classList.add('visible');
-        indicator.innerHTML = `${icon('camera', 'icon icon-sm')} <span>Uploading screenshot…</span>`;
-      }
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');
       const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
@@ -1965,12 +1961,7 @@
 
       pendingScreenshot = { previewDataUrl: preview, uploadPromise };
 
-      uploadPromise.then(url => {
-        if (!indicator || pendingScreenshot?.uploadPromise !== uploadPromise) return;
-        if (url) {
-          indicator.innerHTML = `${icon('check', 'icon icon-sm')} <span>Screenshot ready</span>`;
-        }
-      });
+      uploadPromise.then(() => {});
 
       return pendingScreenshot;
     }
@@ -2262,9 +2253,7 @@
                   ></textarea>
                 </div>
                 <div class="note-input-actions">
-                  <div class="screenshot-indicator" id="screenshotIndicator">
-                    ${icon('camera', 'icon icon-sm')} Screenshot captured
-                  </div>
+                  <div class="screenshot-indicator" id="screenshotIndicator"></div>
                   <button class="btn btn-primary" onclick="addNote()" style="padding:6px 12px;font-size:13px;">
                     Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
                   </button>
