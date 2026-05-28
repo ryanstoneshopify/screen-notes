@@ -637,6 +637,47 @@
     }
     .screenshot-indicator-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink-black); }
 
+    .screenshot-preview {
+      position: relative;
+      margin-bottom: 10px;
+      border-radius: 9.6px;
+      overflow: hidden;
+      background: var(--snow-white);
+      border: 1px solid var(--border-soft);
+      display: none;
+    }
+    .screenshot-preview.visible { display: block; }
+    .screenshot-preview img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 220px;
+      object-fit: cover;
+      object-position: top center;
+    }
+    .screenshot-preview-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
+    }
+    .screenshot-preview-btn {
+      background: rgba(20, 20, 20, 0.65);
+      border: none;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      transition: background 120ms ease;
+    }
+    .screenshot-preview-btn:hover { background: rgba(20, 20, 20, 0.85); }
+
     .notes-list {
       flex: 1;
       overflow-y: auto;
@@ -1838,7 +1879,13 @@
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) {
         indicator.classList.add('visible');
-        indicator.innerHTML = `${icon('camera', 'icon icon-sm')} Screenshot captured · uploading…`;
+        indicator.innerHTML = `${icon('camera', 'icon icon-sm')} <span>Uploading screenshot…</span>`;
+      }
+      const previewEl = document.getElementById('screenshotPreview');
+      const previewImg = document.getElementById('screenshotPreviewImg');
+      if (previewEl && previewImg) {
+        previewImg.src = preview;
+        previewEl.classList.add('visible');
       }
 
       // Grab the blob and start uploading it in the background
@@ -1879,11 +1926,7 @@
         if (!indicator || pendingScreenshot?.uploadPromise !== uploadPromise) return;
         if (url) {
           const timeStr = capturedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-          indicator.innerHTML = `${icon('check', 'icon icon-sm')} <span>Screenshot taken at ${escapeHtml(timeStr)}</span>` +
-            `<span class="screenshot-indicator-actions">` +
-              `<button type="button" class="screenshot-indicator-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>` +
-              `<button type="button" class="screenshot-indicator-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('close', 'icon icon-sm')}</button>` +
-            `</span>`;
+          indicator.innerHTML = `${icon('check', 'icon icon-sm')} <span>Screenshot taken at ${escapeHtml(timeStr)}</span>`;
         }
       });
 
@@ -1894,6 +1937,8 @@
       pendingScreenshot = null;
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.innerHTML = '';
+      const previewEl = document.getElementById('screenshotPreview');
+      if (previewEl) previewEl.classList.remove('visible');
       beginNoteScreenshotCapture();
       const input = document.getElementById('noteInput');
       input?.focus();
@@ -1906,6 +1951,10 @@
         indicator.classList.remove('visible');
         indicator.innerHTML = '';
       }
+      const previewEl = document.getElementById('screenshotPreview');
+      const previewImg = document.getElementById('screenshotPreviewImg');
+      if (previewEl) previewEl.classList.remove('visible');
+      if (previewImg) previewImg.src = '';
     }
 
     function onNoteFocus() {
@@ -1952,6 +2001,10 @@
 
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.classList.remove('visible');
+      const previewEl = document.getElementById('screenshotPreview');
+      const previewImg = document.getElementById('screenshotPreviewImg');
+      if (previewEl) previewEl.classList.remove('visible');
+      if (previewImg) previewImg.src = '';
 
       // Save to DB (no data URLs included)
       const session = allSessions.find(s => s.id === activeSessionId);
@@ -2132,6 +2185,13 @@
                 <span style="font-size:12px;color:var(--text-dim);" id="noteCountLabel">${currentNotes.length} notes</span>
               </div>
               <div class="note-input-area">
+                <div class="screenshot-preview" id="screenshotPreview">
+                  <img id="screenshotPreviewImg" alt="Screenshot preview">
+                  <div class="screenshot-preview-actions">
+                    <button type="button" class="screenshot-preview-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
+                    <button type="button" class="screenshot-preview-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
+                  </div>
+                </div>
                 <div class="note-input-wrapper">
                   <textarea
                     id="noteInput"
