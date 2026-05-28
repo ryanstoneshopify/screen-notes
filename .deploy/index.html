@@ -682,20 +682,22 @@
       gap: 4px;
     }
     .screenshot-preview-btn {
-      background: rgba(20, 20, 20, 0.65);
-      border: none;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(0, 0, 0, 0.08);
       cursor: pointer;
       width: 28px;
       height: 28px;
       border-radius: 6px;
-      color: #fff;
+      color: var(--ink-black);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
       transition: background 120ms ease;
     }
-    .screenshot-preview-btn:hover { background: rgba(20, 20, 20, 0.85); }
+    .screenshot-preview-btn:hover { background: rgba(255, 255, 255, 0.98); }
     .screenshot-preview-timestamp {
       position: absolute;
       left: 8px;
@@ -728,6 +730,9 @@
       overflow: hidden;
       margin-bottom: 12px;
     }
+    .note-card-screenshot-wrap {
+      position: relative;
+    }
     .note-card-screenshot {
       width: 100%;
       aspect-ratio: 16/9;
@@ -735,6 +740,13 @@
       display: block;
       cursor: zoom-in;
       background: #eee;
+    }
+    .note-card-screenshot-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
     }
     .note-card-body { padding: 14px; }
     .note-card-text,
@@ -2105,6 +2117,46 @@
       }
     }
 
+    async function uploadCurrentFrameScreenshot() {
+      const blob = await captureScreenshotBlob();
+      if (!blob) throw new Error('Could not capture a screenshot yet. Please try again.');
+      const file = new File([blob], `screenshot-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const r = await quick.fs.uploadFile(file);
+      const f = r?.files?.[0] || r?.[0] || r?.file || null;
+      const url = f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+      if (!url) throw new Error('Screenshot upload failed — please try again.');
+      return url;
+    }
+
+    async function removeRecordingNoteScreenshot(index) {
+      if (!currentNotes[index]) return;
+      currentNotes[index].screenshotUrl = null;
+      delete currentNotes[index].screenshot;
+      const session = allSessions.find(s => s.id === activeSessionId);
+      if (session) {
+        session.notes = [...currentNotes];
+        await saveSession(session);
+      }
+      renderNotesList();
+    }
+
+    async function retakeRecordingNoteScreenshot(index) {
+      if (!currentNotes[index]) return;
+      try {
+        const url = await uploadCurrentFrameScreenshot();
+        currentNotes[index].screenshotUrl = url;
+        delete currentNotes[index].screenshot;
+        const session = allSessions.find(s => s.id === activeSessionId);
+        if (session) {
+          session.notes = [...currentNotes];
+          await saveSession(session);
+        }
+        renderNotesList();
+      } catch (err) {
+        alert(err?.message || 'Screenshot capture failed — please try again.');
+      }
+    }
+
     function autoGrowTextarea(el) {
       el.style.height = 'auto';
       el.style.height = `${el.scrollHeight}px`;
@@ -2301,11 +2353,17 @@
         const imgSrc = note.screenshotUrl || note.screenshot;
         return `
           <div class="note-card${imgSrc ? '' : ' note-card-text-only'}">
-            ${imgSrc ? `<img class="note-card-screenshot"
-                 src="${imgSrc}"
-                 alt="Screenshot"
-                 onclick="openLightbox('${imgSrc}')"
-                 loading="lazy">` : ''}
+            ${imgSrc ? `<div class="note-card-screenshot-wrap">
+              <img class="note-card-screenshot"
+                   src="${imgSrc}"
+                   alt="Screenshot"
+                   onclick="openLightbox('${imgSrc}')"
+                   loading="lazy">
+              <div class="note-card-screenshot-actions">
+                <button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); retakeRecordingNoteScreenshot(${realIndex})" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
+                <button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); removeRecordingNoteScreenshot(${realIndex})" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
+              </div>
+            </div>` : ''}
             <div class="note-card-body">
               <textarea class="recording-note-edit"
                         rows="1"
