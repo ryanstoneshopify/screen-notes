@@ -2823,7 +2823,6 @@
                 fontSize: item.fontSize || 16,
                 w: Math.min(item.w || 280, 320),
                 h: 60,
-                noteIndex: undefined,
               };
             }
           }
@@ -2896,6 +2895,7 @@
             type: 'text',
             text: note.text || '',
             fontSize: 16,
+            noteIndex: i,
             x,
             y,
             w: textW,
@@ -2938,6 +2938,7 @@
           return `
             <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
               <div class="ci-text" data-note-index="${item.noteIndex}" style="font-size:${fontSize}px;min-height:60px;">${escapeHtml(note.text || 'Text')}</div>
+              <div class="ci-note-time">${formatDuration(note.timestamp)}</div>
               ${handle}
             </div>
           `;
@@ -2959,12 +2960,15 @@
       }
       if (item.type === 'text') {
         const fontSize = item.fontSize || 16;
+        const noteIndex = Number.isInteger(item.noteIndex) ? item.noteIndex : null;
+        const note = noteIndex !== null ? (canvas.session?.notes || [])[noteIndex] : null;
         // Text boxes are AUTO-HEIGHT: item.h is a minimum height only.
         // The container should never clip or be smaller than its text.
         const textStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
         return `
           <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
-            <div class="ci-text" data-text-id="${item.id}" style="font-size:${fontSize}px;min-height:${item.h}px;">${escapeHtml(item.text || 'Text')}</div>
+            <div class="ci-text" ${note ? `data-note-index="${noteIndex}"` : `data-text-id="${item.id}"`} style="font-size:${fontSize}px;min-height:${item.h}px;">${escapeHtml(note ? (note.text || 'Text') : (item.text || 'Text'))}</div>
+            ${note ? `<div class="ci-note-time">${formatDuration(note.timestamp)}</div>` : ''}
             ${handle}
           </div>
         `;
@@ -3370,7 +3374,8 @@
       // 2) Free-floating text item on the canvas
       const textEl = e.target.closest('.ci-text');
       if (textEl) {
-        startEditingText(textEl);
+        if (textEl.dataset.noteIndex) startEditingNoteText(textEl);
+        else startEditingText(textEl);
         e.preventDefault();
         e.stopPropagation();
       }
