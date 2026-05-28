@@ -645,14 +645,13 @@
       background: var(--snow-white);
       border: 1px dashed var(--border-soft);
       display: block;
-      min-height: 120px;
+      height: 220px;
     }
     .screenshot-preview.has-image { border-style: solid; }
     .screenshot-preview img {
       display: none;
       width: 100%;
-      height: auto;
-      max-height: 220px;
+      height: 100%;
       object-fit: cover;
       object-position: top center;
     }
@@ -662,16 +661,17 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      min-height: 120px;
+      gap: 10px;
+      height: 100%;
       color: var(--stone);
       font-size: 13px;
       text-align: center;
       padding: 16px;
-      pointer-events: none;
     }
     .screenshot-preview.has-image .screenshot-preview-empty { display: none; }
     .screenshot-preview-empty .icon { width: 22px; height: 22px; opacity: 0.7; }
+    .screenshot-preview-empty-copy { display: flex; flex-direction: column; gap: 2px; }
+    .screenshot-empty-action { padding: 7px 12px; font-size: 13px; }
     .screenshot-preview.has-image .screenshot-preview-actions { display: flex; }
     .screenshot-preview .screenshot-preview-actions { display: none; }
     .screenshot-preview-actions {
@@ -696,6 +696,24 @@
       transition: background 120ms ease;
     }
     .screenshot-preview-btn:hover { background: rgba(20, 20, 20, 0.85); }
+    .screenshot-preview-timestamp {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: rgba(20, 20, 20, 0.58);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+    .screenshot-preview.has-image .screenshot-preview-timestamp { display: inline-flex; }
 
     .notes-list {
       flex: 1;
@@ -1896,6 +1914,8 @@
       const preview = captureScreenshotPreview();
       if (!preview) return null;
 
+      const capturedAt = new Date();
+      const timeStr = capturedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) {
         indicator.classList.add('visible');
@@ -1903,9 +1923,13 @@
       }
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');
+      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
       if (previewEl && previewImg) {
         previewImg.src = preview;
         previewEl.classList.add('has-image');
+      }
+      if (previewTimestamp) {
+        previewTimestamp.innerHTML = `${icon('check', 'icon icon-sm')} <span>${escapeHtml(timeStr)}</span>`;
       }
 
       // Grab the blob and start uploading it in the background
@@ -1941,26 +1965,26 @@
 
       pendingScreenshot = { previewDataUrl: preview, uploadPromise };
 
-      const capturedAt = new Date();
       uploadPromise.then(url => {
         if (!indicator || pendingScreenshot?.uploadPromise !== uploadPromise) return;
         if (url) {
-          const timeStr = capturedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-          indicator.innerHTML = `${icon('check', 'icon icon-sm')} <span>Screenshot taken at ${escapeHtml(timeStr)}</span>`;
+          indicator.innerHTML = `${icon('check', 'icon icon-sm')} <span>Screenshot ready</span>`;
         }
       });
 
       return pendingScreenshot;
     }
 
-    function retakeScreenshot() {
+    async function retakeScreenshot() {
       pendingScreenshot = null;
       screenshotRemoved = false;
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.innerHTML = '';
       const previewEl = document.getElementById('screenshotPreview');
+      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
       if (previewEl) previewEl.classList.remove('has-image');
-      beginNoteScreenshotCapture();
+      if (previewTimestamp) previewTimestamp.innerHTML = '';
+      await beginNoteScreenshotCapture();
       const input = document.getElementById('noteInput');
       input?.focus();
     }
@@ -1975,8 +1999,10 @@
       }
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');
+      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
       if (previewEl) previewEl.classList.remove('has-image');
       if (previewImg) previewImg.src = '';
+      if (previewTimestamp) previewTimestamp.innerHTML = '';
     }
 
     function onNoteFocus() {
@@ -2026,8 +2052,10 @@
       if (indicator) indicator.classList.remove('visible');
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');
+      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
       if (previewEl) previewEl.classList.remove('has-image');
       if (previewImg) previewImg.src = '';
+      if (previewTimestamp) previewTimestamp.innerHTML = '';
 
       // Save to DB (no data URLs included)
       const session = allSessions.find(s => s.id === activeSessionId);
@@ -2212,12 +2240,16 @@
                   <img id="screenshotPreviewImg" alt="Screenshot preview">
                   <div class="screenshot-preview-empty">
                     ${icon('image')}
-                    <span>Screenshot will appear here when you start typing</span>
+                    <div class="screenshot-preview-empty-copy">
+                      <span>Or start typing to capture screenshot automatically</span>
+                    </div>
+                    <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
                   </div>
                   <div class="screenshot-preview-actions">
                     <button type="button" class="screenshot-preview-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
                     <button type="button" class="screenshot-preview-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
                   </div>
+                  <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
                 </div>
                 <div class="note-input-wrapper">
                   <textarea
