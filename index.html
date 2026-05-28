@@ -24,7 +24,7 @@
       --parchment: #dedcd1;
       --snow-white: #ffffff;
       --pale-azure: #ccdbe8;
-      --terra-cotta: #d97757;
+      --terra-cotta: #4092E5;
 
       --bg: var(--vellum-white);
       --surface: var(--vellum-white);
@@ -370,6 +370,7 @@
     }
     .empty-state::before { content: none; }
     .empty-state > * { max-width: 640px; }
+    .empty-state > .use-cases { max-width: 810px; }
 
     .empty-state-icon {
       font-size: 40px;
@@ -399,6 +400,56 @@
       color: var(--graphite);
       margin-bottom: 40px;
       white-space: nowrap;
+    }
+
+    .use-cases {
+      margin-top: 248px;
+      width: 100%;
+      max-width: 810px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .use-cases-label {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--dusty-gray);
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 1100px) {
+      .use-cases { max-width: 420px; }
+      .empty-state > .use-cases { max-width: 420px; }
+      .use-cases-grid { grid-template-columns: 1fr; }
+    }
+    .use-case-card {
+      min-width: 0;
+      background: var(--snow-white);
+      border: 1px solid var(--parchment);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+    }
+    .use-case-card h4 {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      font-weight: 400;
+      color: var(--ink-black);
+      margin: 0 0 6px;
+    }
+    .use-case-card p {
+      font-size: 13px;
+      color: var(--graphite);
+      margin: 0;
+      line-height: 1.5;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     /* ── Recording ── */
@@ -505,7 +556,7 @@
     }
 
     .notes-panel-header {
-      padding: 20px 20px 12px;
+      padding: 14px 20px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -662,7 +713,7 @@
     /* ── Review header ── */
     .review-title-input {
       font-family: var(--font-serif);
-      font-size: 24px;
+      font-size: 18px;
       line-height: 1.33;
       font-weight: 400;
       background: transparent;
@@ -702,6 +753,44 @@
       color: var(--snow-white);
     }
 
+    .presence-avatars {
+      display: flex;
+      align-items: center;
+      flex-direction: row-reverse;
+    }
+    .presence-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 2px solid var(--vellum-white);
+      margin-left: -8px;
+      background: var(--parchment);
+      object-fit: cover;
+      position: relative;
+    }
+    .presence-avatar:last-child {
+      margin-left: 0;
+    }
+    .presence-avatar-placeholder {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 2px solid var(--vellum-white);
+      margin-left: -8px;
+      background: var(--parchment);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      color: var(--graphite);
+      position: relative;
+    }
+    .presence-avatar-placeholder:last-child {
+      margin-left: 0;
+    }
+
     /* ── Canvas ── */
     .canvas-viewport {
       --grid-size: 32px;
@@ -712,8 +801,8 @@
       position: relative;
       overflow: hidden;
       background-color: #f4f2ec;
-      background-image: radial-gradient(circle, rgba(31,30,29,0.18) var(--grid-dot), transparent calc(var(--grid-dot) + 0.35px));
-      background-size: var(--grid-size) var(--grid-size);
+      background-image: none;
+      background-size: auto;
       background-position: var(--grid-x) var(--grid-y);
       cursor: default;
       user-select: none;
@@ -1080,6 +1169,35 @@
     }
     ::-webkit-scrollbar-thumb:hover { background-color: var(--stone); }
 
+    /* ── Remote cursors ── */
+    .remote-cursor {
+      position: absolute;
+      pointer-events: none;
+      z-index: 50;
+      transition: left 80ms linear, top 80ms linear;
+    }
+    .remote-cursor-pointer {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 10px solid var(--cursor-color, #4BDBBE);
+      transform: rotate(-30deg);
+      transform-origin: top left;
+    }
+    .remote-cursor-label {
+      margin-top: 2px;
+      margin-left: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--cursor-color, #4BDBBE);
+      color: #fff;
+      font-size: 11px;
+      font-family: var(--font-sans);
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+
     .app-layout.recording-active .sidebar {
       display: none;
     }
@@ -1140,8 +1258,25 @@
         <h2>Screen Notes</h2>
         <p>Get automatic screenshots with every note</p>
         <button class="btn btn-primary" id="emptyStartBtn">
-          <svg class="icon icon-filled" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg> New session
+          New session
         </button>
+        <div class="use-cases">
+          <div class="use-cases-label">Great for</div>
+          <div class="use-cases-grid">
+            <div class="use-case-card">
+              <h4>Live demos</h4>
+              <p>Capture key moments by annotating as presentations happen.</p>
+            </div>
+            <div class="use-case-card">
+              <h4>Design reviews</h4>
+              <p>Get timestamped annotated screenshots for your async demo feedback.</p>
+            </div>
+            <div class="use-case-card">
+              <h4>QA documentation</h4>
+              <p>Reproduce a bug step-by-step with screenshots and share a visual timeline with your team.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1253,6 +1388,102 @@
       else history.pushState(null, '', window.location.pathname + window.location.search);
     }
 
+    // ── Presence (remote cursors) ──
+    const CURSOR_COLORS = ['#4BDBBE','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#10B981','#F43F5E','#6366F1'];
+    let presenceRoom = null;
+
+    function getCursorColor(socketId) {
+      let hash = 0;
+      for (let i = 0; i < socketId.length; i++) hash = ((hash << 5) - hash + socketId.charCodeAt(i)) | 0;
+      return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length];
+    }
+
+    async function joinPresenceRoom(sessionId) {
+      await leavePresenceRoom();
+      presenceRoom = quick.socket.room(`session-${sessionId}`);
+
+      presenceRoom.on('user:state', () => { renderRemoteCursors(); renderPresenceAvatars(); });
+      presenceRoom.on('user:join', () => { renderRemoteCursors(); renderPresenceAvatars(); });
+      presenceRoom.on('user:leave', () => { renderRemoteCursors(); renderPresenceAvatars(); });
+
+      await presenceRoom.join();
+      renderPresenceAvatars();
+    }
+
+    async function leavePresenceRoom() {
+      if (presenceRoom) {
+        await presenceRoom.leave();
+        presenceRoom = null;
+      }
+      const container = document.getElementById('remoteCursors');
+      if (container) container.innerHTML = '';
+      const avatars = document.getElementById('presenceAvatars');
+      if (avatars) avatars.innerHTML = '';
+    }
+
+    function renderPresenceAvatars() {
+      const container = document.getElementById('presenceAvatars');
+      if (!container || !presenceRoom) return;
+
+      let html = '';
+      // Include current user
+      if (currentUser) {
+        if (currentUser.slackImageUrl) {
+          html += `<img class="presence-avatar" src="${currentUser.slackImageUrl}" title="${currentUser.fullName || currentUser.email}">`;
+        } else {
+          const initials = (currentUser.fullName || currentUser.email || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+          html += `<div class="presence-avatar-placeholder" title="${currentUser.fullName || currentUser.email}">${initials}</div>`;
+        }
+      }
+
+      // Remote users
+      presenceRoom.users.forEach((user, socketId) => {
+        if (socketId === presenceRoom.user?.socketId) return;
+        const name = user.name || user.email || 'Anon';
+        if (user.slackImageUrl) {
+          html += `<img class="presence-avatar" src="${user.slackImageUrl}" title="${name}">`;
+        } else {
+          const initials = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+          html += `<div class="presence-avatar-placeholder" title="${name}">${initials}</div>`;
+        }
+      });
+
+      container.innerHTML = html;
+    }
+
+    function broadcastCursorPosition(e) {
+      if (!presenceRoom || !activeSessionId) return;
+      const viewport = document.getElementById('canvasViewport');
+      if (!viewport) return;
+      const rect = viewport.getBoundingClientRect();
+      // Convert screen position to world coordinates
+      const worldX = (e.clientX - rect.left - canvas.x) / canvas.scale;
+      const worldY = (e.clientY - rect.top - canvas.y) / canvas.scale;
+      presenceRoom.updateUserState({ cursorX: worldX, cursorY: worldY });
+    }
+
+    function renderRemoteCursors() {
+      const container = document.getElementById('remoteCursors');
+      if (!container || !presenceRoom) return;
+
+      let html = '';
+      presenceRoom.users.forEach((user, socketId) => {
+        if (socketId === presenceRoom.user?.socketId) return;
+        const state = user.state;
+        if (state?.cursorX == null || state?.cursorY == null) return;
+        const color = getCursorColor(socketId);
+        const name = user.name?.split(' ')[0] || user.email?.split('@')[0] || 'Anon';
+        // Convert world coords to viewport pixel position
+        const px = canvas.x + state.cursorX * canvas.scale;
+        const py = canvas.y + state.cursorY * canvas.scale;
+        html += `<div class="remote-cursor" style="left:${px}px;top:${py}px;--cursor-color:${color}">
+          <div class="remote-cursor-pointer"></div>
+          <div class="remote-cursor-label">${name}</div>
+        </div>`;
+      });
+      container.innerHTML = html;
+    }
+
     async function goHome() {
       if (isRecording) {
         if (!confirm('Stop current recording and return home?')) return;
@@ -1262,6 +1493,7 @@
       currentNotes = [];
       setSelectedItems?.([]);
       setSessionUrl(null);
+      await leavePresenceRoom();
       render();
     }
 
@@ -1803,8 +2035,25 @@
           <h2>Screen Notes</h2>
           <p>Get automatic screenshots with every note</p>
           <button class="btn btn-primary" onclick="startRecording()">
-            ${icon('record', 'icon icon-filled')} New session
+            New session
           </button>
+          <div class="use-cases">
+            <div class="use-cases-label">Great for</div>
+            <div class="use-cases-grid">
+              <div class="use-case-card">
+                <h4>Live demos</h4>
+                <p>Capture key moments by annotating as presentations happen.</p>
+              </div>
+              <div class="use-case-card">
+                <h4>Design reviews</h4>
+                <p>Get timestamped annotated screenshots for your async demo feedback.</p>
+              </div>
+              <div class="use-case-card">
+                <h4>QA documentation</h4>
+                <p>Reproduce a bug step-by-step with screenshots and share a visual timeline with your team.</p>
+              </div>
+            </div>
+          </div>
         </div>
       `;
     }
@@ -1819,8 +2068,8 @@
               <span style="color:var(--text-dim);font-size:13px;">Recording</span>
             </div>
             <div>
-              <button class="btn btn-danger" onclick="stopRecording()">
-                ${icon('stop', 'icon icon-filled')} Stop Recording
+              <button class="btn btn-danger" style="padding-left:12px" onclick="stopRecording()">
+                ${icon('stop', 'icon icon-filled')} Stop recording
               </button>
             </div>
           </div>
@@ -1850,7 +2099,7 @@
                     ${icon('camera', 'icon icon-sm')} Screenshot captured
                   </div>
                   <button class="btn btn-primary" onclick="addNote()" style="padding:6px 12px;font-size:13px;">
-                    Save Note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
+                    Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
                   </button>
                 </div>
               </div>
@@ -1919,9 +2168,11 @@
               <input class="review-title-input"
                      value="${escapeHtml(session.title)}"
                      onchange="renameSession('${session.id}', this.value)"
+                     onblur="renameSession('${session.id}', this.value)"
                      placeholder="Untitled session">
             </div>
             <div class="review-header-right">
+              <div class="presence-avatars" id="presenceAvatars"></div>
               <button class="btn btn-ghost review-share-btn" id="shareSessionBtn" onclick="shareSession('${session.id}')" title="Copy session link">
                 Share
               </button>
@@ -1937,15 +2188,18 @@
             <div class="canvas-world" id="canvasWorld"></div>
 
             <div class="canvas-help" id="canvasHelp">
-              <div><kbd>space</kbd> + <kbd>drag</kbd> to pan</div>
-              <div><kbd>⌘</kbd> + <kbd>scroll</kbd> to zoom</div>
+              <div><kbd>space</kbd> <kbd>drag</kbd> to pan</div>
+              <div><kbd>⌘</kbd> <kbd>scroll</kbd> to zoom</div>
               <div><kbd>drag empty</kbd> to select</div>
-              <div><kbd>shift</kbd> + <kbd>click</kbd> multi-select</div>
+              <div><kbd>shift</kbd> <kbd>click</kbd> multi-select</div>
               <div><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> nudge layers</div>
-              <div><kbd>⌘</kbd> + <kbd>Z</kbd> undo</div>
+              <div><kbd>⌘</kbd> <kbd>C</kbd> copy layers</div>
+              <div><kbd>⌘</kbd> <kbd>V</kbd> paste layers</div>
+              <div><kbd>⌘</kbd> <kbd>Z</kbd> undo</div>
               <div>Drop images anywhere</div>
             </div>
             <button class="help-fab" onclick="toggleCanvasHelp(event)" title="Canvas help">?</button>
+            <div class="remote-cursors" id="remoteCursors"></div>
             <div class="zoom-indicator" id="zoomIndicator">100%</div>
             <div class="alignment-guide vertical" id="guideVertical"></div>
             <div class="alignment-guide horizontal" id="guideHorizontal"></div>
@@ -1988,6 +2242,8 @@
       render();
       // Initialize canvas after DOM is ready
       requestAnimationFrame(() => initCanvas(session));
+      // Join presence room
+      joinPresenceRoom(id);
     }
 
     // ════════════════════════════════════════════
@@ -2001,7 +2257,12 @@
       session: null,
       saveTimer: null,
       undoStack: [],
+      clipboardItems: [],
     };
+
+    function newCanvasItemId(type) {
+      return `${type || 'item'}-${Math.random().toString(36).slice(2, 9)}`;
+    }
 
     function snapshotCanvasState() {
       return {
@@ -2030,10 +2291,198 @@
       saveCanvasDebounced();
     }
 
+    function copySelectedCanvasItems() {
+      if (!canvas.selectedIds.length) return false;
+      const selectedSet = new Set(canvas.selectedIds);
+      canvas.clipboardItems = canvas.items
+        .filter(item => selectedSet.has(item.id))
+        .map(item => JSON.parse(JSON.stringify(item)));
+      if (canvas.clipboardItems.length) writeCanvasItemsToSystemClipboard(canvas.clipboardItems);
+      return canvas.clipboardItems.length > 0;
+    }
+
+    function escapeXml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
+    function wrapSvgText(text, x, y, maxWidth, fontSize = 14, lineHeight = 20, color = '#1f1e1d', weight = 400, family = 'Arial, sans-serif') {
+      const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return '';
+      const maxChars = Math.max(8, Math.floor(maxWidth / (fontSize * 0.55)));
+      const lines = [];
+      let line = '';
+      words.forEach(word => {
+        const next = line ? `${line} ${word}` : word;
+        if (next.length > maxChars && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = next;
+        }
+      });
+      if (line) lines.push(line);
+      return `<text x="${x}" y="${y}" fill="${color}" font-family="${family}" font-size="${fontSize}" font-weight="${weight}">${lines.map((l, i) => `<tspan x="${x}" dy="${i === 0 ? 0 : lineHeight}">${escapeXml(l)}</tspan>`).join('')}</text>`;
+    }
+
+    async function imageUrlToClipboardHref(url) {
+      if (!url) return '';
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Image fetch failed');
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (_) {
+        return url;
+      }
+    }
+
+    async function getImageDimensions(src) {
+      if (!src) return null;
+      return await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    function svgLayerName(item) {
+      if (item.type === 'text') return `Text layer ${item.id}`;
+      if (item.type === 'image') return `Image layer ${item.id}`;
+      if (item.type === 'screenshot') {
+        const note = (canvas.session?.notes || [])[item.noteIndex];
+        const timestamp = note ? formatDuration(note.timestamp) : '';
+        return `Screenshot ${timestamp || item.id}`;
+      }
+      return `Layer ${item.id}`;
+    }
+
+    function svgSafeId(name) {
+      return String(name || 'layer').replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'layer';
+    }
+
+    function namedSvgGroup(item, content) {
+      const name = svgLayerName(item);
+      return `<g id="${escapeXml(svgSafeId(name))}" data-name="${escapeXml(name)}"><title>${escapeXml(name)}</title>${content}</g>`;
+    }
+
+    async function svgContainImage(href, x, y, boxW, boxH) {
+      const dims = await getImageDimensions(href);
+      if (!dims) {
+        return `<image href="${escapeXml(href)}" x="${x}" y="${y}" width="${boxW}" height="${boxH}"/>`;
+      }
+      const scale = Math.min(boxW / dims.w, boxH / dims.h);
+      const imageW = dims.w * scale;
+      const imageH = dims.h * scale;
+      const imageX = x + (boxW - imageW) / 2;
+      const imageY = y + (boxH - imageH) / 2;
+      return `<image href="${escapeXml(href)}" x="${imageX}" y="${imageY}" width="${imageW}" height="${imageH}"/>`;
+    }
+
+    async function canvasItemsToSvg(items) {
+      const entries = items.map(item => ({ item, bounds: getRenderedItemBounds(item) }));
+      const minX = Math.min(...entries.map(e => e.bounds.x1));
+      const minY = Math.min(...entries.map(e => e.bounds.y1));
+      const maxX = Math.max(...entries.map(e => e.bounds.x2));
+      const maxY = Math.max(...entries.map(e => e.bounds.y2));
+      const width = Math.max(1, maxX - minX);
+      const height = Math.max(1, maxY - minY);
+      const parts = [];
+
+      for (const { item, bounds } of entries) {
+        const x = item.x - minX;
+        const y = item.y - minY;
+        const w = bounds.w;
+        const h = bounds.h;
+
+        if (item.type === 'text') {
+          const fontSize = item.fontSize || 16;
+          const content = `
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#faf9f5" stroke="#ded9cc"/>
+            ${wrapSvgText(item.text || 'Text', x + 12, y + 10 + fontSize, Math.max(1, w - 24), fontSize, Math.round(fontSize * 1.45), '#1f1e1d', 400, 'Inter, Arial, sans-serif')}
+          `;
+          parts.push(namedSvgGroup(item, content));
+          continue;
+        }
+
+        if (item.type === 'image') {
+          const href = await imageUrlToClipboardHref(item.url);
+          const imageSvg = await svgContainImage(href, x, y, w, item.h);
+          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#faf9f5" stroke="#ded9cc"/>${imageSvg}${item.note ? wrapSvgText(item.note, x + 14, y + item.h + 28, w - 28, 14, 20) : ''}`;
+          parts.push(namedSvgGroup(item, content));
+          continue;
+        }
+
+        if (item.type === 'screenshot') {
+          const note = (canvas.session?.notes || [])[item.noteIndex];
+          if (!note) continue;
+          const href = await imageUrlToClipboardHref(note.screenshotUrl || note.screenshot);
+          const imageSvg = await svgContainImage(href, x, y, w, item.h);
+          const timestamp = formatDuration(note.timestamp);
+          const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20) : '';
+          const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
+          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#faf9f5" stroke="#ded9cc"/>${imageSvg}${noteText}<rect x="${x + 14}" y="${timeY}" width="${Math.max(64, timestamp.length * 8 + 22)}" height="24" rx="12" fill="#f2f0ea"/><text x="${x + 25}" y="${timeY + 16}" fill="#6f6a61" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
+          parts.push(namedSvgGroup(item, content));
+        }
+      }
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(width)}" height="${Math.ceil(height)}" viewBox="0 0 ${Math.ceil(width)} ${Math.ceil(height)}">${parts.join('')}</svg>`;
+    }
+
+    async function writeCanvasItemsToSystemClipboard(items) {
+      if (!navigator.clipboard?.write) return;
+      try {
+        const svg = await canvasItemsToSvg(items);
+        const html = `<div>${svg}</div>`;
+        const data = {
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([svg], { type: 'text/plain' }),
+        };
+        try {
+          data['image/svg+xml'] = new Blob([svg], { type: 'image/svg+xml' });
+        } catch (_) {}
+        await navigator.clipboard.write([new ClipboardItem(data)]);
+      } catch (err) {
+        console.warn('[screen-notes] Failed to write SVG clipboard:', err);
+      }
+    }
+
+    function pasteCanvasItems() {
+      if (!canvas.clipboardItems.length) return false;
+      pushUndoState();
+      const offset = 32;
+      const pasted = canvas.clipboardItems.map(item => {
+        const clone = JSON.parse(JSON.stringify(item));
+        clone.id = newCanvasItemId(clone.type);
+        clone.x = (clone.x || 0) + offset;
+        clone.y = (clone.y || 0) + offset;
+        return clone;
+      });
+      canvas.items.push(...pasted);
+      canvas.clipboardItems = pasted.map(item => JSON.parse(JSON.stringify(item)));
+      renderCanvas();
+      setSelectedItems(pasted.map(item => item.id));
+      saveCanvasDebounced();
+      return true;
+    }
+
     function initCanvas(session) {
       const viewport = document.getElementById('canvasViewport');
       if (!viewport) return;
       canvas.session = session;
+
+      // Presence: broadcast cursor on mousemove
+      viewport.addEventListener('mousemove', broadcastCursorPosition);
 
       // Load existing canvas state OR auto-generate from notes
       if (session.canvas && session.canvas.items && session.canvas.items.length) {
@@ -2108,6 +2557,7 @@
       updateZoomIndicator();
       updateCanvasGrid();
       updateGroupSelectionBox();
+      renderRemoteCursors();
     }
 
     function renderCanvasItem(item) {
@@ -2622,6 +3072,20 @@
       if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
       if (document.activeElement?.isContentEditable) return;
 
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c' && !e.shiftKey) {
+        if (copySelectedCanvasItems()) {
+          e.preventDefault();
+          return;
+        }
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v' && !e.shiftKey) {
+        if (pasteCanvasItems()) {
+          e.preventDefault();
+          return;
+        }
+      }
+
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         undoCanvasAction();
         e.preventDefault();
@@ -2854,10 +3318,11 @@
       };
     }
 
+
+
     function getSnappedDragPosition(item, rawX, rawY) {
       const size = getRenderedItemSize(item);
       const threshold = SNAP_THRESHOLD_PX / canvas.scale;
-
       const movingX = [
         { value: rawX, offset: 0 },
         { value: rawX + size.w / 2, offset: size.w / 2 },
@@ -2872,6 +3337,9 @@
       let bestX = null;
       let bestY = null;
 
+      // Snap to other items (overrides grid if closer)
+      let itemSnapX = null;
+      let itemSnapY = null;
       const selectedSet = new Set(canvas.selectedIds);
       canvas.items.forEach(other => {
         if (other.id === item.id || selectedSet.has(other.id)) return;
@@ -2885,6 +3353,7 @@
             const abs = Math.abs(diff);
             if (abs <= threshold && (!bestX || abs < bestX.abs)) {
               bestX = { abs, diff, target: t };
+              itemSnapX = t;
             }
           });
         });
@@ -2895,6 +3364,7 @@
             const abs = Math.abs(diff);
             if (abs <= threshold && (!bestY || abs < bestY.abs)) {
               bestY = { abs, diff, target: t };
+              itemSnapY = t;
             }
           });
         });
@@ -2903,8 +3373,8 @@
       return {
         x: rawX + (bestX ? bestX.diff : 0),
         y: rawY + (bestY ? bestY.diff : 0),
-        guideX: bestX ? bestX.target : null,
-        guideY: bestY ? bestY.target : null,
+        guideX: itemSnapX,
+        guideY: itemSnapY,
       };
     }
 
