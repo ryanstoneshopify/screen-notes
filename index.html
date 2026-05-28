@@ -611,11 +611,18 @@
       font-size: 13px;
       opacity: 0;
       transition: opacity 160ms ease;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .screenshot-indicator > span:not(.screenshot-indicator-actions) {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      min-width: 0;
     }
-    .screenshot-indicator.visible { opacity: 1; display: inline-flex; align-items: center; gap: 8px; }
+    .screenshot-indicator.visible { opacity: 1; display: inline-flex; }
     .screenshot-indicator-actions { display: inline-flex; gap: 2px; margin-left: 2px; }
     .screenshot-indicator-btn {
       background: transparent;

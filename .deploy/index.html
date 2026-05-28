@@ -615,7 +615,20 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .screenshot-indicator.visible { opacity: 1; }
+    .screenshot-indicator.visible { opacity: 1; display: inline-flex; align-items: center; gap: 8px; }
+    .screenshot-indicator-actions { display: inline-flex; gap: 2px; margin-left: 2px; }
+    .screenshot-indicator-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      color: var(--graphite);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .screenshot-indicator-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink-black); }
 
     .notes-list {
       flex: 1;
@@ -1299,6 +1312,8 @@
         pin: '<path d="M12 21s6-5.3 6-11a6 6 0 1 0-12 0c0 5.7 6 11 6 11z"/><circle cx="12" cy="10" r="2"/>',
         check: '<path d="M5 12.5l4 4L19 6"/>',
         warning: '<path d="M12 4l9 16H3L12 4z"/><path d="M12 9v5"/><path d="M12 17h.01"/>',
+        refresh: '<path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/>',
+        close: '<path d="M6 6l12 12"/><path d="M18 6L6 18"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
@@ -1852,12 +1867,38 @@
 
       pendingScreenshot = { previewDataUrl: preview, uploadPromise };
 
+      const capturedAt = new Date();
       uploadPromise.then(url => {
         if (!indicator || pendingScreenshot?.uploadPromise !== uploadPromise) return;
-        if (url) indicator.innerHTML = `${icon('check', 'icon icon-sm')} Screenshot ready`;
+        if (url) {
+          const timeStr = capturedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+          indicator.innerHTML = `${icon('check', 'icon icon-sm')} <span>Screenshot taken at ${escapeHtml(timeStr)}</span>` +
+            `<span class="screenshot-indicator-actions">` +
+              `<button type="button" class="screenshot-indicator-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>` +
+              `<button type="button" class="screenshot-indicator-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('close', 'icon icon-sm')}</button>` +
+            `</span>`;
+        }
       });
 
       return pendingScreenshot;
+    }
+
+    function retakeScreenshot() {
+      pendingScreenshot = null;
+      const indicator = document.getElementById('screenshotIndicator');
+      if (indicator) indicator.innerHTML = '';
+      beginNoteScreenshotCapture();
+      const input = document.getElementById('noteInput');
+      input?.focus();
+    }
+
+    function removeScreenshot() {
+      pendingScreenshot = null;
+      const indicator = document.getElementById('screenshotIndicator');
+      if (indicator) {
+        indicator.classList.remove('visible');
+        indicator.innerHTML = '';
+      }
     }
 
     function onNoteFocus() {
