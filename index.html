@@ -2412,12 +2412,18 @@
       const label = document.getElementById('noteCountLabel');
       if (label) label.textContent = `${currentNotes.length} note${currentNotes.length !== 1 ? 's' : ''}`;
 
+      const previousTops = new Map();
+      list.querySelectorAll('.note-card[data-note-key]').forEach(card => {
+        previousTops.set(card.dataset.noteKey, card.getBoundingClientRect().top);
+      });
+
       list.innerHTML = [...currentNotes].reverse().map((note, i) => {
         const realIndex = currentNotes.length - 1 - i;
         const imgSrc = note.screenshotUrl || note.screenshot;
         const enterClass = note.createdAt && note.createdAt === enteringNoteCreatedAt ? ' note-card-entering' : '';
+        const noteKey = note.createdAt || `note-${realIndex}`;
         return `
-          <div class="note-card${imgSrc ? '' : ' note-card-text-only'}${enterClass}">
+          <div class="note-card${imgSrc ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
             ${imgSrc ? `<div class="note-card-screenshot-wrap">
               <img class="note-card-screenshot"
                    src="${imgSrc}"
@@ -2445,6 +2451,27 @@
           </div>
         `;
       }).join('');
+
+      if (previousTops.size) {
+        list.querySelectorAll('.note-card[data-note-key]:not(.note-card-entering)').forEach(card => {
+          const previousTop = previousTops.get(card.dataset.noteKey);
+          if (previousTop === undefined) return;
+          const nextTop = card.getBoundingClientRect().top;
+          const deltaY = previousTop - nextTop;
+          if (Math.abs(deltaY) < 1) return;
+          card.style.transition = 'none';
+          card.style.transform = `translateY(${deltaY}px)`;
+          requestAnimationFrame(() => {
+            card.style.transition = 'transform 450ms cubic-bezier(0.17, 0.84, 0.44, 1)';
+            card.style.transform = 'translateY(0)';
+            window.setTimeout(() => {
+              card.style.transition = '';
+              card.style.transform = '';
+            }, 470);
+          });
+        });
+      }
+
       if (enteringNoteCreatedAt) {
         window.setTimeout(() => { enteringNoteCreatedAt = null; }, 470);
       }
