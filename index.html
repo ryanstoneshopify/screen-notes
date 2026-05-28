@@ -2011,7 +2011,6 @@
     async function addNote() {
       const input = document.getElementById('noteInput');
       const text = input.value.trim();
-      if (!text) return;
 
       let url = null;
       if (!screenshotRemoved) {
@@ -2026,6 +2025,9 @@
           }
         }
       }
+
+      // Allow image-only or text-only notes, but don't save a completely empty note.
+      if (!text && !url) return;
 
       const note = {
         text,
