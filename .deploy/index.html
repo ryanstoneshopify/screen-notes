@@ -785,19 +785,17 @@
       color: var(--dusty-gray);
     }
     .note-card-actions { display: flex; gap: 4px; }
-    .note-card-actions button {
+    .note-delete-link {
       background: transparent;
       border: none;
-      color: var(--graphite);
+      color: #b42318;
       cursor: pointer;
-      padding: 6px;
-      border-radius: 6px;
+      padding: 0;
       font-size: 12px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      font-family: var(--font-sans);
+      text-decoration: none;
     }
-    .note-card-actions button:hover { background: #f2f0ea; color: var(--ink-black); }
+    .note-delete-link:hover { text-decoration: underline; color: #8f1d14; }
 
     .loading-state {
       flex: 1;
@@ -2373,7 +2371,7 @@
               <div class="note-card-meta">
                 <span>${formatDuration(note.timestamp)}</span>
                 <div class="note-card-actions">
-                  <button class="delete-btn" onclick="deleteNote(${realIndex})" title="Delete note">${icon('trash', 'icon icon-sm')}</button>
+                  <button class="note-delete-link" onclick="deleteNote(${realIndex})" title="Delete note">Delete</button>
                 </div>
               </div>
             </div>
