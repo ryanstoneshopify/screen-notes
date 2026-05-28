@@ -1960,15 +1960,26 @@
       })();
 
       pendingScreenshot = { previewDataUrl: preview, uploadPromise };
+      updateSaveNoteButtonState();
 
       uploadPromise.then(() => {});
 
       return pendingScreenshot;
     }
 
+    function updateSaveNoteButtonState() {
+      const input = document.getElementById('noteInput');
+      const button = document.getElementById('saveNoteBtn');
+      if (!button) return;
+      const hasText = !!input?.value.trim();
+      const hasScreenshot = !!pendingScreenshot && !screenshotRemoved;
+      button.disabled = !(hasText || hasScreenshot);
+    }
+
     async function retakeScreenshot() {
       pendingScreenshot = null;
       screenshotRemoved = false;
+      updateSaveNoteButtonState();
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.innerHTML = '';
       const previewEl = document.getElementById('screenshotPreview');
@@ -1976,6 +1987,7 @@
       if (previewEl) previewEl.classList.remove('has-image');
       if (previewTimestamp) previewTimestamp.innerHTML = '';
       await beginNoteScreenshotCapture();
+      updateSaveNoteButtonState();
       const input = document.getElementById('noteInput');
       input?.focus();
     }
@@ -1994,6 +2006,7 @@
       if (previewEl) previewEl.classList.remove('has-image');
       if (previewImg) previewImg.src = '';
       if (previewTimestamp) previewTimestamp.innerHTML = '';
+      updateSaveNoteButtonState();
     }
 
     function onNoteFocus() {
@@ -2005,7 +2018,8 @@
       // Important after saving: the textarea remains focused, so focus won't fire
       // again. The next screenshot should be captured when typing starts.
       const input = document.getElementById('noteInput');
-      if (input?.value.trim()) beginNoteScreenshotCapture();
+      updateSaveNoteButtonState();
+      if (input?.value.trim()) beginNoteScreenshotCapture().then(updateSaveNoteButtonState);
     }
 
     async function addNote() {
@@ -2049,6 +2063,7 @@
       if (previewEl) previewEl.classList.remove('has-image');
       if (previewImg) previewImg.src = '';
       if (previewTimestamp) previewTimestamp.innerHTML = '';
+      updateSaveNoteButtonState();
 
       // Save to DB (no data URLs included)
       const session = allSessions.find(s => s.id === activeSessionId);
@@ -2252,7 +2267,7 @@
                 </div>
                 <div class="note-input-actions">
                   <div class="screenshot-indicator" id="screenshotIndicator"></div>
-                  <button class="btn btn-primary" onclick="addNote()" style="width:100%;">
+                  <button class="btn btn-primary" id="saveNoteBtn" onclick="addNote()" style="width:100%;" disabled>
                     Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
                   </button>
                 </div>

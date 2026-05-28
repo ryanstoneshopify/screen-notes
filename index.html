@@ -2236,7 +2236,7 @@
           <div class="recording-body">
             <div class="video-panel">
               <video id="screenVideo" autoplay playsinline muted></video>
-              <div class="video-overlay-hint" id="videoHint">Click the note box to capture a screenshot →</div>
+
             </div>
             <div class="notes-panel">
               <div class="notes-panel-header">
@@ -2286,11 +2286,7 @@
       }
       renderNotesList();
 
-      // Hide hint after first note
-      setTimeout(() => {
-        const hint = document.getElementById('videoHint');
-        if (hint && currentNotes.length > 0) hint.style.opacity = '0';
-      }, 100);
+
     }
 
     function renderNotesList() {
