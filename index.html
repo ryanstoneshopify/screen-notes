@@ -656,7 +656,7 @@
       object-position: top center;
       transform-origin: center center;
     }
-    .screenshot-preview.has-image img { display: block; }
+    .screenshot-preview.has-image img { display: block; cursor: zoom-in; }
     .screenshot-preview.capturing-image img {
       animation: screenshotCaptureIn 300ms cubic-bezier(0.2, 0.8, 0.3, 1.15);
     }
@@ -2092,6 +2092,12 @@
       return new Promise(resolve => window.setTimeout(resolve, 250));
     }
 
+    function openPendingScreenshotLightbox() {
+      const previewImg = document.getElementById('screenshotPreviewImg');
+      const src = pendingScreenshot?.previewDataUrl || previewImg?.src;
+      if (src) openLightbox(src);
+    }
+
     async function addNote() {
       const input = document.getElementById('noteInput');
       const text = input.value.trim();
@@ -2361,7 +2367,7 @@
               </div>
               <div class="note-input-area">
                 <div class="screenshot-preview" id="screenshotPreview">
-                  <img id="screenshotPreviewImg" alt="Screenshot preview">
+                  <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openPendingScreenshotLightbox()">
                   <div class="screenshot-preview-empty">
                     <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
                   </div>

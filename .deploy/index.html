@@ -765,7 +765,7 @@
       margin-bottom: 12px;
     }
     .note-card.note-card-entering {
-      animation: noteCardEnter 450ms cubic-bezier(0.17, 0.84, 0.44, 1);
+      animation: noteCardEnter 450ms cubic-bezier(0.4, 0.22, 0.28, 1);
     }
     @keyframes noteCardEnter {
       from {
@@ -2462,7 +2462,7 @@
           card.style.transition = 'none';
           card.style.transform = `translateY(${deltaY}px)`;
           requestAnimationFrame(() => {
-            card.style.transition = 'transform 450ms cubic-bezier(0.17, 0.84, 0.44, 1)';
+            card.style.transition = 'transform 450ms cubic-bezier(0.4, 0.22, 0.28, 1)';
             card.style.transform = 'translateY(0)';
             window.setTimeout(() => {
               card.style.transition = '';
