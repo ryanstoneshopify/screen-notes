@@ -707,12 +707,14 @@
       gap: 5px;
       padding: 5px 8px;
       border-radius: 6px;
-      background: rgba(20, 20, 20, 0.58);
-      color: #fff;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      color: var(--ink-black);
       font-size: 12px;
       line-height: 1;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
       pointer-events: none;
     }
     .screenshot-preview.has-image .screenshot-preview-timestamp { display: inline-flex; }
@@ -1924,8 +1926,7 @@
       const preview = captureScreenshotPreview();
       if (!preview) return null;
 
-      const capturedAt = new Date();
-      const timeStr = capturedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+      const timeStr = formatDuration(Date.now() - recordingStartTime);
       const indicator = document.getElementById('screenshotIndicator');
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');

@@ -2144,6 +2144,7 @@
       try {
         const url = await uploadCurrentFrameScreenshot();
         currentNotes[index].screenshotUrl = url;
+        currentNotes[index].timestamp = Date.now() - recordingStartTime;
         delete currentNotes[index].screenshot;
         const session = allSessions.find(s => s.id === activeSessionId);
         if (session) {
