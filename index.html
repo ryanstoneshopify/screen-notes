@@ -1052,6 +1052,14 @@
       padding: 2px 8px;
     }
     .ci-text .ci-note-time { margin-top: 10px; }
+    .ci-text-note {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+    .ci-text-note .ci-note-time { margin-top: 0; }
 
     .ci-text {
       padding: 10px 12px;
@@ -2938,7 +2946,7 @@
           const textStyle = `left:${item.x}px;top:${item.y}px;width:${textW}px;`;
           return `
             <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
-              <div class="ci-text" style="font-size:${fontSize}px;min-height:60px;">
+              <div class="ci-text ci-text-note" style="font-size:${fontSize}px;">
                 <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text || 'Text')}</div>
                 <div class="ci-note-time">${formatDuration(note.timestamp)}</div>
               </div>
@@ -2967,10 +2975,11 @@
         const note = noteIndex !== null ? (canvas.session?.notes || [])[noteIndex] : null;
         // Text boxes are AUTO-HEIGHT: item.h is a minimum height only.
         // The container should never clip or be smaller than its text.
-        const textStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+        const textW = note ? Math.min(item.w || 280, 320) : item.w;
+        const textStyle = `left:${item.x}px;top:${item.y}px;width:${textW}px;`;
         return `
           <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
-            ${note ? `<div class="ci-text" style="font-size:${fontSize}px;min-height:${item.h}px;">
+            ${note ? `<div class="ci-text ci-text-note" style="font-size:${fontSize}px;">
               <div class="ci-note-text" data-note-index="${noteIndex}">${escapeHtml(note.text || 'Text')}</div>
               <div class="ci-note-time">${formatDuration(note.timestamp)}</div>
             </div>` : `<div class="ci-text" data-text-id="${item.id}" style="font-size:${fontSize}px;min-height:${item.h}px;">${escapeHtml(item.text || 'Text')}</div>`}
