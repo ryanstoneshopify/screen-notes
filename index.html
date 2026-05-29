@@ -2830,7 +2830,7 @@
                 type: 'text',
                 text: note?.text || item.text || '',
                 fontSize: item.fontSize || 16,
-                w: Math.min(item.w || 280, 320),
+                w: estimateTextNoteWidth(note?.text || item.text || ''),
                 h: 60,
               };
             }
@@ -2865,6 +2865,11 @@
       return imageH + noteTextH + noteChromeH;
     }
 
+    function estimateTextNoteWidth(text) {
+      const longestLine = String(text || '').split('\n').reduce((max, line) => Math.max(max, line.length), 0);
+      return Math.max(120, Math.min(280, Math.ceil(longestLine * 9 + 48)));
+    }
+
     function generateInitialLayout(notes) {
       // Masonry-arrange screenshots from the start so auto-height note sections
       // don't overlap when the session first opens after recording stops.
@@ -2897,7 +2902,7 @@
           colHeights[col] += estimatedH + gap;
         } else {
           // Text-only note → standalone text box on canvas
-          const textW = 280;
+          const textW = estimateTextNoteWidth(note.text || '');
           const textH = 60;
           items.push({
             id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
@@ -2942,7 +2947,7 @@
           // Notes with no screenshot should behave like plain text boxes on canvas,
           // not like empty screenshot cards.
           const fontSize = item.fontSize || 16;
-          const textW = Math.min(item.w || 280, 320);
+          const textW = estimateTextNoteWidth(note.text || '');
           const textStyle = `left:${item.x}px;top:${item.y}px;width:${textW}px;`;
           return `
             <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
@@ -2975,7 +2980,7 @@
         const note = noteIndex !== null ? (canvas.session?.notes || [])[noteIndex] : null;
         // Text boxes are AUTO-HEIGHT: item.h is a minimum height only.
         // The container should never clip or be smaller than its text.
-        const textW = note ? Math.min(item.w || 280, 320) : item.w;
+        const textW = note ? estimateTextNoteWidth(note.text || '') : item.w;
         const textStyle = `left:${item.x}px;top:${item.y}px;width:${textW}px;`;
         return `
           <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
