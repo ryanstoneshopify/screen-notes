@@ -2661,7 +2661,11 @@
         }
       });
       if (line) lines.push(line);
-      return `<text x="${x}" y="${y}" fill="${color}" font-family="${family}" font-size="${fontSize}" font-weight="${weight}">${lines.map((l, i) => `<tspan x="${x}" dy="${i === 0 ? 0 : lineHeight}">${escapeXml(l)}</tspan>`).join('')}</text>`;
+
+      // Keep copied notes as a single SVG text element. Figma imports separate
+      // tspans as separate text layers, so use preserved newlines instead.
+      const safeText = escapeXml(lines.join('\n'));
+      return `<text x="${x}" y="${y}" fill="${color}" font-family="${family}" font-size="${fontSize}" font-weight="${weight}" xml:space="preserve" style="white-space: pre; line-height: ${lineHeight}px;">${safeText}</text>`;
     }
 
     async function imageUrlToClipboardHref(url) {
