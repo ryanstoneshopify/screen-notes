@@ -2662,11 +2662,24 @@
       });
       if (line) lines.push(line);
 
-      // Keep copied notes as a single SVG text element. Figma imports separate
-      // tspans as separate text layers. Use explicit XML line-feed entities;
-      // literal newlines are normalized to spaces by Figma's SVG importer.
-      const safeText = lines.map(escapeXml).join('&#10;');
-      return `<text x="${x}" y="${y}" fill="${color}" font-family="${family}" font-size="${fontSize}" font-weight="${weight}" xml:space="preserve" style="white-space: pre; line-height: ${lineHeight}px;">${safeText}</text>`;
+      // Figma ignores SVG/CSS text wrapping on import. Using tspan x=... wraps
+      // visually, but Figma turns every line into a separate text layer. Instead,
+      // keep one <text> with relative tspans. The negative dx returns each line
+      // to the original x without per-line absolute positioning, which Figma is
+      // much more likely to preserve as one editable text object.
+      const measure = (() => {
+        const c = document.createElement('canvas');
+        const ctx = c.getContext('2d');
+        ctx.font = `${weight} ${fontSize}px ${family}`;
+        return value => Math.max(1, ctx.measureText(value).width);
+      })();
+      let previousLineWidth = measure(lines[0]);
+      const tspans = lines.slice(1).map(line => {
+        const dx = -previousLineWidth;
+        previousLineWidth = measure(line);
+        return `<tspan dx="${dx.toFixed(2)}" dy="${lineHeight}">${escapeXml(line)}</tspan>`;
+      }).join('');
+      return `<text x="${x}" y="${y}" fill="${color}" font-family="${family}" font-size="${fontSize}" font-weight="${weight}">${escapeXml(lines[0])}${tspans}</text>`;
     }
 
     async function imageUrlToClipboardHref(url) {
