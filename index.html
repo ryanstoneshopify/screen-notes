@@ -989,10 +989,10 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      width: min-content;
       box-shadow: var(--shadow-soft);
     }
     .ci-screenshot .ci-screenshot-img-wrap {
-      width: 100%;
       background: #ebe8df;
       flex-shrink: 0;
       overflow: hidden;
@@ -1001,14 +1001,15 @@
       justify-content: center;
     }
     .ci-screenshot .ci-screenshot-img-wrap img {
-      width: 100%;
-      height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
       display: block;
       pointer-events: none;
     }
 
     .ci-note {
+      width: 100%;
       padding: 14px;
       border-top: 1px solid var(--parchment);
       background: var(--vellum-white);
@@ -2959,12 +2960,14 @@
             </div>
           `;
         }
-        // Screenshot cards are AUTO-HEIGHT: image is item.h, note grows below
-        const cardStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+        // Screenshot cards are AUTO-HEIGHT and shrink-wrap to the rendered image.
+        // item.w / item.h are max bounds; the note below uses that same rendered
+        // image width instead of stretching across any empty contain space.
+        const cardStyle = `left:${item.x}px;top:${item.y}px;max-width:${item.w}px;`;
         return `
           <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
-            <div class="ci-screenshot-img-wrap" style="height:${item.h}px;">
-              <img src="${src}" alt="" draggable="false">
+            <div class="ci-screenshot-img-wrap" style="max-width:${item.w}px;max-height:${item.h}px;">
+              <img src="${src}" alt="" draggable="false" style="max-width:${item.w}px;max-height:${item.h}px;">
             </div>
             <div class="ci-note">
               <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
@@ -3672,9 +3675,20 @@
       if (!el) return;
       el.style.width = item.w + 'px';
       if (item.type === 'screenshot') {
-        // For screenshot cards, item.h controls image height; card height is auto
+        // For screenshot cards, item.w/item.h bound the image; card width hugs the image.
+        el.style.width = '';
+        el.style.maxWidth = item.w + 'px';
         const wrap = el.querySelector('.ci-screenshot-img-wrap');
-        if (wrap) wrap.style.height = item.h + 'px';
+        if (wrap) {
+          wrap.style.maxWidth = item.w + 'px';
+          wrap.style.maxHeight = item.h + 'px';
+          wrap.style.height = '';
+        }
+        const img = el.querySelector('.ci-screenshot-img-wrap img');
+        if (img) {
+          img.style.maxWidth = item.w + 'px';
+          img.style.maxHeight = item.h + 'px';
+        }
         el.style.height = '';
       } else if (item.type === 'image') {
         // For dropped image cards, item.h controls image height; note height is auto.
