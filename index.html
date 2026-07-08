@@ -2711,17 +2711,19 @@
       return `<g id="${escapeXml(svgSafeId(name))}" data-name="${escapeXml(name)}"><title>${escapeXml(name)}</title>${content}</g>`;
     }
 
-    async function svgContainImage(href, x, y, boxW, boxH) {
+    async function svgContainImage(href, x, y, boxW, boxH, options = {}) {
+      const clip = options.clipId ? `<defs><clipPath id="${escapeXml(options.clipId)}" clipPathUnits="userSpaceOnUse"><rect x="${options.clipX ?? x}" y="${options.clipY ?? y}" width="${options.clipW ?? boxW}" height="${options.clipH ?? boxH}" rx="${options.clipRx ?? 0}" ry="${options.clipRx ?? 0}"/></clipPath></defs>` : '';
+      const clipAttr = options.clipId ? ` clip-path="url(#${escapeXml(options.clipId)})"` : '';
       const dims = await getImageDimensions(href);
       if (!dims) {
-        return `<image href="${escapeXml(href)}" x="${x}" y="${y}" width="${boxW}" height="${boxH}"/>`;
+        return `${clip}<image href="${escapeXml(href)}" x="${x}" y="${y}" width="${boxW}" height="${boxH}"${clipAttr}/>`;
       }
       const scale = Math.min(boxW / dims.w, boxH / dims.h);
       const imageW = dims.w * scale;
       const imageH = dims.h * scale;
       const imageX = x + (boxW - imageW) / 2;
       const imageY = y + (boxH - imageH) / 2;
-      return `<image href="${escapeXml(href)}" x="${imageX}" y="${imageY}" width="${imageW}" height="${imageH}"/>`;
+      return `${clip}<image href="${escapeXml(href)}" x="${imageX}" y="${imageY}" width="${imageW}" height="${imageH}"${clipAttr}/>`;
     }
 
     async function canvasItemsToSvg(items) {
@@ -2752,7 +2754,14 @@
 
         if (item.type === 'image') {
           const href = await imageUrlToClipboardHref(item.url);
-          const imageSvg = await svgContainImage(href, x, y, w, item.h);
+          const imageSvg = await svgContainImage(href, x, y, w, item.h, {
+            clipId: svgSafeId(`clip-${item.id}`),
+            clipX: x,
+            clipY: y,
+            clipW: w,
+            clipH: h,
+            clipRx: 12,
+          });
           const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#faf9f5" stroke="#ded9cc"/>${imageSvg}${item.note ? wrapSvgText(item.note, x + 14, y + item.h + 28, w - 28, 14, 20) : ''}`;
           parts.push(namedSvgGroup(item, content));
           continue;
@@ -2762,7 +2771,14 @@
           const note = (canvas.session?.notes || [])[item.noteIndex];
           if (!note) continue;
           const href = await imageUrlToClipboardHref(note.screenshotUrl || note.screenshot);
-          const imageSvg = await svgContainImage(href, x, y, w, item.h);
+          const imageSvg = await svgContainImage(href, x, y, w, item.h, {
+            clipId: svgSafeId(`clip-${item.id}`),
+            clipX: x,
+            clipY: y,
+            clipW: w,
+            clipH: h,
+            clipRx: 12,
+          });
           const timestamp = formatDuration(note.timestamp);
           const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20) : '';
           const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
