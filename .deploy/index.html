@@ -2663,8 +2663,9 @@
       if (line) lines.push(line);
 
       // Keep copied notes as a single SVG text element. Figma imports separate
-      // tspans as separate text layers, so use preserved newlines instead.
-      const safeText = escapeXml(lines.join('\n'));
+      // tspans as separate text layers. Use explicit XML line-feed entities;
+      // literal newlines are normalized to spaces by Figma's SVG importer.
+      const safeText = lines.map(escapeXml).join('&#10;');
       return `<text x="${x}" y="${y}" fill="${color}" font-family="${family}" font-size="${fontSize}" font-weight="${weight}" xml:space="preserve" style="white-space: pre; line-height: ${lineHeight}px;">${safeText}</text>`;
     }
 
