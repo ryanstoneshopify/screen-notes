@@ -574,37 +574,110 @@
     }
 
     .note-input-area { padding: 0 20px 20px; flex-shrink: 0; }
-    .note-input-wrapper { position: relative; }
-
-    .note-input {
-      width: 100%;
-      min-height: 100px;
-      max-height: 200px;
+    .note-input-wrapper {
+      position: relative;
       background: var(--snow-white);
       border: 1px solid var(--border-soft);
       border-radius: 9.6px;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .note-input-wrapper:focus-within {
+      border-color: var(--pale-azure);
+      box-shadow: 0 0 0 3px rgba(204, 219, 232, 0.5);
+    }
+
+    .note-input {
+      display: block;
+      width: 100%;
+      min-height: 100px;
+      max-height: 200px;
+      background: transparent;
+      border: 0;
+      border-radius: 9.6px 9.6px 0 0;
       color: var(--ink-black);
-      padding: 12px 14px;
+      padding: 12px 14px 8px;
       font-size: 15px;
       line-height: 1.45;
       font-family: var(--font-sans);
       resize: vertical;
-      transition: border-color 160ms ease, box-shadow 160ms ease;
+      overflow-x: hidden;
     }
-    .note-input:focus {
-      outline: none;
-      border-color: var(--pale-azure);
-      box-shadow: 0 0 0 3px rgba(204, 219, 232, 0.5);
-    }
+    .note-input:focus { outline: none; }
     .note-input::placeholder { color: var(--stone); }
 
-    .note-input-actions {
+    .note-input-footer { padding: 0 14px 12px; }
+    .voice-input-row {
+      height: 30px;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: 12px;
-      margin-top: 12px;
+      margin-bottom: 8px;
     }
+    .save-note-inline { width: 100%; min-height: 38px; }
+
+    .voice-input-toggle {
+      position: relative;
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--ink-black);
+      cursor: pointer;
+      transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+    .voice-input-toggle:hover { background: rgba(31, 30, 29, 0.06); }
+    .voice-input-toggle:active { transform: scale(0.94); }
+    .voice-input-toggle:focus-visible {
+      outline: 2px solid var(--pale-azure);
+      outline-offset: 2px;
+    }
+    .voice-input-toggle.listening {
+      color: var(--terra-cotta);
+      background: rgba(64, 146, 229, 0.10);
+    }
+    .voice-input-toggle.listening .icon { animation: pulse 1.6s ease-in-out infinite; }
+
+    .voice-dictation-marker {
+      position: absolute;
+      z-index: 2;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--terra-cotta);
+      color: var(--snow-white);
+      box-shadow: 0 2px 8px rgba(64, 146, 229, 0.32);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-1px) scale(0.88);
+      transition: opacity 120ms ease, transform 120ms ease, left 140ms ease-out, top 140ms ease-out;
+    }
+    .voice-dictation-marker::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 3px);
+      width: 3px;
+      height: var(--voice-caret-height, 22px);
+      border-radius: 999px;
+      background: var(--terra-cotta);
+      transform: translateX(-50%);
+    }
+    .voice-dictation-marker.visible {
+      opacity: 1;
+      transform: translateY(-1px) scale(1);
+    }
+    .voice-dictation-marker.visible .icon { animation: pulse 1.6s ease-in-out infinite; }
+    .voice-dictation-marker .icon { width: 14px; height: 14px; }
 
     .screenshot-indicator {
       color: var(--graphite);
@@ -702,6 +775,46 @@
     .screenshot-preview-empty .icon { width: 22px; height: 22px; opacity: 0.7; }
     .screenshot-preview-empty-copy { display: flex; flex-direction: column; gap: 2px; }
     .screenshot-empty-action { padding: 7px 12px; font-size: 13px; }
+    .voice-listening-hint {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1;
+      white-space: pre;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(1px);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .voice-listening-hint.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .voice-listening-label { display: inline-flex; white-space: pre; }
+    .voice-hint-character {
+      display: inline-block;
+      opacity: 1;
+      filter: blur(0);
+    }
+    .voice-hint-character.entering {
+      animation: voiceHintCharacterIn 180ms ease-out both;
+    }
+    .voice-hint-character.exiting {
+      animation: voiceHintCharacterOut 140ms ease-in both;
+    }
+    @keyframes voiceHintCharacterIn {
+      from { opacity: 0; filter: blur(3px); transform: translateY(1px); }
+      to { opacity: 1; filter: blur(0); transform: translateY(0); }
+    }
+    @keyframes voiceHintCharacterOut {
+      from { opacity: 1; filter: blur(0); transform: translateY(0); }
+      to { opacity: 0; filter: blur(3px); transform: translateY(-1px); }
+    }
     .screenshot-preview.has-image .screenshot-preview-actions { display: flex; }
     .screenshot-preview .screenshot-preview-actions { display: none; }
     .screenshot-preview-actions {
@@ -1466,6 +1579,7 @@
         warning: '<path d="M12 4l9 16H3L12 4z"/><path d="M12 9v5"/><path d="M12 17h.01"/>',
         refresh: '<path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/>',
         close: '<path d="M6 6l12 12"/><path d="M18 6L6 18"/>',
+        mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3"/><path d="M9 21h6"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
@@ -1484,6 +1598,31 @@
     let currentNotes = [];
     let screenshotCaptured = null; // data URL of screenshot taken on focus
     let isRecording = false;
+    let speechRecognition = null;
+    let voiceCommandsShouldListen = false;
+    let voiceCommandsListening = false;
+    let voiceCommandsVisualActive = false;
+    let voiceCommandsStarting = false;
+    const VOICE_COMMANDS_PREFERENCE_KEY = 'screenNotesVoiceCommandsEnabled';
+    let voiceCommandsEnabledPreference = (() => {
+      try { return localStorage.getItem(VOICE_COMMANDS_PREFERENCE_KEY) === 'true'; }
+      catch (_) { return false; }
+    })();
+    let voiceRecognitionRestartTimer = null;
+    let voiceScreenshotInFlight = false;
+    let lastVoiceScreenshotAt = 0;
+    let voiceNoteDictationActive = false;
+    let voiceCaptureOnFirstDictationText = false;
+    let voiceInterimStart = null;
+    let voiceInterimText = '';
+    const voiceCommandResultIndexes = new Set();
+    const voiceSaveResultIndexes = new Set();
+    const voiceRemoveScreenshotResultIndexes = new Set();
+    let voiceSaveNoteInFlight = false;
+    let suppressNextNoteFocusCapture = false;
+    const VOICE_LISTENING_HINTS = ['screenshot', 'remove screenshot', 'delete screenshot', 'save note'];
+    let voiceHintAnimationRun = 0;
+    let voiceHintAnimationElement = null;
 
     // ── Init ──
     function blurActiveFieldIfClickedOutside(event) {
@@ -1852,11 +1991,15 @@
 
       render();
       startTimer();
+      if (voiceCommandsEnabledPreference) enableVoiceCommands(false);
     }
 
     async function stopRecording() {
       const stoppedSessionId = activeSessionId;
       isRecording = false;
+      // Stop this recording's listener without changing the user's choice for
+      // whether voice commands should start automatically next time.
+      stopVoiceCommands(false);
 
       if (mediaStream) {
         mediaStream.getTracks().forEach(t => t.stop());
@@ -1918,6 +2061,415 @@
         const el = document.getElementById('recTimer');
         if (el) el.textContent = formatDuration(Date.now() - recordingStartTime);
       }, 1000);
+    }
+
+    // ── Voice commands ──
+    function waitForVoiceHintAnimation(ms) {
+      return new Promise(resolve => window.setTimeout(resolve, ms));
+    }
+
+    async function animateVoiceListeningHint(labelElement, runId) {
+      let labelIndex = 0;
+      while (runId === voiceHintAnimationRun && voiceCommandsVisualActive && labelElement.isConnected) {
+        const label = VOICE_LISTENING_HINTS[labelIndex];
+        labelElement.replaceChildren();
+
+        for (const value of label) {
+          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) return;
+          const character = document.createElement('span');
+          character.className = 'voice-hint-character entering';
+          character.textContent = value;
+          labelElement.appendChild(character);
+          await waitForVoiceHintAnimation(90);
+        }
+
+        await waitForVoiceHintAnimation(3000);
+        while (labelElement.lastElementChild) {
+          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) return;
+          const character = labelElement.lastElementChild;
+          character.classList.remove('entering');
+          character.classList.add('exiting');
+          // Let the exit animation reach its blurred state before removing it.
+          await waitForVoiceHintAnimation(160);
+          character.remove();
+        }
+
+        await waitForVoiceHintAnimation(220);
+        labelIndex = (labelIndex + 1) % VOICE_LISTENING_HINTS.length;
+      }
+    }
+
+    function syncVoiceListeningHint() {
+      const hint = document.getElementById('voiceListeningHint');
+      const label = document.getElementById('voiceListeningLabel');
+      const visible = voiceCommandsVisualActive;
+      if (hint) hint.classList.toggle('visible', visible);
+
+      if (!visible || !label) {
+        voiceHintAnimationRun += 1;
+        voiceHintAnimationElement = null;
+        if (label) label.replaceChildren();
+        return;
+      }
+      if (voiceHintAnimationElement === label) return;
+
+      voiceHintAnimationElement = label;
+      const runId = ++voiceHintAnimationRun;
+      animateVoiceListeningHint(label, runId);
+    }
+
+    function updateVoiceCommandControl() {
+      const toggle = document.getElementById('voiceInputToggle');
+      if (toggle) {
+        toggle.classList.toggle('listening', voiceCommandsVisualActive);
+        toggle.setAttribute('aria-pressed', String(voiceCommandsVisualActive));
+        toggle.setAttribute('aria-label', voiceCommandsVisualActive ? 'Turn off voice commands' : 'Start voice dictation');
+        toggle.title = voiceCommandsVisualActive ? 'Turn off voice commands' : 'Start voice dictation';
+      }
+      syncVoiceListeningHint();
+      updateVoiceDictationMarker();
+    }
+
+    function toggleVoiceCommands() {
+      if (voiceCommandsVisualActive || voiceCommandsStarting) {
+        stopVoiceCommands();
+      } else {
+        voiceNoteDictationActive = true;
+        voiceCaptureOnFirstDictationText = true;
+        voiceInterimStart = null;
+        voiceInterimText = '';
+        if (!voiceCommandsShouldListen) enableVoiceCommands();
+        else startVoiceRecognition();
+        updateVoiceCommandControl();
+        const input = document.getElementById('noteInput');
+        if (input && document.activeElement !== input) {
+          suppressNextNoteFocusCapture = true;
+          input.focus();
+        }
+      }
+    }
+
+    function resetVoiceNoteDictation() {
+      voiceNoteDictationActive = false;
+      voiceCaptureOnFirstDictationText = false;
+      voiceInterimStart = null;
+      voiceInterimText = '';
+      updateVoiceCommandControl();
+    }
+
+    function formatVoiceDictationText(prefix, text) {
+      const next = String(text || '').trim();
+      if (!next) return '';
+      if (!prefix || /\s$/.test(prefix) || /^[,.;!?]/.test(next)) return next;
+      return ` ${next}`;
+    }
+
+    function updateVoiceDictationText(text, isFinal) {
+      const input = document.getElementById('noteInput');
+      if (!input) return;
+
+      let start = voiceInterimStart;
+      let previous = voiceInterimText;
+      if (start == null || input.value.slice(start, start + previous.length) !== previous) {
+        start = input.value.length;
+        previous = '';
+      }
+
+      const next = formatVoiceDictationText(input.value.slice(0, start), text);
+      if (!isFinal && previous && next.length < previous.length) return;
+      input.setRangeText(next, start, start + previous.length, 'end');
+      if (voiceCaptureOnFirstDictationText && next.trim()) {
+        voiceCaptureOnFirstDictationText = false;
+        beginNoteScreenshotCapture().then(updateSaveNoteButtonState);
+      }
+      if (isFinal) {
+        voiceInterimStart = null;
+        voiceInterimText = '';
+      } else {
+        voiceInterimStart = start;
+        voiceInterimText = next;
+      }
+
+      input.scrollLeft = 0;
+      updateSaveNoteButtonState();
+      requestAnimationFrame(updateVoiceDictationMarker);
+    }
+
+    function stripVoiceControlPhrases(text) {
+      return String(text || '')
+        .replace(/\bsave\s+note\b/ig, ' ')
+        .replace(/\b(?:remove|delete)\s+(?:the\s+)?screenshot\b/ig, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    async function saveNoteFromVoice() {
+      if (voiceSaveNoteInFlight) return;
+      voiceSaveNoteInFlight = true;
+      voiceInterimStart = null;
+      voiceInterimText = '';
+      updateVoiceCommandControl();
+      try {
+        await addNote();
+      } finally {
+        voiceSaveNoteInFlight = false;
+      }
+    }
+
+    function removeTrailingVoiceCommandPrefix() {
+      const input = document.getElementById('noteInput');
+      if (!input) return;
+      const next = input.value.replace(/\s*(?:remove|delete)(?:\s+the)?\s*$/i, '');
+      if (next === input.value) return;
+      input.value = next;
+      voiceInterimStart = null;
+      voiceInterimText = '';
+      input.scrollLeft = 0;
+      updateSaveNoteButtonState();
+      requestAnimationFrame(updateVoiceDictationMarker);
+    }
+
+    function handleVoiceRecognitionResult(event) {
+      if (!voiceCommandsShouldListen || voiceSaveNoteInFlight) return;
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const transcript = String(result[0]?.transcript || '').trim();
+        const previousResult = i > 0 ? event.results[i - 1] : null;
+        const previousTranscript = String(previousResult?.[0]?.transcript || '').trim();
+        const removeScreenshotAcrossResults = !!previousResult?.isFinal
+          && /\b(?:remove|delete)(?:\s+the)?$/i.test(previousTranscript)
+          && /^screenshot\b/i.test(transcript);
+        const removeScreenshotCommand = /\b(?:remove|delete)\s+(?:the\s+)?screenshot\b/i.test(transcript)
+          || removeScreenshotAcrossResults;
+        const command = removeScreenshotCommand ? null : /\bscreenshot\b/i.exec(transcript);
+        const saveCommand = /\bsave\s+note\b/i.test(transcript);
+        let noteText = '';
+
+        if (removeScreenshotCommand) {
+          if (!voiceRemoveScreenshotResultIndexes.has(i)) {
+            voiceRemoveScreenshotResultIndexes.add(i);
+            if (removeScreenshotAcrossResults) removeTrailingVoiceCommandPrefix();
+            removeScreenshot();
+          }
+          if (voiceNoteDictationActive) {
+            noteText = removeScreenshotAcrossResults
+              ? transcript.replace(/^screenshot\b/i, '')
+              : transcript;
+          }
+        } else if (command) {
+          // Interim recognition often reports "screenshot" before revising it
+          // to "remove screenshot". Only a final generic command may capture.
+          if (!result.isFinal && !voiceNoteDictationActive) continue;
+          if (result.isFinal && !voiceCommandResultIndexes.has(i)) {
+            voiceCommandResultIndexes.add(i);
+            voiceNoteDictationActive = true;
+            voiceCaptureOnFirstDictationText = false;
+            updateVoiceCommandControl();
+            takeVoiceScreenshot();
+          } else if (result.isFinal && !voiceNoteDictationActive) {
+            // The note may have been saved while this result was still interim.
+            // Ignore its late final event instead of starting the old note again.
+            continue;
+          }
+          noteText = transcript.slice(command.index + command[0].length);
+        } else if (voiceNoteDictationActive) {
+          noteText = transcript;
+        }
+
+        if (voiceNoteDictationActive) {
+          updateVoiceDictationText(stripVoiceControlPhrases(noteText), result.isFinal);
+        }
+
+        if (saveCommand && result.isFinal && !voiceSaveResultIndexes.has(i)) {
+          voiceSaveResultIndexes.add(i);
+          saveNoteFromVoice();
+        }
+      }
+    }
+
+    function updateVoiceDictationMarker() {
+      const input = document.getElementById('noteInput');
+      const marker = document.getElementById('voiceDictationMarker');
+      if (!input || !marker) return;
+
+      const visible = voiceCommandsVisualActive && voiceNoteDictationActive;
+      marker.classList.toggle('visible', visible);
+      if (!visible) return;
+
+      const style = getComputedStyle(input);
+      const mirror = document.createElement('div');
+      const copiedStyles = [
+        'fontFamily', 'fontSize', 'fontStyle', 'fontWeight', 'letterSpacing',
+        'lineHeight', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+        'textAlign', 'textIndent', 'textTransform', 'direction', 'tabSize',
+        'wordBreak', 'overflowWrap',
+      ];
+      copiedStyles.forEach(property => { mirror.style[property] = style[property]; });
+      mirror.style.position = 'absolute';
+      mirror.style.left = '-9999px';
+      mirror.style.top = '0';
+      mirror.style.visibility = 'hidden';
+      mirror.style.boxSizing = 'border-box';
+      // clientWidth excludes the textarea's scrollbar. Matching that usable
+      // width keeps long, wrapped text on the same lines in both elements.
+      mirror.style.width = `${input.clientWidth}px`;
+      mirror.style.whiteSpace = 'pre-wrap';
+      mirror.style.wordWrap = 'break-word';
+      mirror.style.overflow = 'hidden';
+      const caretPosition = input.selectionEnd ?? input.value.length;
+      const textBeforeCaret = input.value.slice(0, caretPosition);
+      mirror.textContent = textBeforeCaret;
+      if (textBeforeCaret.endsWith('\n')) mirror.appendChild(document.createTextNode('\u200b'));
+      const caret = document.createElement('span');
+      caret.textContent = '\u200b';
+      mirror.appendChild(caret);
+      document.body.appendChild(mirror);
+
+      const left = input.offsetLeft + input.clientLeft + caret.offsetLeft - input.scrollLeft;
+      const top = input.offsetTop + input.clientTop + caret.offsetTop - input.scrollTop;
+      mirror.remove();
+
+      const caretHeight = Number.parseFloat(style.lineHeight) || 22;
+      marker.style.setProperty('--voice-caret-height', `${caretHeight}px`);
+      marker.style.left = `${Math.max(input.offsetLeft + 4, Math.min(left - 12, input.offsetLeft + input.clientWidth - 30))}px`;
+      // The bubble sits 27px above the caret. Do not clamp this to zero:
+      // first-line dictation intentionally overlaps the textarea border so the
+      // blue caret begins at the same vertical position as the text itself.
+      marker.style.top = `${Math.min(top - 27, input.offsetTop + input.clientHeight - caretHeight - 27)}px`;
+    }
+
+    function startVoiceRecognition() {
+      if (!voiceCommandsShouldListen || !isRecording || voiceCommandsListening || voiceCommandsStarting) return;
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        voiceCommandsShouldListen = false;
+        voiceCommandsVisualActive = false;
+        setVoiceCommandsPreference(false);
+        resetVoiceNoteDictation();
+        updateVoiceCommandControl();
+        return;
+      }
+
+      if (!speechRecognition) {
+        speechRecognition = new SpeechRecognition();
+        speechRecognition.continuous = true;
+        speechRecognition.interimResults = true;
+        speechRecognition.maxAlternatives = 1;
+        speechRecognition.lang = navigator.language || 'en-US';
+
+        speechRecognition.onstart = () => {
+          voiceCommandsStarting = false;
+          if (!voiceCommandsShouldListen || !isRecording) {
+            voiceCommandsListening = false;
+            voiceCommandsVisualActive = false;
+            updateVoiceCommandControl();
+            try { speechRecognition.abort(); } catch (_) {}
+            return;
+          }
+          voiceCommandsListening = true;
+          voiceCommandsVisualActive = true;
+          voiceCommandResultIndexes.clear();
+          voiceSaveResultIndexes.clear();
+          voiceRemoveScreenshotResultIndexes.clear();
+          updateVoiceCommandControl();
+        };
+
+        speechRecognition.onresult = handleVoiceRecognitionResult;
+
+        speechRecognition.onerror = event => {
+          voiceCommandsStarting = false;
+          voiceCommandsListening = false;
+          if (['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(event.error)) {
+            voiceCommandsShouldListen = false;
+            voiceCommandsVisualActive = false;
+            if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(event.error)) {
+              setVoiceCommandsPreference(false);
+            }
+            voiceCommandResultIndexes.clear();
+            voiceSaveResultIndexes.clear();
+            voiceRemoveScreenshotResultIndexes.clear();
+            resetVoiceNoteDictation();
+          }
+          console.warn('[screen-notes] voice command error:', event.error);
+          updateVoiceCommandControl();
+        };
+
+        speechRecognition.onend = () => {
+          voiceCommandsStarting = false;
+          voiceCommandsListening = false;
+          clearTimeout(voiceRecognitionRestartTimer);
+          if (voiceCommandsShouldListen && isRecording) {
+            // SpeechRecognition regularly ends its own session. Keep the UI
+            // continuously active while the engine silently reconnects.
+            voiceCommandsVisualActive = true;
+            updateVoiceCommandControl();
+            voiceRecognitionRestartTimer = setTimeout(() => {
+              voiceRecognitionRestartTimer = null;
+              startVoiceRecognition();
+            }, 400);
+          } else {
+            voiceCommandsVisualActive = false;
+            updateVoiceCommandControl();
+          }
+        };
+      }
+
+      voiceCommandsStarting = true;
+      try {
+        // Starting speech recognition from this click requests microphone
+        // permission; only onstart changes the link to the listening hint.
+        speechRecognition.start();
+      } catch (error) {
+        voiceCommandsStarting = false;
+        if (error?.name !== 'InvalidStateError') {
+          voiceCommandsShouldListen = false;
+          voiceCommandsVisualActive = false;
+        }
+        console.warn('[screen-notes] could not start voice commands:', error);
+        updateVoiceCommandControl();
+      }
+    }
+
+    function setVoiceCommandsPreference(enabled) {
+      voiceCommandsEnabledPreference = enabled;
+      try { localStorage.setItem(VOICE_COMMANDS_PREFERENCE_KEY, String(enabled)); }
+      catch (_) {}
+    }
+
+    function enableVoiceCommands(persistPreference = true) {
+      if (persistPreference) setVoiceCommandsPreference(true);
+      voiceCommandsShouldListen = true;
+      startVoiceRecognition();
+    }
+
+    function stopVoiceCommands(persistPreference = true) {
+      if (persistPreference) setVoiceCommandsPreference(false);
+      voiceCommandsShouldListen = false;
+      voiceCommandsStarting = false;
+      voiceCommandsListening = false;
+      voiceCommandsVisualActive = false;
+      clearTimeout(voiceRecognitionRestartTimer);
+      voiceRecognitionRestartTimer = null;
+      voiceCommandResultIndexes.clear();
+      voiceSaveResultIndexes.clear();
+      voiceRemoveScreenshotResultIndexes.clear();
+      resetVoiceNoteDictation();
+      try { speechRecognition?.abort(); } catch (_) {}
+      updateVoiceCommandControl();
+    }
+
+    async function takeVoiceScreenshot() {
+      const now = Date.now();
+      if (!isRecording || voiceScreenshotInFlight || now - lastVoiceScreenshotAt < 1200) return;
+      lastVoiceScreenshotAt = now;
+      voiceScreenshotInFlight = true;
+      try {
+        await retakeScreenshot(false);
+      } finally {
+        voiceScreenshotInFlight = false;
+      }
     }
 
     // ── Screenshot ──
@@ -2048,7 +2600,7 @@
       button.disabled = !(hasText || hasScreenshot);
     }
 
-    async function retakeScreenshot() {
+    async function retakeScreenshot(focusNoteInput = true) {
       pendingScreenshot = null;
       screenshotRemoved = false;
       updateSaveNoteButtonState();
@@ -2061,7 +2613,7 @@
       await beginNoteScreenshotCapture();
       updateSaveNoteButtonState();
       const input = document.getElementById('noteInput');
-      input?.focus();
+      if (focusNoteInput) input?.focus();
     }
 
     function removeScreenshot() {
@@ -2082,6 +2634,10 @@
     }
 
     function onNoteFocus() {
+      if (suppressNextNoteFocusCapture) {
+        suppressNextNoteFocusCapture = false;
+        return;
+      }
       // Preserve existing behaviour: clicking into the box captures the moment.
       beginNoteScreenshotCapture();
     }
@@ -2092,6 +2648,7 @@
       const input = document.getElementById('noteInput');
       updateSaveNoteButtonState();
       if (input?.value.trim()) beginNoteScreenshotCapture().then(updateSaveNoteButtonState);
+      requestAnimationFrame(updateVoiceDictationMarker);
     }
 
     function animateScreenshotPreviewOut() {
@@ -2143,8 +2700,15 @@
       currentNotes.push(note);
       enteringNoteCreatedAt = note.createdAt;
       input.value = '';
+      input.scrollTop = 0;
+      input.scrollLeft = 0;
+      input.setSelectionRange(0, 0);
       pendingScreenshot = null;
       screenshotRemoved = false;
+      voiceInterimStart = null;
+      voiceInterimText = '';
+      voiceCaptureOnFirstDictationText = voiceCommandsShouldListen && voiceNoteDictationActive;
+      updateVoiceCommandControl();
 
       const indicator = document.getElementById('screenshotIndicator');
       if (indicator) indicator.classList.remove('visible');
@@ -2394,14 +2958,34 @@
                     placeholder="Or type to take screenshot automatically"
                     onfocus="onNoteFocus()"
                     oninput="onNoteInput()"
+                    wrap="soft"
+                    onscroll="this.scrollLeft=0;updateVoiceDictationMarker()"
                     onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();addNote()}"
                   ></textarea>
-                </div>
-                <div class="note-input-actions">
-                  <div class="screenshot-indicator" id="screenshotIndicator"></div>
-                  <button class="btn btn-primary" id="saveNoteBtn" onclick="addNote()" style="width:100%;" disabled>
-                    Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
-                  </button>
+                  <div class="voice-dictation-marker" id="voiceDictationMarker" aria-hidden="true">
+                    ${icon('mic', 'icon')}
+                  </div>
+                  <div class="note-input-footer">
+                    <div class="voice-input-row">
+                      <div
+                        class="voice-listening-hint ${voiceCommandsVisualActive ? 'visible' : ''}"
+                        id="voiceListeningHint"
+                        aria-hidden="true"
+                      >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
+                      <button
+                        type="button"
+                        class="voice-input-toggle ${voiceCommandsVisualActive ? 'listening' : ''}"
+                        id="voiceInputToggle"
+                        aria-label="${voiceCommandsVisualActive ? 'Turn off voice commands' : 'Start voice dictation'}"
+                        aria-pressed="${voiceCommandsVisualActive}"
+                        title="${voiceCommandsVisualActive ? 'Turn off voice commands' : 'Start voice dictation'}"
+                        onclick="toggleVoiceCommands()"
+                      >${icon('mic', 'icon')}</button>
+                    </div>
+                    <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" disabled>
+                      Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="notes-list" id="notesList"></div>
