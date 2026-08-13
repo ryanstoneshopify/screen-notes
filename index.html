@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
   <script src="/client/quick.js"></script>
+  <script>try{if(localStorage.getItem('sn-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}</script>
   <style>
     /* ════════════════════════════════════════════════════════════════
        Claude Theme — Academic Journal on Vellum
@@ -31,7 +32,7 @@
       --surface-hover: #f2f0ea;
       --surface-raised: var(--snow-white);
       --border: var(--parchment);
-      --border-soft: rgba(31, 30, 29, 0.15);
+      --border-soft: rgba(31, 30, 29, 0.10);
       --border-strong: rgba(31, 30, 29, 0.3);
       --text: var(--ink-black);
       --text-dim: var(--dusty-gray);
@@ -48,8 +49,41 @@
       --radius-sm: 9.6px;
       --radius-lg: 16px;
       --radius-hero: 24px;
+      --surface-sunken: #f4f2ec;
+      --surface-hover-strong: #ebe8df;
+      --bg-translucent: rgba(250, 249, 245, 0.92);
       --shadow-soft: 0 1px 0 rgba(20,20,19,0.04), 0 8px 24px rgba(20,20,19,0.045);
       --shadow-pop: 0 16px 40px rgba(20,20,19,0.10);
+    }
+
+    html.dark {
+      color-scheme: dark;
+      --vellum-white: #1b1a17;
+      --ink-black: #f0efe9;
+      --onyx: #dbd9d1;
+      --graphite: #c6c4bb;
+      --dusty-gray: #96948b;
+      --stone: #75736b;
+      --parchment: #3a3831;
+      --snow-white: #242320;
+      --pale-azure: #31445a;
+      --surface-hover: #26251f;
+      --surface-hover-strong: #302e27;
+      --surface-sunken: #141310;
+      --border-soft: rgba(240, 239, 233, 0.10);
+      --border-strong: rgba(240, 239, 233, 0.30);
+      --accent-soft: #33465c;
+      --bg-translucent: rgba(27, 26, 23, 0.92);
+      --shadow-soft: 0 1px 0 rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35);
+      --shadow-pop: 0 16px 40px rgba(0,0,0,0.5);
+    }
+    html.dark .kbd-hint { color: rgba(20,20,19,0.65); }
+    html.dark .selection-rect { border-color: rgba(240,239,233,0.55); }
+    html.dark .note-delete-link { color: #e0655a; }
+    html.dark .note-delete-link:hover { color: #f08a80; }
+    html.dark .session-tabs::before {
+      background: #403e36;
+      border-color: rgba(240,239,233,0.14);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -70,7 +104,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 24px;
-      background: rgba(250, 249, 245, 0.92);
+      background: var(--bg-translucent);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--parchment);
@@ -93,7 +127,7 @@
       transition: background 160ms ease;
     }
     .logo:hover {
-      background: #f2f0ea;
+      background: var(--surface-hover);
     }
 
     .logo-icon {
@@ -140,7 +174,7 @@
     /* ── Buttons ── */
     .btn {
       padding: 9px 20px;
-      border-radius: 9.6px;
+      border-radius: 99px;
       font-family: var(--font-sans);
       font-size: 14px;
       font-weight: 400;
@@ -159,14 +193,14 @@
       color: var(--snow-white);
       border-color: var(--ink-black);
     }
-    .btn-primary:hover { background: var(--onyx); transform: translateY(-1px); }
+    .btn-primary:hover { background: var(--onyx); }
 
     .btn-danger {
       background: transparent;
       color: var(--ink-black);
       border-color: var(--onyx);
     }
-    .btn-danger:hover { background: #eee9e1; }
+    .btn-danger:hover { background: var(--surface-hover-strong); }
 
     .btn-ghost {
       background: transparent;
@@ -178,6 +212,9 @@
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-icon { font-size: 14px; line-height: 1; }
     .kbd-hint { color: rgba(255,255,255,0.7); font-size: 12px; }
+
+    /* Keep every native button fully rounded, including icon-only controls. */
+    button { border-radius: 99px !important; }
 
     /* ── Layout ── */
     .app-layout {
@@ -241,7 +278,7 @@
       transition: background 160ms ease;
     }
     .sidebar-new-btn:hover {
-      background: #f2f0ea;
+      background: var(--surface-hover);
     }
 
     .session-tabs {
@@ -250,9 +287,9 @@
       gap: 0;
       margin: 8px 12px 16px;
       padding: 4px;
-      background: #f2f0ea;
+      background: var(--surface-hover);
       border: 1px solid var(--parchment);
-      border-radius: 12px;
+      border-radius: 99px;
       overflow: hidden;
     }
     .session-tabs::before {
@@ -264,7 +301,7 @@
       width: calc((100% - 12px) / 2);
       background: var(--snow-white);
       border: 1px solid rgba(31,30,29,0.12);
-      border-radius: 9.6px;
+      border-radius: 99px;
       box-shadow: 0 1px 2px rgba(20,20,19,.04);
       transition: left 180ms ease;
       z-index: 0;
@@ -277,7 +314,7 @@
       z-index: 1;
       flex: 1;
       padding: 8px 12px;
-      border-radius: 9.6px;
+      border-radius: 99px;
       border: none;
       background: transparent;
       color: var(--graphite);
@@ -312,7 +349,7 @@
       border: 1px solid transparent;
       transition: background 160ms ease, border-color 160ms ease;
     }
-    .session-item:hover { background: #f2f0ea; }
+    .session-item:hover { background: var(--surface-hover); }
     .session-item.active {
       background: var(--snow-white);
       border-color: var(--pale-azure);
@@ -351,11 +388,35 @@
 
     /* ── Main ── */
     .main-content {
+      position: relative;
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       background: var(--vellum-white);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid var(--parchment);
+      background: var(--snow-white);
+      color: var(--graphite);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 50;
+      box-shadow: var(--shadow-soft);
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    .theme-toggle:hover {
+      background: var(--surface-hover);
+      color: var(--ink-black);
     }
 
     .empty-state {
@@ -516,14 +577,14 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      background: #f4f2ec;
+      background: var(--surface-sunken);
       border-right: 1px solid var(--parchment);
     }
 
     video {
       max-width: 100%;
       max-height: 100%;
-      border-radius: 16px;
+      border-radius: 24px;
       background: #000;
       object-fit: contain;
       border: 1px solid rgba(31,30,29,0.18);
@@ -560,6 +621,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
     .notes-panel-header h3 {
       font-family: var(--font-serif);
@@ -578,7 +640,8 @@
       position: relative;
       background: var(--snow-white);
       border: 1px solid var(--border-soft);
-      border-radius: 9.6px;
+      border-radius: 24px;
+      overflow: hidden;
       transition: border-color 160ms ease, box-shadow 160ms ease;
     }
     .note-input-wrapper:focus-within {
@@ -593,47 +656,50 @@
       max-height: 200px;
       background: transparent;
       border: 0;
-      border-radius: 9.6px 9.6px 0 0;
+      border-radius: 0;
       color: var(--ink-black);
       padding: 12px 14px 8px;
       font-size: 15px;
       line-height: 1.45;
       font-family: var(--font-sans);
-      resize: vertical;
+      resize: none;
       overflow-x: hidden;
     }
     .note-input:focus { outline: none; }
     .note-input::placeholder { color: var(--stone); }
 
-    .note-input-footer { padding: 0 14px 12px; }
-    .voice-input-row {
-      height: 30px;
+    .note-input-footer { padding: 0 14px 14px; }
+    .note-input-button-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 8px;
+      gap: 8px;
     }
-    .save-note-inline { width: 100%; min-height: 38px; }
+    .save-note-inline {
+      flex: 1 1 auto;
+      width: auto;
+      height: 40px;
+      min-height: 40px;
+      border-radius: 99px;
+    }
 
     .voice-input-toggle {
       position: relative;
       flex: 0 0 auto;
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       appearance: none;
       border: 0;
       border-radius: 999px;
-      background: transparent;
-      color: var(--ink-black);
+      background: var(--surface-hover);
+      color: var(--graphite);
       cursor: pointer;
       transition: color 160ms ease, background 160ms ease, transform 160ms ease;
     }
-    .voice-input-toggle:hover { background: rgba(31, 30, 29, 0.06); }
-    .voice-input-toggle:active { transform: scale(0.94); }
+    .voice-input-toggle:hover { background: var(--surface-hover-strong); }
+    .voice-input-toggle:active { transform: translateY(0) scale(0.94); }
     .voice-input-toggle:focus-visible {
       outline: 2px solid var(--pale-azure);
       outline-offset: 2px;
@@ -712,15 +778,16 @@
 
     .screenshot-preview {
       position: relative;
-      margin-bottom: 10px;
-      border-radius: 9.6px;
+      margin: 0;
+      border-radius: 0;
       overflow: hidden;
-      background: transparent;
-      border: 1px dashed var(--border-soft);
+      background: var(--surface-sunken);
+      border: 0;
+      border-bottom: 1px solid var(--border-soft);
       display: block;
       height: 220px;
     }
-    .screenshot-preview.has-image { border-style: solid; }
+    .screenshot-preview.has-image { border-bottom-style: solid; }
     .screenshot-preview img {
       display: none;
       width: 100%;
@@ -777,9 +844,9 @@
     .screenshot-empty-action { padding: 7px 12px; font-size: 13px; }
     .voice-listening-hint {
       position: relative;
-      flex: 1 1 auto;
-      min-width: 0;
+      width: 100%;
       height: 30px;
+      max-height: 30px;
       display: flex;
       align-items: center;
       color: var(--stone);
@@ -787,6 +854,8 @@
       line-height: 1;
       white-space: pre;
       opacity: 0;
+      overflow: hidden;
+      margin-bottom: 8px;
       pointer-events: none;
       transform: translateY(1px);
       transition: opacity 160ms ease, transform 160ms ease;
@@ -825,11 +894,11 @@
       gap: 4px;
     }
     .screenshot-preview-btn {
-      background: rgba(255, 255, 255, 0.86);
+      background: var(--snow-white);
       border: 1px solid rgba(0, 0, 0, 0.08);
       cursor: pointer;
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 6px;
       color: var(--ink-black);
       display: inline-flex;
@@ -840,7 +909,7 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
       transition: background 120ms ease;
     }
-    .screenshot-preview-btn:hover { background: rgba(255, 255, 255, 0.98); }
+    .screenshot-preview-btn:hover { background: var(--snow-white); }
     .screenshot-preview-timestamp {
       position: absolute;
       left: 8px;
@@ -864,16 +933,20 @@
     .screenshot-preview.has-image.saving-out .screenshot-preview-actions,
     .screenshot-preview.has-image.saving-out .screenshot-preview-timestamp { display: none; }
 
-    .notes-list {
+    .notes-panel-scroll {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
+    }
+
+    .notes-list {
       padding: 0 20px 20px;
     }
 
     .note-card {
       background: var(--snow-white);
       border: 1px solid var(--parchment);
-      border-radius: 9.6px;
+      border-radius: 24px;
       overflow: hidden;
       margin-bottom: 12px;
     }
@@ -892,6 +965,7 @@
     }
     .note-card-screenshot-wrap {
       position: relative;
+      border-bottom: 1px solid var(--border-soft);
     }
     .note-card-screenshot {
       width: 100%;
@@ -899,7 +973,7 @@
       object-fit: cover;
       display: block;
       cursor: zoom-in;
-      background: #eee;
+      background: var(--surface-hover);
     }
     .note-card-screenshot-actions {
       position: absolute;
@@ -907,6 +981,18 @@
       right: 8px;
       display: flex;
       gap: 4px;
+      opacity: 0;
+      filter: blur(4px);
+      transform: translateY(1px);
+      pointer-events: none;
+      transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease;
+    }
+    .note-card:hover .note-card-screenshot-actions,
+    .note-card:focus-within .note-card-screenshot-actions {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+      pointer-events: auto;
     }
     .note-card-body { padding: 14px; }
     .note-card-text,
@@ -919,7 +1005,7 @@
     }
 
     .recording-note-edit {
-      width: 100%;
+      width: calc(100% + 12px);
       min-height: 24px;
       background: transparent;
       border: 1px solid transparent;
@@ -929,7 +1015,9 @@
       resize: none;
       overflow: hidden;
       font-family: var(--font-sans);
+      transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
     }
+    .recording-note-edit:hover:not(:focus) { background: var(--surface-hover); }
     .recording-note-edit:focus {
       outline: none;
       background: var(--snow-white);
@@ -954,6 +1042,18 @@
       font-size: 12px;
       font-family: var(--font-sans);
       text-decoration: none;
+      opacity: 0;
+      filter: blur(4px);
+      transform: translateY(1px);
+      pointer-events: none;
+      transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease, color 120ms ease;
+    }
+    .note-card:hover .note-delete-link,
+    .note-card:focus-within .note-delete-link {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+      pointer-events: auto;
     }
     .note-delete-link:hover { text-decoration: underline; color: #8f1d14; }
 
@@ -992,7 +1092,7 @@
       outline: none;
       width: 340px;
     }
-    .review-title-input:hover { background: #f2f0ea; }
+    .review-title-input:hover { background: var(--surface-hover); }
     .review-title-input:focus {
       background: var(--snow-white);
       border-color: var(--pale-azure);
@@ -1068,7 +1168,7 @@
       flex: 1;
       position: relative;
       overflow: hidden;
-      background-color: #f4f2ec;
+      background-color: var(--surface-sunken);
       background-image: none;
       background-size: auto;
       background-position: var(--grid-x) var(--grid-y);
@@ -1106,7 +1206,7 @@
       box-shadow: var(--shadow-soft);
     }
     .ci-screenshot .ci-screenshot-img-wrap {
-      background: #ebe8df;
+      background: var(--surface-hover-strong);
       flex-shrink: 0;
       overflow: hidden;
       display: flex;
@@ -1160,7 +1260,7 @@
       width: fit-content;
       font-size: 12px;
       color: var(--dusty-gray);
-      background: #f2f0ea;
+      background: var(--surface-hover);
       border: 1px solid var(--parchment);
       border-radius: 999px;
       padding: 2px 8px;
@@ -1296,7 +1396,7 @@
     .zoom-indicator,
     .canvas-help {
       position: absolute;
-      background: rgba(250,249,245,.94);
+      background: var(--bg-translucent);
       border: 1px solid var(--parchment);
       border-radius: 9.6px;
       color: var(--graphite);
@@ -1400,7 +1500,7 @@
     .canvas-drop-overlay {
       position: absolute;
       inset: 16px;
-      background: rgba(250,249,245,.86);
+      background: var(--bg-translucent);
       border: 1.5px dashed var(--onyx);
       border-radius: 24px;
       display: flex;
@@ -1580,6 +1680,8 @@
         refresh: '<path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/>',
         close: '<path d="M6 6l12 12"/><path d="M18 6L6 18"/>',
         mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3"/><path d="M9 21h6"/>',
+        sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/>',
+        moon: '<path d="M20 13.2A8 8 0 0 1 10.8 4 8 8 0 1 0 20 13.2z"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
@@ -2820,6 +2922,23 @@
     }
 
     // ── Rendering ──
+    // ── Theme ──
+    function isDarkMode() {
+      return document.documentElement.classList.contains('dark');
+    }
+    function toggleTheme() {
+      const dark = !isDarkMode();
+      document.documentElement.classList.toggle('dark', dark);
+      try { localStorage.setItem('sn-theme', dark ? 'dark' : 'light'); } catch (e) {}
+      const btn = document.getElementById('themeToggle');
+      if (btn) {
+        btn.innerHTML = icon(dark ? 'sun' : 'moon');
+        const label = dark ? 'Switch to light mode' : 'Switch to dark mode';
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+      }
+    }
+
     function render() {
       const appLayout = document.getElementById('appLayout');
       appLayout?.classList.toggle('recording-active', isRecording);
@@ -2886,6 +3005,11 @@
 
       // Empty state
       main.innerHTML = `
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"
+                title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
+                aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
+          ${icon(isDarkMode() ? 'sun' : 'moon')}
+        </button>
         <div class="empty-state" id="emptyState">
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>
@@ -2939,23 +3063,24 @@
                 <h3>Notes</h3>
                 <span style="font-size:12px;color:var(--text-dim);" id="noteCountLabel">${currentNotes.length} notes</span>
               </div>
+              <div class="notes-panel-scroll">
               <div class="note-input-area">
-                <div class="screenshot-preview" id="screenshotPreview">
-                  <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openPendingScreenshotLightbox()">
-                  <div class="screenshot-preview-empty">
-                    <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
-                  </div>
-                  <div class="screenshot-preview-actions">
-                    <button type="button" class="screenshot-preview-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
-                    <button type="button" class="screenshot-preview-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
-                  </div>
-                  <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
-                </div>
                 <div class="note-input-wrapper">
+                  <div class="screenshot-preview" id="screenshotPreview">
+                    <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openPendingScreenshotLightbox()">
+                    <div class="screenshot-preview-empty">
+                      <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
+                    </div>
+                    <div class="screenshot-preview-actions">
+                      <button type="button" class="screenshot-preview-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
+                      <button type="button" class="screenshot-preview-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
+                    </div>
+                    <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
+                  </div>
                   <textarea
                     id="noteInput"
                     class="note-input"
-                    placeholder="Or type to take screenshot automatically"
+                    placeholder="Add note"
                     onfocus="onNoteFocus()"
                     oninput="onNoteInput()"
                     wrap="soft"
@@ -2966,12 +3091,15 @@
                     ${icon('mic', 'icon')}
                   </div>
                   <div class="note-input-footer">
-                    <div class="voice-input-row">
-                      <div
-                        class="voice-listening-hint ${voiceCommandsVisualActive ? 'visible' : ''}"
-                        id="voiceListeningHint"
-                        aria-hidden="true"
-                      >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
+                    <div
+                      class="voice-listening-hint ${voiceCommandsVisualActive ? 'visible' : ''}"
+                      id="voiceListeningHint"
+                      aria-hidden="true"
+                    >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
+                    <div class="note-input-button-row">
+                      <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" disabled>
+                        Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
+                      </button>
                       <button
                         type="button"
                         class="voice-input-toggle ${voiceCommandsVisualActive ? 'listening' : ''}"
@@ -2982,13 +3110,11 @@
                         onclick="toggleVoiceCommands()"
                       >${icon('mic', 'icon')}</button>
                     </div>
-                    <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" disabled>
-                      Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
-                    </button>
                   </div>
                 </div>
               </div>
               <div class="notes-list" id="notesList"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -3044,7 +3170,7 @@
               <div class="note-card-meta">
                 <span>${formatDuration(note.timestamp)}</span>
                 <div class="note-card-actions">
-                  <button class="note-delete-link" onclick="deleteNote(${realIndex})" title="Delete note">Delete</button>
+                  <button class="note-delete-link" onclick="deleteNote(${realIndex})" title="Delete note">Delete note</button>
                 </div>
               </div>
             </div>
@@ -3384,7 +3510,7 @@
           const timestamp = formatDuration(note.timestamp);
           const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20) : '';
           const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
-          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#faf9f5" stroke="#ded9cc"/>${imageSvg}${noteText}<rect x="${x + 14}" y="${timeY}" width="${Math.max(64, timestamp.length * 8 + 22)}" height="24" rx="12" fill="#f2f0ea"/><text x="${x + 25}" y="${timeY + 16}" fill="#6f6a61" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
+          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#faf9f5" stroke="#ded9cc"/>${imageSvg}${noteText}<rect x="${x + 14}" y="${timeY}" width="${Math.max(64, timestamp.length * 8 + 22)}" height="24" rx="12" fill="var(--surface-hover)"/><text x="${x + 25}" y="${timeY + 16}" fill="#6f6a61" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
           parts.push(namedSvgGroup(item, content));
         }
       }
