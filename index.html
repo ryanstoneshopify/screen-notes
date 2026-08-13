@@ -1299,8 +1299,8 @@
     }
     .review-header-right {
       position: absolute;
-      top: 24px;
-      right: 24px;
+      top: 12px;
+      right: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1312,6 +1312,15 @@
       box-shadow: var(--shadow-pop);
     }
     .review-header-right .btn { border-radius: 999px; }
+    .review-theme-btn {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .review-theme-btn .icon { width: 16px; height: 16px; }
 
     .review-meta {
       font-size: 13px;
@@ -3636,16 +3645,6 @@
       const notes = session.notes || [];
       return `
         <div class="review-view">
-          <div class="review-header">
-            <div class="review-header-left">
-              <input class="review-title-input"
-                     value="${escapeHtml(session.title)}"
-                     onchange="renameSession('${session.id}', this.value)"
-                     onblur="renameSession('${session.id}', this.value)"
-                     onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-                     placeholder="Untitled session">
-            </div>
-          </div>
           <div class="canvas-viewport" id="canvasViewport">
             <div class="review-header-right">
               <div class="presence-avatars" id="presenceAvatars"></div>
@@ -3657,6 +3656,11 @@
                   Delete
                 </button>
               ` : ''}
+              <button class="btn btn-ghost review-theme-btn" id="themeToggle" onclick="toggleTheme()"
+                      title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
+                      aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
+                ${icon(isDarkMode() ? 'sun' : 'moon')}
+              </button>
             </div>
             <div class="canvas-world" id="canvasWorld"></div>
 
