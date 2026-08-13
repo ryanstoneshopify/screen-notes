@@ -519,6 +519,21 @@
       background: var(--vellum-white);
     }
 
+    /* ── Home grid backdrop ── */
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(var(--border-soft) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+      background-size: 32px 32px;
+      -webkit-mask-image: radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+      mask-image: radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+    }
+    .empty-state { position: relative; z-index: 1; }
+
     .theme-toggle {
       position: absolute;
       top: 16px;
@@ -1861,6 +1876,13 @@
         console.log('Could not get user info');
       }
       initSidebarResize();
+      document.addEventListener('mousemove', (e) => {
+        const g = document.getElementById('gridBg');
+        if (!g) return;
+        const r = g.getBoundingClientRect();
+        g.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        g.style.setProperty('--my', `${e.clientY - r.top}px`);
+      });
       await loadSessions();
 
       const sessionId = getSessionIdFromUrl();
@@ -3246,6 +3268,7 @@
 
       // Empty state
       main.innerHTML = `
+        <div class="grid-bg" id="gridBg"></div>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"
                 title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
                 aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
