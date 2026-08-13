@@ -233,7 +233,7 @@
       width: 300px;
       min-width: 240px;
       max-width: 400px;
-      background: var(--snow-white);
+      background: var(--vellum-white);
       border: 1px solid var(--parchment);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-pop);
@@ -372,10 +372,13 @@
       border: 1px solid transparent;
       transition: background 160ms ease, border-color 160ms ease;
     }
-    .session-item:hover { background: var(--surface-hover-strong); }
+    .session-item:hover {
+      background: var(--snow-white);
+      border-color: var(--border-soft);
+    }
     .session-item.active {
       background: var(--snow-white);
-      border-color: var(--pale-azure);
+      border-color: transparent;
     }
 
     .session-item-title {
