@@ -54,6 +54,7 @@
       --bg-translucent: rgba(250, 249, 245, 0.92);
       --shadow-soft: 0 1px 0 rgba(20,20,19,0.04), 0 8px 24px rgba(20,20,19,0.045);
       --shadow-pop: 0 16px 40px rgba(20,20,19,0.10);
+      --floating-bg: rgba(255, 255, 255, 0.95);
     }
 
     html.dark {
@@ -74,6 +75,7 @@
       --border-strong: rgba(240, 239, 233, 0.30);
       --accent-soft: #33465c;
       --bg-translucent: rgba(27, 26, 23, 0.92);
+      --floating-bg: rgba(36, 35, 32, 0.95);
       --shadow-soft: 0 1px 0 rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35);
       --shadow-pop: 0 16px 40px rgba(0,0,0,0.5);
     }
@@ -233,7 +235,9 @@
       width: 300px;
       min-width: 240px;
       max-width: 400px;
-      background: var(--vellum-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-pop);
@@ -443,7 +447,9 @@
       z-index: 300;
       min-width: 160px;
       padding: 6px;
-      background: var(--snow-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
       border-radius: 12px;
       box-shadow: var(--shadow-pop);
@@ -1304,7 +1310,9 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: var(--vellum-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
       border-radius: 999px;
       padding: 6px;
@@ -1601,7 +1609,9 @@
       left: 50%;
       bottom: 12px;
       transform: translateX(-50%);
-      background: var(--vellum-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
       border-radius: 999px;
       padding: 6px;
@@ -1678,7 +1688,9 @@
       height: 44px;
       border-radius: 999px;
       border: 1px solid var(--parchment);
-      background: var(--vellum-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       color: var(--graphite);
       font-size: 22px;
       line-height: 1;
@@ -3424,12 +3436,12 @@
           ${icon(isDarkMode() ? 'sun' : 'moon')}
         </button>`;
       const sessionActions = session ? `
-        <button class="btn btn-ghost review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Copy session link">
-          Share
+        <button class="btn btn-ghost review-theme-btn review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Share — copy session link" aria-label="Share">
+          ${icon('link')}
         </button>
         ${isMySession(session) ? `
-          <button class="btn btn-ghost review-delete-btn bar-action" onclick="deleteSession('${session.id}')" title="Delete session">
-            Delete
+          <button class="btn btn-ghost review-theme-btn review-delete-btn bar-action" onclick="deleteSession('${session.id}')" title="Delete session" aria-label="Delete">
+            ${icon('trash')}
           </button>
         ` : ''}` : '';
       return `
