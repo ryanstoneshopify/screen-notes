@@ -1337,7 +1337,7 @@
       border-color: transparent;
     }
     .review-header-right .btn:hover {
-      background: var(--snow-white);
+      background: color-mix(in srgb, var(--surface-hover) 25%, transparent);
       border-color: transparent;
       color: var(--ink-black);
     }
@@ -1654,7 +1654,7 @@
       font-family: var(--font-sans);
     }
     .tb-btn:hover {
-      background: var(--snow-white);
+      background: color-mix(in srgb, var(--surface-hover) 25%, transparent);
       color: var(--ink-black);
     }
     .tb-icon { color: var(--terra-cotta); }
@@ -1723,9 +1723,12 @@
       transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
     }
     .help-fab:hover {
-      background: var(--snow-white);
+      background: color-mix(in srgb, var(--surface-hover) 25%, transparent);
       border-color: var(--border-soft);
       color: var(--ink-black);
+    }
+    html.dark .help-fab:hover {
+      background: var(--surface-hover-strong);
     }
 
     .alignment-guide {
