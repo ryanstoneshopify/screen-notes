@@ -790,7 +790,7 @@
       flex: 1;
       min-width: 0;
       padding: 24px;
-      padding-right: calc(400px + 24px + 24px); /* clear floating notes panel */
+      padding-right: calc(var(--notes-w, 400px) + 24px + 24px); /* clear floating notes panel */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -848,8 +848,9 @@
       right: 12px;
       bottom: 12px;
       z-index: 150;
-      width: 400px;
-      min-width: 400px;
+      width: var(--notes-w, 400px);
+      min-width: 300px;
+      max-width: 800px;
       background: var(--floating-bg);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
@@ -862,7 +863,21 @@
     }
 
     body.recording-active .review-header-right {
-      right: calc(400px + 12px + 12px + 12px);
+      right: calc(var(--notes-w, 400px) + 12px + 12px + 12px);
+    }
+
+    .notes-panel-resize {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 5;
+    }
+    .notes-panel-resize:hover,
+    .notes-panel-resize.dragging {
+      background: var(--pale-azure);
     }
     .review-header-right .tb-btn {
       display: inline-flex;
@@ -1890,7 +1905,7 @@
       display: none;
     }
 
-    :root { --sidebar-w: 300px; }
+    :root { --sidebar-w: 300px; --notes-w: 400px; }
     .app-layout.session-active .review-header {
       padding-left: calc(var(--sidebar-w) + 12px + 24px);
     }
@@ -3253,6 +3268,32 @@
       }
     }
 
+    function startNotesPanelResize(e) {
+      e.preventDefault();
+      const handle = e.currentTarget;
+      handle.classList.add('dragging');
+      const root = document.documentElement;
+      const startX = e.clientX;
+      const startW = parseFloat(getComputedStyle(root).getPropertyValue('--notes-w')) || 400;
+      const onMove = (ev) => {
+        // Dragging left grows the panel
+        const w = Math.min(800, Math.max(300, startW + (startX - ev.clientX)));
+        root.style.setProperty('--notes-w', `${w}px`);
+      };
+      const onUp = () => {
+        handle.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        growAllNoteTextareas();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    function growAllNoteTextareas() {
+      document.querySelectorAll('.recording-note-edit').forEach(autoGrowTextarea);
+    }
+
     function autoGrowTextarea(el) {
       el.style.height = 'auto';
       el.style.height = `${el.scrollHeight}px`;
@@ -3671,6 +3712,8 @@
 
             </div>
             <div class="notes-panel">
+              <div class="notes-panel-resize" id="notesPanelResize"
+                   onmousedown="startNotesPanelResize(event)"></div>
               <div class="notes-panel-header">
                 <h3>Notes</h3>
                 <span style="font-size:12px;color:var(--text-dim);" id="noteCountLabel">${currentNotes.length} notes</span>
@@ -3789,6 +3832,9 @@
           </div>
         `;
       }).join('');
+
+      // Size textareas to their content immediately (long notes were cropped until focused)
+      growAllNoteTextareas();
 
       if (previousTops.size) {
         list.querySelectorAll('.note-card[data-note-key]:not(.note-card-entering)').forEach(card => {
