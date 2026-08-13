@@ -3651,13 +3651,16 @@
         a.x < b.x + b.w + gap && a.x + a.w + gap > b.x &&
         a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
       const placed = [];
+      // On small screens let notes hang off the left/right edges rather than clump mid-screen
+      const tight = W < 1400;
+      const minX = tight ? -cardW * 0.5 : sidebarRight;
       const pick = (cardH) => {
-        const maxX = Math.max(sidebarRight + 1, W - cardW - margin);
+        const maxX = tight ? W - cardW * 0.5 : Math.max(sidebarRight + 1, W - cardW - margin);
         const maxY = Math.max(margin + 1, H - cardH - margin);
         let best = null;
         for (let attempt = 0; attempt < 200; attempt++) {
           const p = {
-            x: Math.round(sidebarRight + Math.random() * (maxX - sidebarRight)),
+            x: Math.round(minX + Math.random() * (maxX - minX)),
             y: Math.round(margin + Math.random() * (maxY - margin)),
             w: cardW, h: cardH,
           };
