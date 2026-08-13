@@ -3792,15 +3792,15 @@
       ];
       const W = window.innerWidth, H = window.innerHeight;
       const cardW = 260, margin = 24, gap = 16, textBlock = 100;
-      const small = W < 1200;
+      const small = W < 1500;
       // Fixed arrangements (fractions of viewport)
       const layout = small ? {
         // Small screens: fewer notes, hugging the edges
         'notes/n-claude.jpg':   { fx: 0.01, fy: 0.05, rot: 2.5, noPush: true },
-        'notes/n-metrics.jpg':  { fx: 0.03, fy: 0.60, rot: -3.5, noPush: true },
-        'notes/n-pos-grid.jpg': { fx: 0.78, fy: 0.08, rot: -4, noPush: true },
-        'notes/n-music.jpg':    { fx: 0.75, fy: 0.68, rot: 3, noPush: true },
-        'notes/n-ryan.jpg':     { fx: 0.32, fy: 0.85, rot: 5, noPush: true },
+        'notes/n-metrics.jpg':  { fx: 0.05, fy: 0.59, rot: -3.5, noPush: true },
+        'notes/n-pos-grid.jpg': { fx: 0.45, fy: 0.04, rot: -4, noPush: true },
+        'notes/n-music.jpg':    { fx: 0.80, fy: 0.10, rot: 3, noPush: true },
+        'notes/n-ryan.jpg':     { fx: 0.71, fy: 0.61, rot: 5, noPush: true },
       } : {
         'notes/n-login.jpg':    { fx: 0.615, fy: 0.07, rot: -5 },
         'notes/n-music.jpg':    { fx: 0.68,  fy: 0.67, rot: 3 },
