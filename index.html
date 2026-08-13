@@ -2137,8 +2137,8 @@
       }
       const container = document.getElementById('remoteCursors');
       if (container) container.innerHTML = '';
-      const avatars = document.getElementById('presenceAvatars');
-      if (avatars) avatars.innerHTML = '';
+      // Keep your own avatar locked in place; just drop remote users
+      renderSelfAvatar();
     }
 
     function renderPresenceAvatars() {
@@ -3516,12 +3516,14 @@
     function renderSelfAvatar() {
       const container = document.getElementById('presenceAvatars');
       if (!container || !currentUser) return;
+      let html;
       if (currentUser.slackImageUrl) {
-        container.innerHTML = `<img class="presence-avatar" src="${currentUser.slackImageUrl}" title="${currentUser.fullName || currentUser.email}">`;
+        html = `<img class="presence-avatar" src="${currentUser.slackImageUrl}" title="${currentUser.fullName || currentUser.email}">`;
       } else {
         const initials = (currentUser.fullName || currentUser.email || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-        container.innerHTML = `<div class="presence-avatar-placeholder" title="${currentUser.fullName || currentUser.email}">${initials}</div>`;
+        html = `<div class="presence-avatar-placeholder" title="${currentUser.fullName || currentUser.email}">${initials}</div>`;
       }
+      if (container.innerHTML !== html) container.innerHTML = html;
     }
 
     function renderHomeHiddenNotes() {
