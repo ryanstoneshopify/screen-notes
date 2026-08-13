@@ -1650,17 +1650,28 @@
       pointer-events: none;
     }
 
-    /* Let selected resize handles render outside the card instead of being clipped. */
+    /* Let selected resize handles render outside the card instead of being clipped,
+       while inner corners stay rounded so the card never "un-crops". */
     .ci-screenshot.selected,
     .ci-image.selected {
       overflow: visible;
+    }
+    .ci-screenshot .ci-screenshot-img-wrap {
+      border-radius: 23px 23px 0 0;
+    }
+    .ci-screenshot .ci-note,
+    .ci-image .ci-note {
+      border-radius: 0 0 23px 23px;
+    }
+    .ci-image > img {
+      border-radius: 23px 23px 0 0;
     }
 
     .resize-handle {
       position: absolute;
       width: 14px;
       height: 14px;
-      background: var(--ink-black);
+      background: var(--terra-cotta);
       border: 2px solid var(--vellum-white);
       border-radius: 999px;
       bottom: -7px;
