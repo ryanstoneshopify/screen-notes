@@ -304,7 +304,10 @@
       transition: background 160ms ease;
     }
     .sidebar-new-btn:hover {
-      background: var(--surface-hover);
+      background: color-mix(in srgb, var(--surface-hover) 25%, transparent);
+    }
+    html.dark .sidebar-new-btn:hover {
+      background: var(--surface-hover-strong);
     }
 
     .session-tabs {
@@ -377,7 +380,10 @@
       transition: background 160ms ease, border-color 160ms ease;
     }
     .session-item:hover {
-      background: var(--snow-white);
+      background: color-mix(in srgb, var(--surface-hover) 25%, transparent);
+    }
+    html.dark .session-item:hover {
+      background: var(--surface-hover-strong);
     }
     .session-item.active {
       background: color-mix(in srgb, var(--surface-hover) 50%, transparent);
