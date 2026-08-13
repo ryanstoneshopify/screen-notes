@@ -380,11 +380,8 @@
       background: var(--snow-white);
     }
     .session-item.active {
-      background: rgba(0, 0, 0, 0.10);
+      background: color-mix(in srgb, var(--surface-hover) 20%, transparent);
       border-color: transparent;
-    }
-    html.dark .session-item.active {
-      background: rgba(255, 255, 255, 0.05);
     }
 
     .session-item-title {
