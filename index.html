@@ -790,12 +790,29 @@
       flex: 1;
       min-width: 0;
       padding: 24px;
+      padding-right: calc(300px + 24px + 24px); /* clear floating notes panel */
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       background: var(--surface-sunken);
-      border-right: 1px solid var(--parchment);
+    }
+
+    .rec-pill {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      box-shadow: var(--shadow-pop);
     }
 
     video {
@@ -826,11 +843,33 @@
     }
 
     .notes-panel {
-      width: 390px;
-      min-width: 390px;
-      background: var(--vellum-white);
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 150;
+      width: 300px;
+      min-width: 300px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-pop);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+    }
+
+    body.recording-active .review-header-right {
+      right: calc(300px + 12px + 12px + 12px);
+    }
+    .review-header-right .tb-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      white-space: nowrap;
     }
 
     .notes-panel-header {
@@ -3477,12 +3516,13 @@
     // Animates width + slide-in only when the action set actually changes.
     function updateTopBar(session) {
       const bar = ensureTopBar();
-      bar.style.display = isRecording ? 'none' : 'flex';
+      bar.style.display = 'flex';
       const actions = document.getElementById('topBarActions');
-      const mode = session ? (isMySession(session) ? 'session-own' : 'session-shared') : 'home';
+      const mode = isRecording ? 'recording'
+        : session ? (isMySession(session) ? 'session-own' : 'session-shared') : 'home';
 
       if (bar.dataset.mode === mode) {
-        if (session) {
+        if (session && !isRecording) {
           // Same mode (e.g. session → session): swap ids without animating
           actions.innerHTML = topBarActionsHTML(session);
           actions.querySelectorAll('.bar-action').forEach(el => el.classList.add('in'));
@@ -3495,7 +3535,9 @@
       const prevW = bar.getBoundingClientRect().width;
       bar.style.width = '';
       bar.style.transition = '';
-      actions.innerHTML = session ? topBarActionsHTML(session) : '';
+      actions.innerHTML = isRecording
+        ? `<button class="tb-btn bar-action" onclick="stopRecording()" title="Stop recording">${icon('stop', 'icon icon-filled')} Stop recording</button>`
+        : session ? topBarActionsHTML(session) : '';
       const target = bar.getBoundingClientRect().width;
       // Slide distance = width delta so icons travel at the exact pace the bar grows
       const delta = Math.max(target - prevW, 0);
@@ -3618,17 +3660,10 @@
     function renderRecordingView() {
       return `
         <div class="recording-view">
-          <div class="recording-header">
-            <div class="recording-status">
-              <div class="rec-dot"></div>
-              <span class="rec-timer" id="recTimer">00:00</span>
-              <span style="color:var(--text-dim);font-size:13px;">Recording</span>
-            </div>
-            <div>
-              <button class="btn btn-danger" style="padding-left:12px" onclick="stopRecording()">
-                ${icon('stop', 'icon icon-filled')} Stop recording
-              </button>
-            </div>
+          <div class="rec-pill">
+            <div class="rec-dot"></div>
+            <span class="rec-timer" id="recTimer">00:00</span>
+            <span class="rec-status-label">Recording</span>
           </div>
           <div class="recording-body">
             <div class="video-panel">
