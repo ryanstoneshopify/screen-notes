@@ -547,6 +547,16 @@
       user-select: none;
     }
     .home-hidden-note.dragging { cursor: grabbing; }
+    .home-hidden-note { overflow: visible; }
+    .home-hidden-note .note-card-screenshot-wrap {
+      border-radius: 23px 23px 0 0;
+      overflow: hidden;
+    }
+    .home-hidden-note .note-card-text {
+      cursor: text;
+      user-select: text;
+      outline: none;
+    }
     .home-note-resize {
       position: absolute;
       width: 14px;
@@ -1922,6 +1932,7 @@
       document.addEventListener('mousedown', (e) => {
         const card = e.target.closest('.home-hidden-note');
         if (!card) return;
+        if (e.target.closest('.note-card-text')) return; // allow text editing
         e.preventDefault();
         const sx = e.clientX, sy = e.clientY;
 
@@ -3355,7 +3366,7 @@
                style="${c.h}: ${hOff}px; ${c.v}: ${vOff}px; transform: rotate(${rot}deg);">
             <div class="note-card-screenshot-wrap"><div class="note-card-screenshot"></div></div>
             <div class="note-card-body">
-              <div class="note-card-text">${s.text}</div>
+              <div class="note-card-text" contenteditable="true" spellcheck="false">${s.text}</div>
               <div class="note-card-meta"><span>${s.time}</span></div>
             </div>
             <div class="home-note-resize"></div>
