@@ -506,12 +506,16 @@
       font-weight: 500;
       box-shadow: var(--shadow-pop);
       pointer-events: none;
-      transition: transform var(--ease-out-duration) var(--ease-out);
+      filter: blur(8px);
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  filter var(--ease-out-duration) var(--ease-out);
       white-space: nowrap;
     }
     .toast-center.visible {
       transform: translate(-50%, 0);
-      transition: transform var(--ease-out-spring-duration) var(--ease-out-spring);
+      filter: blur(0);
+      transition: transform var(--ease-out-spring-duration) var(--ease-out-spring),
+                  filter 400ms var(--ease-out);
     }
 
     /* ── Main ── */
