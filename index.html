@@ -1351,7 +1351,7 @@
     .review-header-right .bar-action {
       opacity: 0;
       filter: blur(8px);
-      transform: translateX(32px) scale(0.8);
+      transform: translateX(var(--slide, 32px)) scale(0.8);
       transition: opacity 400ms var(--ease-out),
                   filter 400ms var(--ease-out),
                   transform 400ms var(--ease-out);
@@ -3495,22 +3495,30 @@
       bar.style.transition = '';
       actions.innerHTML = session ? topBarActionsHTML(session) : '';
       const target = bar.getBoundingClientRect().width;
+      // Slide distance = width delta so icons travel at the exact pace the bar grows
+      const delta = Math.max(target - prevW, 0);
+      actions.querySelectorAll('.bar-action').forEach(el => {
+        el.style.setProperty('--slide', `${delta || 32}px`);
+      });
       if (prevW > 1 && Math.abs(prevW - target) > 1) {
         bar.style.overflow = 'hidden';
         bar.style.width = `${prevW}px`;
         void bar.offsetWidth;
         bar.style.transition = 'width 400ms var(--ease-out)';
         bar.style.width = `${target}px`;
+        // Start icon transition in the same frame as the width transition
+        actions.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
         clearTimeout(bar._widthTimer);
         bar._widthTimer = setTimeout(() => {
           bar.style.width = '';
           bar.style.transition = '';
           bar.style.overflow = '';
         }, 450);
+      } else {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          actions.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
+        }));
       }
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        actions.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
-      }));
     }
 
     function renderSelfAvatar() {
