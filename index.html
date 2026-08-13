@@ -4469,6 +4469,12 @@
       if (noteText) {
         const parentItem = noteText.closest('.canvas-item');
         if (parentItem) setSelectedItem(parentItem.dataset.id);
+        // Single click starts editing right away
+        if (noteText.contentEditable !== 'true') {
+          if (noteText.dataset.imageNoteId) startEditingImageNoteText(noteText);
+          else startEditingNoteText(noteText);
+          e.preventDefault();
+        }
         return;
       }
       if (e.target.closest('.ci-text[contenteditable="true"]')) {
