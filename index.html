@@ -534,7 +534,8 @@
       -webkit-mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
       mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
     }
-    .empty-state { position: relative; z-index: 1; }
+    .empty-state { position: relative; z-index: 1; pointer-events: none; }
+    .empty-state .btn { pointer-events: auto; }
 
     .home-hidden-note {
       position: absolute;
