@@ -3768,18 +3768,6 @@
       if (container.innerHTML !== html) container.innerHTML = html;
     }
 
-    // Re-lay-out home notes on window resize so the center stays clear
-    let homeNotesResizeTimer = null;
-    window.addEventListener('resize', () => {
-      const grid = document.getElementById('gridBg');
-      if (!grid) return;
-      clearTimeout(homeNotesResizeTimer);
-      homeNotesResizeTimer = setTimeout(() => {
-        const g = document.getElementById('gridBg');
-        if (g) g.innerHTML = renderHomeHiddenNotes();
-      }, 120);
-    });
-
     function renderHomeHiddenNotes() {
       // aspect = image height / width, used to estimate real card heights
       const samples = [
@@ -3793,8 +3781,16 @@
       ];
       const W = window.innerWidth, H = window.innerHeight;
       const cardW = 260, margin = 24, gap = 16, textBlock = 100;
-      // Fixed arrangement (fractions of viewport), matched to the approved layout
-      const layout = {
+      const small = W < 1200;
+      // Fixed arrangements (fractions of viewport)
+      const layout = small ? {
+        // Small screens: fewer notes, hugging the edges
+        'notes/n-claude.jpg':   { fx: 0.01, fy: 0.05, rot: 2.5, noPush: true },
+        'notes/n-metrics.jpg':  { fx: 0.03, fy: 0.60, rot: -3.5, noPush: true },
+        'notes/n-pos-grid.jpg': { fx: 0.78, fy: 0.08, rot: -4, noPush: true },
+        'notes/n-music.jpg':    { fx: 0.75, fy: 0.68, rot: 3, noPush: true },
+        'notes/n-ryan.jpg':     { fx: 0.32, fy: 0.85, rot: 5, noPush: true },
+      } : {
         'notes/n-login.jpg':    { fx: 0.615, fy: 0.07, rot: -5 },
         'notes/n-music.jpg':    { fx: 0.68,  fy: 0.67, rot: 3 },
         'notes/n-pos-grid.jpg': { fx: 0.20,  fy: 0.55, rot: -4 },
@@ -3808,9 +3804,9 @@
       const rectsOverlap = (a, b) =>
         a.x < b.x + b.w + gap && a.x + a.w + gap > b.x &&
         a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
-      return samples.map((s) => {
+      return samples.filter(s => layout[s.img]).map((s) => {
         const cardH = Math.round(cardW * s.aspect) + textBlock;
-        const l = layout[s.img] || { fx: 0.5, fy: 0.5, rot: 0 };
+        const l = layout[s.img];
         let x = Math.round(l.fx * W) + (l.dx || 0);
         let y = Math.round(Math.min(l.fy * H, H - cardH - margin));
         // Push out of the center zone (notes may hang off screen edges instead)
