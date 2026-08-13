@@ -3845,23 +3845,21 @@
       // Size textareas to their content immediately (long notes were cropped until focused)
       growAllNoteTextareas();
 
-      // Animate the newly saved note in (spring + blur + scale, same as toast)
-      const enteringCard = list.querySelector('.note-card-entering');
-      if (enteringCard) {
-        enteringCard.animate(
-          [
-            { transform: 'translateY(-48px) scale(0.8)' },
-            { transform: 'translateY(0) scale(1)' },
-          ],
-          { duration: 1000, easing: 'cubic-bezier(0.1, 1.25, 0, 1)', fill: 'both' }
+      // Animate the newly saved note in (ease-out slide + blur + scale)
+      if (enteringNoteCreatedAt) {
+        const enteringCard = list.querySelector(
+          `.note-card[data-note-key="${CSS.escape(enteringNoteCreatedAt)}"]`
         );
-        enteringCard.animate(
-          [
-            { opacity: 0, filter: 'blur(8px)' },
-            { opacity: 1, filter: 'blur(0px)' },
-          ],
-          { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0, 1)', fill: 'both' }
-        );
+        enteringNoteCreatedAt = null; // consume immediately, no timers
+        if (enteringCard) {
+          enteringCard.animate(
+            [
+              { transform: 'translateY(-48px) scale(0.8)', opacity: 0, filter: 'blur(8px)' },
+              { transform: 'translateY(0) scale(1)', opacity: 1, filter: 'blur(0px)' },
+            ],
+            { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0, 1)', fill: 'both' }
+          );
+        }
       }
 
       if (previousTops.size) {
@@ -3884,9 +3882,6 @@
         });
       }
 
-      if (enteringNoteCreatedAt) {
-        window.setTimeout(() => { enteringNoteCreatedAt = null; }, 470);
-      }
     }
 
     function renderReviewView(session) {
