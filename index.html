@@ -3359,10 +3359,11 @@
       ];
       const W = window.innerWidth, H = window.innerHeight;
       const cardW = 260, margin = 24;
+      const sidebarRight = (document.querySelector('.sidebar')?.getBoundingClientRect().right || 312) + margin;
       // Random non-overlapping-ish placement: sample positions, reject ones too close to existing.
       const placed = [];
       const randomPos = () => ({
-        x: Math.round(margin + Math.random() * Math.max(1, W - cardW - margin * 2)),
+        x: Math.round(sidebarRight + Math.random() * Math.max(1, W - cardW - margin - sidebarRight)),
         y: Math.round(margin + Math.random() * Math.max(1, H - 320 - margin * 2)),
       });
       const pick = () => {
