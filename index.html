@@ -536,6 +536,20 @@
     }
     .empty-state { position: relative; z-index: 1; }
 
+    .home-hidden-note {
+      position: absolute;
+      width: 260px;
+      margin: 0;
+      box-shadow: var(--shadow-soft);
+      pointer-events: none;
+    }
+    .home-hidden-note .note-card-screenshot {
+      aspect-ratio: 16/9;
+      background:
+        linear-gradient(135deg, var(--surface-hover) 0%, var(--surface-hover-strong) 100%);
+      cursor: default;
+    }
+
     .theme-toggle {
       position: absolute;
       top: 16px;
@@ -3260,6 +3274,37 @@
       });
     }
 
+    function renderHomeHiddenNotes() {
+      const samples = [
+        { text: 'The onboarding flow skips step 2 when you resize — capture this for the team.', time: '0:42' },
+        { text: 'Love the new empty state. Ship it.', time: '1:15' },
+        { text: 'Bug: toast overlaps the composer on small screens.', time: '3:08' },
+        { text: 'Voice note — remember to annotate the pricing modal.', time: '5:27' },
+      ];
+      const corners = [
+        { h: 'left', v: 'top' },
+        { h: 'right', v: 'top' },
+        { h: 'left', v: 'bottom' },
+        { h: 'right', v: 'bottom' },
+      ];
+      return corners.map((c, i) => {
+        const hOff = Math.round(30 + Math.random() * 90);
+        const vOff = Math.round(30 + Math.random() * 90);
+        const rot = (Math.random() * 16 - 8).toFixed(1);
+        const s = samples[i];
+        return `
+          <div class="note-card home-hidden-note"
+               style="${c.h}: ${hOff}px; ${c.v}: ${vOff}px; transform: rotate(${rot}deg);">
+            <div class="note-card-screenshot-wrap"><div class="note-card-screenshot"></div></div>
+            <div class="note-card-body">
+              <div class="note-card-text">${s.text}</div>
+              <div class="note-card-meta"><span>${s.time}</span></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     function renderMain() {
       const main = document.getElementById('mainContent');
 
@@ -3279,7 +3324,7 @@
 
       // Empty state
       main.innerHTML = `
-        <div class="grid-bg" id="gridBg"></div>
+        <div class="grid-bg" id="gridBg">${renderHomeHiddenNotes()}</div>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"
                 title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
                 aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
