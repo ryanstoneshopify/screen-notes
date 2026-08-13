@@ -481,7 +481,8 @@
       text-align: left;
       cursor: pointer;
     }
-    .session-menu-item:hover { background: var(--surface-hover-strong); }
+    .session-menu-item:hover { background: color-mix(in srgb, var(--surface-hover) 25%, transparent); }
+    html.dark .session-menu-item:hover { background: var(--surface-hover-strong); }
     .session-menu-item .icon { width: 15px; height: 15px; color: var(--dusty-gray); flex: 0 0 auto; }
     .session-menu-item.danger { color: #d0453c; }
     .session-menu-item.danger .icon { color: #d0453c; }
