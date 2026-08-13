@@ -585,6 +585,17 @@
       cursor: text;
       user-select: text;
       outline: none;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 4px 6px;
+      margin: -4px -6px 0;
+      transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .home-hidden-note .note-card-text:hover:not(:focus) { background: var(--surface-hover); }
+    .home-hidden-note .note-card-text:focus {
+      background: var(--snow-white);
+      border-color: var(--pale-azure);
+      box-shadow: 0 0 0 3px rgba(204,219,232,.5);
     }
     .note-card.home-hidden-note:hover {
       outline: 2px solid var(--terra-cotta);
