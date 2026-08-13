@@ -1233,20 +1233,7 @@
       overflow: hidden;
       margin-bottom: 12px;
     }
-    .note-card.note-card-entering {
-      animation-name: noteCardSpring, noteCardFade;
-      animation-duration: 1000ms, 400ms;
-      animation-timing-function: cubic-bezier(0.1, 1.25, 0, 1), cubic-bezier(0.2, 0.8, 0, 1);
-      animation-fill-mode: both, both;
-    }
-    @keyframes noteCardSpring {
-      from { transform: translateY(-48px) scale(0.8); }
-      to { transform: translateY(0) scale(1); }
-    }
-    @keyframes noteCardFade {
-      from { opacity: 0; filter: blur(8px); }
-      to { opacity: 1; filter: blur(0); }
-    }
+    /* Enter animation for new notes is driven by the Web Animations API in renderNotesList */
     .note-card-screenshot-wrap {
       position: relative;
       border-bottom: 1px solid var(--border-soft);
@@ -3857,6 +3844,25 @@
 
       // Size textareas to their content immediately (long notes were cropped until focused)
       growAllNoteTextareas();
+
+      // Animate the newly saved note in (spring + blur + scale, same as toast)
+      const enteringCard = list.querySelector('.note-card-entering');
+      if (enteringCard) {
+        enteringCard.animate(
+          [
+            { transform: 'translateY(-48px) scale(0.8)' },
+            { transform: 'translateY(0) scale(1)' },
+          ],
+          { duration: 1000, easing: 'cubic-bezier(0.1, 1.25, 0, 1)', fill: 'both' }
+        );
+        enteringCard.animate(
+          [
+            { opacity: 0, filter: 'blur(8px)' },
+            { opacity: 1, filter: 'blur(0px)' },
+          ],
+          { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0, 1)', fill: 'both' }
+        );
+      }
 
       if (previousTops.size) {
         list.querySelectorAll('.note-card[data-note-key]:not(.note-card-entering)').forEach(card => {
