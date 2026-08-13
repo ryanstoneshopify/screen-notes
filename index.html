@@ -495,7 +495,7 @@
       position: fixed;
       bottom: 24px;
       left: 50%;
-      transform: translate(-50%, calc(100% + 24px));
+      transform: translate(-50%, calc(100% + 24px)) scale(0.8);
       z-index: 500;
       padding: 12px 24px;
       border-radius: 999px;
@@ -507,15 +507,19 @@
       box-shadow: var(--shadow-pop);
       pointer-events: none;
       filter: blur(8px);
+      opacity: 0;
       transition: transform var(--ease-out-duration) var(--ease-out),
-                  filter var(--ease-out-duration) var(--ease-out);
+                  filter var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out);
       white-space: nowrap;
     }
     .toast-center.visible {
-      transform: translate(-50%, 0);
+      transform: translate(-50%, 0) scale(1);
       filter: blur(0);
+      opacity: 1;
       transition: transform var(--ease-out-spring-duration) var(--ease-out-spring),
-                  filter 400ms var(--ease-out);
+                  filter 400ms var(--ease-out),
+                  opacity 400ms var(--ease-out);
     }
 
     /* ── Main ── */
