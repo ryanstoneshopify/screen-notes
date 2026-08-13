@@ -1309,7 +1309,7 @@
       right: 12px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: var(--floating-bg);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
@@ -1328,7 +1328,12 @@
       border-color: transparent;
       color: var(--ink-black);
     }
+    html.dark .review-header-right .btn:hover,
+    html.dark .tb-btn:hover {
+      background: var(--surface-hover-strong);
+    }
     .presence-avatars:empty { display: none; }
+    .review-header-right > * { flex: 0 0 auto; }
     .review-header-right .bar-action {
       opacity: 0;
       filter: blur(8px);
