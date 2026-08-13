@@ -3191,6 +3191,11 @@
         document.body.appendChild(toast);
       }
       toast.textContent = message;
+      const main = document.getElementById('mainContent');
+      if (main) {
+        const r = main.getBoundingClientRect();
+        toast.style.left = `${r.left + r.width / 2}px`;
+      }
       clearTimeout(toastTimer);
       toast.classList.remove('visible');
       void toast.offsetHeight; // restart animation from below
