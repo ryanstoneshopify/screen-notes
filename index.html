@@ -1735,16 +1735,16 @@
     }
 
     :root { --sidebar-w: 300px; }
-    .app-layout.session-active .main-content {
-      padding-left: calc(var(--sidebar-w) + 24px);
+    .app-layout.session-active .review-header {
+      padding-left: calc(var(--sidebar-w) + 12px + 24px);
     }
 
     @media (max-width: 900px) {
       .app-layout.session-active .sidebar {
         display: none;
       }
-      .app-layout.session-active .main-content {
-        padding-left: 0;
+      .app-layout.session-active .review-header {
+        padding-left: 24px;
       }
       .notes-panel { width: 320px; min-width: 320px; }
       .empty-state h2 { font-size: 40px; }
