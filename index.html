@@ -2254,6 +2254,10 @@
         document.execCommand('copy');
         input.remove();
       }
+    }
+
+    async function shareSessionFromHeader(id) {
+      await shareSession(id);
       const button = document.getElementById('shareSessionBtn');
       if (button) {
         button.textContent = 'Link copied';
@@ -3283,7 +3287,7 @@
     async function menuShareSession(id) {
       closeSessionMenu();
       await shareSession(id);
-      showToast('Share link copied');
+      showToast('Link copied');
     }
 
     function menuRenameSession(id) {
@@ -3634,7 +3638,7 @@
             </div>
             <div class="review-header-right">
               <div class="presence-avatars" id="presenceAvatars"></div>
-              <button class="btn btn-ghost review-share-btn" id="shareSessionBtn" onclick="shareSession('${session.id}')" title="Copy session link">
+              <button class="btn btn-ghost review-share-btn" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Copy session link">
                 Share
               </button>
               ${isMySession(session) ? `
