@@ -225,13 +225,33 @@
 
     /* ── Sidebar ── */
     .sidebar {
+      position: relative;
+      flex: 0 0 auto;
       width: 300px;
-      min-width: 300px;
-      background: var(--vellum-white);
-      border-right: 1px solid var(--parchment);
+      min-width: 240px;
+      max-width: 400px;
+      margin: 12px;
+      background: var(--snow-white);
+      border: 1px solid var(--parchment);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+
+    .sidebar-resize {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 5;
+    }
+    .sidebar-resize:hover,
+    .sidebar-resize.dragging {
+      background: var(--pale-azure);
     }
 
     .sidebar-header {
@@ -342,6 +362,7 @@
     }
 
     .session-item {
+      position: relative;
       padding: 14px 12px;
       border-radius: 9.6px;
       cursor: pointer;
@@ -385,6 +406,101 @@
     }
     .session-item:hover .session-actions { opacity: 1; }
     .session-actions .btn { padding: 5px 10px; font-size: 12px; }
+
+    .session-menu-btn {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--dusty-gray);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 140ms ease, background 140ms ease, color 140ms ease;
+    }
+    .session-item:hover .session-menu-btn,
+    .session-menu-btn.open { opacity: 1; }
+    .session-menu-btn:hover, .session-menu-btn.open {
+      background: var(--surface-hover-strong);
+      color: var(--ink-black);
+    }
+    .session-menu-btn .icon { width: 16px; height: 16px; }
+
+    .session-menu-popover {
+      position: fixed;
+      z-index: 300;
+      min-width: 160px;
+      padding: 6px;
+      background: var(--snow-white);
+      border: 1px solid var(--parchment);
+      border-radius: 12px;
+      box-shadow: var(--shadow-pop);
+    }
+    .session-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-black);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .session-menu-item:hover { background: var(--surface-hover); }
+    .session-menu-item .icon { width: 15px; height: 15px; color: var(--dusty-gray); flex: 0 0 auto; }
+    .session-menu-item.danger { color: var(--red); }
+    .session-menu-item.danger .icon { color: var(--red); }
+
+    .session-title-input {
+      width: 100%;
+      padding: 2px 6px;
+      margin: -3px 0 3px -7px;
+      border: 1px solid var(--pale-azure);
+      border-radius: 6px;
+      background: var(--snow-white);
+      color: var(--ink-black);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+    }
+
+    /* ── Center toast ── */
+    .toast-center {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      z-index: 500;
+      padding: 12px 24px;
+      border-radius: 999px;
+      background: var(--ink-black);
+      color: var(--vellum-white);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: var(--shadow-pop);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      white-space: nowrap;
+    }
+    .toast-center.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
 
     /* ── Main ── */
     .main-content {
@@ -1617,6 +1733,7 @@
         <button class="session-tab" id="sessionsTabOthers" onclick="setSessionListTab('others')">Others</button>
       </div>
       <div class="session-list" id="sessionList"></div>
+      <div class="sidebar-resize" id="sidebarResize"></div>
     </div>
 
     <!-- Main content -->
@@ -1665,6 +1782,9 @@
         mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3"/><path d="M9 21h6"/>',
         sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/>',
         moon: '<path d="M20 13.2A8 8 0 0 1 10.8 4 8 8 0 1 0 20 13.2z"/>',
+        more: '<circle cx="12" cy="5.5" r="1.2" class="icon-filled"/><circle cx="12" cy="12" r="1.2" class="icon-filled"/><circle cx="12" cy="18.5" r="1.2" class="icon-filled"/>',
+        link: '<path d="M10 14a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/>',
+        pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
@@ -1733,6 +1853,7 @@
       } catch(e) {
         console.log('Could not get user info');
       }
+      initSidebarResize();
       await loadSessions();
 
       const sessionId = getSessionIdFromUrl();
@@ -2009,7 +2130,7 @@
     }
 
     async function deleteSession(id) {
-      if (!confirm('Delete this session and all its notes?')) return;
+      if (!confirm('Delete this session and all its notes?')) return false;
       try {
         await sessionsDb.delete(id);
         if (activeSessionId === id) {
@@ -2018,8 +2139,10 @@
         }
         await loadSessions();
         render();
+        return true;
       } catch(e) {
         console.error('Failed to delete:', e);
+        return false;
       }
     }
 
@@ -2948,8 +3071,16 @@
 
       const renderSessionItem = (s) => `
         <div class="session-item ${s.id === activeSessionId ? 'active' : ''}"
+             data-session-id="${s.id}"
              onclick="viewSession('${s.id}')">
-          <div class="session-item-title">${escapeHtml(s.title)}</div>
+          ${renamingSessionId === s.id
+            ? `<input class="session-title-input" value="${escapeHtml(s.title)}"
+                      onclick="event.stopPropagation()"
+                      onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){renamingSessionId=null;renderSidebar();}"
+                      onblur="commitRenameSession('${s.id}', this.value)">`
+            : `<div class="session-item-title">${escapeHtml(s.title)}</div>`}
+          <button class="session-menu-btn" title="More actions"
+                  onclick="event.stopPropagation(); openSessionMenu(event, '${s.id}')">${icon('more')}</button>
           <div class="session-item-meta">
             ${sessionListTab === 'others' ? `
               <span>${escapeHtml(ownerLabel(s))}</span>
@@ -2967,6 +3098,119 @@
         return;
       }
       list.innerHTML = visibleSessions.map(renderSessionItem).join('');
+
+      if (renamingSessionId) {
+        const input = list.querySelector('.session-title-input');
+        if (input) { input.focus(); input.select(); }
+      }
+    }
+
+    // ── Session item menu ──
+    let renamingSessionId = null;
+    let openMenuEl = null;
+
+    function closeSessionMenu() {
+      if (openMenuEl) { openMenuEl.remove(); openMenuEl = null; }
+      document.querySelectorAll('.session-menu-btn.open').forEach(b => b.classList.remove('open'));
+      document.removeEventListener('mousedown', onSessionMenuOutside, true);
+    }
+
+    function onSessionMenuOutside(e) {
+      if (openMenuEl && !openMenuEl.contains(e.target)) closeSessionMenu();
+    }
+
+    function openSessionMenu(event, id) {
+      if (openMenuEl) { closeSessionMenu(); return; }
+      const btn = event.currentTarget;
+      btn.classList.add('open');
+      const menu = document.createElement('div');
+      menu.className = 'session-menu-popover';
+      menu.innerHTML = `
+        <button class="session-menu-item" onclick="menuShareSession('${id}')">${icon('link')} Share</button>
+        <button class="session-menu-item" onclick="menuRenameSession('${id}')">${icon('pencil')} Rename</button>
+        <button class="session-menu-item danger" onclick="menuDeleteSession('${id}')">${icon('trash')} Delete</button>
+      `;
+      document.body.appendChild(menu);
+      const r = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let left = r.right - mw;
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = r.top - mh - 6;
+      if (left < 8) left = 8;
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      openMenuEl = menu;
+      document.addEventListener('mousedown', onSessionMenuOutside, true);
+    }
+
+    async function menuShareSession(id) {
+      closeSessionMenu();
+      await shareSession(id);
+      showToast('Share link copied');
+    }
+
+    function menuRenameSession(id) {
+      closeSessionMenu();
+      renamingSessionId = id;
+      renderSidebar();
+    }
+
+    async function menuDeleteSession(id) {
+      closeSessionMenu();
+      const deleted = await deleteSession(id);
+      if (deleted) showToast('Session deleted');
+    }
+
+    async function commitRenameSession(id, value) {
+      if (renamingSessionId !== id) return;
+      renamingSessionId = null;
+      const session = allSessions.find(s => s.id === id);
+      const newTitle = value.trim() || 'Untitled Session';
+      const changed = session && session.title !== newTitle;
+      await renameSession(id, newTitle);
+      renderSidebar();
+      if (activeSessionId === id) renderMain();
+      if (changed) showToast('Session renamed');
+    }
+
+    // ── Center toast ──
+    let toastTimer = null;
+    function showToast(message) {
+      let toast = document.getElementById('centerToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'centerToast';
+        toast.className = 'toast-center';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      clearTimeout(toastTimer);
+      requestAnimationFrame(() => toast.classList.add('visible'));
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 1800);
+    }
+
+    // ── Sidebar resize ──
+    function initSidebarResize() {
+      const handle = document.getElementById('sidebarResize');
+      const sidebar = document.querySelector('.sidebar');
+      if (!handle || !sidebar) return;
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        handle.classList.add('dragging');
+        const startX = e.clientX;
+        const startW = sidebar.getBoundingClientRect().width;
+        const onMove = (ev) => {
+          const w = Math.min(400, Math.max(240, startW + (ev.clientX - startX)));
+          sidebar.style.width = `${w}px`;
+        };
+        const onUp = () => {
+          handle.classList.remove('dragging');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
     }
 
     function renderMain() {
