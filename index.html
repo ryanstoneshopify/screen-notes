@@ -3631,6 +3631,18 @@
       if (container.innerHTML !== html) container.innerHTML = html;
     }
 
+    // Re-lay-out home notes on window resize so the center stays clear
+    let homeNotesResizeTimer = null;
+    window.addEventListener('resize', () => {
+      const grid = document.getElementById('gridBg');
+      if (!grid) return;
+      clearTimeout(homeNotesResizeTimer);
+      homeNotesResizeTimer = setTimeout(() => {
+        const g = document.getElementById('gridBg');
+        if (g) g.innerHTML = renderHomeHiddenNotes();
+      }, 120);
+    });
+
     function renderHomeHiddenNotes() {
       // aspect = image height / width, used to estimate real card heights
       const samples = [
@@ -3644,37 +3656,36 @@
       ];
       const W = window.innerWidth, H = window.innerHeight;
       const cardW = 260, margin = 24, gap = 16, textBlock = 100;
-      const sidebarRight = (document.querySelector('.sidebar')?.getBoundingClientRect().right || 312) + margin;
-      // Center hero exclusion zone
-      const centerBox = { x: W / 2 - 340, y: H / 2 - 300, w: 680, h: 600 };
+      // Fixed arrangement (fractions of viewport), matched to the approved layout
+      const layout = {
+        'notes/n-login.jpg':    { fx: 0.615, fy: 0.07, rot: -5 },
+        'notes/n-music.jpg':    { fx: 0.68,  fy: 0.67, rot: 3 },
+        'notes/n-pos-grid.jpg': { fx: 0.20,  fy: 0.55, rot: -4 },
+        'notes/n-claude.jpg':   { fx: 0.40,  fy: 0.04, rot: 2.5 },
+        'notes/n-airbnb.jpg':   { fx: 0.84,  fy: 0.33, rot: 4.5 },
+        'notes/n-metrics.jpg':  { fx: 0.17,  fy: 0.17, rot: -3.5 },
+        'notes/n-ryan.jpg':     { fx: 0.345, fy: 0.70, rot: 5 },
+      };
+      // Keep the hero area clear of notes
+      const centerBox = { x: W / 2 - 350, w: 700, y: H * 0.34, h: H * 0.45 };
       const rectsOverlap = (a, b) =>
         a.x < b.x + b.w + gap && a.x + a.w + gap > b.x &&
         a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
-      const placed = [];
-      // On small screens let notes hang off the left/right edges rather than clump mid-screen
-      const tight = W < 1400;
-      const minX = tight ? -cardW * 0.5 : sidebarRight;
-      const pick = (cardH) => {
-        const maxX = tight ? W - cardW * 0.5 : Math.max(sidebarRight + 1, W - cardW - margin);
-        const maxY = Math.max(margin + 1, H - cardH - margin);
-        let best = null;
-        for (let attempt = 0; attempt < 200; attempt++) {
-          const p = {
-            x: Math.round(minX + Math.random() * (maxX - minX)),
-            y: Math.round(margin + Math.random() * (maxY - margin)),
-            w: cardW, h: cardH,
-          };
-          const bad = rectsOverlap(p, centerBox) || placed.some(q => rectsOverlap(p, q));
-          if (!bad) { placed.push(p); return p; }
-          if (!best) best = p;
-        }
-        placed.push(best);
-        return best;
-      };
       return samples.map((s) => {
         const cardH = Math.round(cardW * s.aspect) + textBlock;
-        const p = pick(cardH);
-        const rot = (Math.random() * 16 - 8).toFixed(1);
+        const l = layout[s.img] || { fx: 0.5, fy: 0.5, rot: 0 };
+        let x = Math.round(l.fx * W);
+        let y = Math.round(Math.min(l.fy * H, H - cardH - margin));
+        // Push out of the center zone (notes may hang off screen edges instead)
+        const rect = { x, y, w: cardW, h: cardH };
+        if (rectsOverlap(rect, centerBox)) {
+          const centerX = W / 2;
+          x = (x + cardW / 2) < centerX
+            ? Math.round(centerBox.x - cardW - gap)
+            : Math.round(centerBox.x + centerBox.w + gap);
+        }
+        const p = { x, y };
+        const rot = l.rot;
         return `
           <div class="note-card home-hidden-note"
                style="left: ${p.x}px; top: ${p.y}px; transform: rotate(${rot}deg);">
