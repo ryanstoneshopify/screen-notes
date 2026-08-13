@@ -323,7 +323,11 @@
       overflow: hidden;
     }
     .sidebar.open { display: flex; }
-    .sidebar-new-btn { display: none; }
+    .sidebar-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
 
     .sidebar-resize {
       position: absolute;
@@ -2044,11 +2048,18 @@
           </svg>
           <span>Screen Notes</span>
         </button>
-        <button class="sidebar-new-btn" id="newSessionBtn" title="New session">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 5v14"/><path d="M5 12h14"/>
-          </svg>
-        </button>
+        <div class="sidebar-header-actions">
+          <button class="sidebar-new-btn" id="drawerCloseBtn" title="Close sessions" onclick="closeNavDrawer(true)">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/>
+            </svg>
+          </button>
+          <button class="sidebar-new-btn" id="newSessionBtn" title="New session">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5v14"/><path d="M5 12h14"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="session-tabs" id="sessionTabs" data-active="yours">
         <button class="session-tab active" id="sessionsTabYours" onclick="setSessionListTab('yours')">Yours</button>
@@ -2176,6 +2187,10 @@
         console.log('Could not get user info');
       }
       initSidebarResize();
+      // Drawer open by default on larger screens
+      if (window.innerWidth >= 900) {
+        document.getElementById('sidebarDrawer')?.classList.add('open');
+      }
       document.addEventListener('mousedown', (e) => {
         const card = e.target.closest('.home-hidden-note');
         if (!card) return;
@@ -3467,7 +3482,9 @@
       }
     }
 
-    function closeNavDrawer() {
+    // force = explicit user action (close button). Automatic closes only apply below 900px.
+    function closeNavDrawer(force = false) {
+      if (!force && window.innerWidth >= 900) return;
       const drawer = document.getElementById('sidebarDrawer');
       if (drawer?.classList.contains('open')) {
         drawer.classList.remove('open');
@@ -3519,19 +3536,13 @@
         </div>
       `;
 
-      const newSessionRow = `
-        <div class="session-item new-session-row" onclick="closeNavDrawer(); startRecording()">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-          New session
-        </div>`;
-
       const list = document.getElementById('sessionList');
       const visibleSessions = sessionListTab === 'others' ? sharedSessions : sessions;
       if (sessionListTab === 'others' && visibleSessions.length === 0) {
-        list.innerHTML = newSessionRow + '<div class="session-empty-state">No sessions shared with you</div>';
+        list.innerHTML = '<div class="session-empty-state">No sessions shared with you</div>';
         return;
       }
-      list.innerHTML = newSessionRow + visibleSessions.map(renderSessionItem).join('');
+      list.innerHTML = visibleSessions.map(renderSessionItem).join('');
 
       if (renamingSessionId) {
         const input = list.querySelector('.session-title-input');
