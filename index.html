@@ -496,7 +496,7 @@
       position: fixed;
       bottom: 24px;
       left: 50%;
-      transform: translate(-50%, calc(100% + 24px + 16px));
+      transform: translate(-50%, calc(100% + 24px));
       z-index: 500;
       padding: 12px 24px;
       border-radius: 999px;
@@ -3300,7 +3300,11 @@
       const changed = session && session.title !== newTitle;
       await renameSession(id, newTitle);
       renderSidebar();
-      if (activeSessionId === id) renderMain();
+      if (activeSessionId === id) {
+        renderMain();
+        const s2 = allSessions.find(s => s.id === id);
+        if (s2) requestAnimationFrame(() => initCanvas(s2));
+      }
       if (changed) showToast('Session renamed');
     }
 
@@ -3315,10 +3319,21 @@
         document.body.appendChild(toast);
       }
       toast.textContent = message;
-      const main = document.getElementById('mainContent');
-      if (main) {
-        const r = main.getBoundingClientRect();
+      const toolbar = document.querySelector('.canvas-toolbar');
+      if (toolbar) {
+        // Emerge from behind the canvas toolbar, resting 24px above it
+        const r = toolbar.getBoundingClientRect();
         toast.style.left = `${r.left + r.width / 2}px`;
+        toast.style.bottom = `${window.innerHeight - r.top + 24}px`;
+        toast.style.zIndex = '15'; // below .canvas-toolbar (20)
+      } else {
+        const main = document.getElementById('mainContent');
+        if (main) {
+          const r = main.getBoundingClientRect();
+          toast.style.left = `${r.left + r.width / 2}px`;
+        }
+        toast.style.bottom = '24px';
+        toast.style.zIndex = '500';
       }
       clearTimeout(toastTimer);
       toast.classList.remove('visible');
