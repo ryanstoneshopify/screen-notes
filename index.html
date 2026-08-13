@@ -3350,26 +3350,38 @@
 
     function renderHomeHiddenNotes() {
       const samples = [
-        { text: 'The onboarding flow skips step 2 when you resize — capture this for the team.', time: '0:42' },
-        { text: 'Love the new empty state. Ship it.', time: '1:15' },
-        { text: 'Bug: toast overlaps the composer on small screens.', time: '3:08' },
-        { text: 'Voice note — remember to annotate the pricing modal.', time: '5:27' },
+        { text: 'The onboarding flow skips step 2 when you resize — capture this for the team.', time: '0:42', image: true },
+        { text: 'Love the new empty state. Ship it.', time: '1:15', image: true },
+        { text: 'Bug: toast overlaps the composer on small screens.', time: '3:08', image: true },
+        { text: 'Voice note — remember to annotate the pricing modal.', time: '5:27', image: true },
+        { text: 'Quick thought — the empty state could double as a playground.', time: '2:34', image: false },
+        { text: 'Follow up with the team about session sharing permissions.', time: '4:51', image: false },
       ];
-      const corners = [
-        { h: 'left', v: 'top' },
-        { h: 'right', v: 'top' },
-        { h: 'left', v: 'bottom' },
-        { h: 'right', v: 'bottom' },
-      ];
-      return corners.map((c, i) => {
-        const hOff = Math.round(330 + Math.random() * 90);
-        const vOff = Math.round(180 + Math.random() * 90);
+      const W = window.innerWidth, H = window.innerHeight;
+      const cardW = 260, margin = 24;
+      // Random non-overlapping-ish placement: sample positions, reject ones too close to existing.
+      const placed = [];
+      const randomPos = () => ({
+        x: Math.round(margin + Math.random() * Math.max(1, W - cardW - margin * 2)),
+        y: Math.round(margin + Math.random() * Math.max(1, H - 320 - margin * 2)),
+      });
+      const pick = () => {
+        for (let attempt = 0; attempt < 30; attempt++) {
+          const p = randomPos();
+          const cx = W / 2, cy = H / 2;
+          const nearCenter = Math.abs(p.x + cardW / 2 - cx) < 320 && Math.abs(p.y + 140 - cy) < 260;
+          const overlaps = placed.some(q => Math.abs(q.x - p.x) < cardW + 20 && Math.abs(q.y - p.y) < 280);
+          if (!nearCenter && !overlaps) { placed.push(p); return p; }
+        }
+        const p = randomPos(); placed.push(p); return p;
+      };
+      return samples.map((s) => {
+        const p = pick();
         const rot = (Math.random() * 16 - 8).toFixed(1);
-        const s = samples[i];
         return `
-          <div class="note-card home-hidden-note"
-               style="${c.h}: ${hOff}px; ${c.v}: ${vOff}px; transform: rotate(${rot}deg);">
-            <div class="note-card-screenshot-wrap"><div class="note-card-screenshot"></div></div>
+          <div class="note-card home-hidden-note${s.image ? '' : ' note-card-text-only'}"
+               style="left: ${p.x}px; top: ${p.y}px; transform: rotate(${rot}deg);">
+            ${s.image ? '<div class="note-card-screenshot-wrap"><div class="note-card-screenshot"></div></div>' : ''}
             <div class="note-card-body">
               <div class="note-card-text" contenteditable="true" spellcheck="false">${s.text}</div>
               <div class="note-card-meta"><span>${s.time}</span></div>
