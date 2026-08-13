@@ -1307,7 +1307,7 @@
       box-shadow: 0 0 0 3px rgba(204,219,232,.5);
     }
     .review-header-right {
-      position: absolute;
+      position: fixed;
       top: 12px;
       right: 12px;
       display: flex;
@@ -1336,7 +1336,8 @@
       background: var(--surface-hover-strong);
     }
     .presence-avatars:empty { display: none; }
-    .review-header-right > * { flex: 0 0 auto; }
+    .review-header-right > *, .top-bar-actions > * { flex: 0 0 auto; }
+    .top-bar-actions { display: contents; }
     .review-header-right .bar-action {
       opacity: 0;
       filter: blur(8px);
@@ -2135,7 +2136,7 @@
       if (!container || !presenceRoom) return;
 
       let html = '';
-      // Include current user
+      // Include current user (guard below avoids re-creating identical DOM)
       if (currentUser) {
         if (currentUser.slackImageUrl) {
           html += `<img class="presence-avatar" src="${currentUser.slackImageUrl}" title="${currentUser.fullName || currentUser.email}">`;
@@ -2157,7 +2158,7 @@
         }
       });
 
-      container.innerHTML = html;
+      if (container.innerHTML !== html) container.innerHTML = html;
     }
 
     function broadcastCursorPosition(e) {
@@ -3428,22 +3429,8 @@
       });
     }
 
-    function animateBarActionsIn() {
-      renderSelfAvatar();
-      animateTopBarWidth();
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        document.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
-      }));
-    }
-
-    function renderTopBar(session) {
-      const themeBtn = `
-        <button class="btn btn-ghost review-theme-btn" id="themeToggle" onclick="toggleTheme()"
-                title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
-                aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
-          ${icon(isDarkMode() ? 'sun' : 'moon')}
-        </button>`;
-      const sessionActions = session ? `
+    function topBarActionsHTML(session) {
+      return `
         <button class="btn btn-ghost review-theme-btn review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Share — copy session link" aria-label="Share">
           ${icon('link')}
         </button>
@@ -3451,13 +3438,69 @@
           <button class="btn btn-ghost review-theme-btn review-delete-btn bar-action" onclick="deleteSession('${session.id}')" title="Delete session" aria-label="Delete">
             ${icon('trash')}
           </button>
-        ` : ''}` : '';
-      return `
-        <div class="review-header-right" id="topBar">
+        ` : ''}`;
+    }
+
+    function ensureTopBar() {
+      let bar = document.getElementById('topBar');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'topBar';
+        bar.className = 'review-header-right';
+        bar.innerHTML = `
           <div class="presence-avatars" id="presenceAvatars"></div>
-          ${themeBtn}
-          ${sessionActions}
-        </div>`;
+          <button class="btn btn-ghost review-theme-btn" id="themeToggle" onclick="toggleTheme()"
+                  title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
+                  aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
+            ${icon(isDarkMode() ? 'sun' : 'moon')}
+          </button>
+          <span class="top-bar-actions" id="topBarActions"></span>`;
+        document.body.appendChild(bar);
+        renderSelfAvatar();
+      }
+      return bar;
+    }
+
+    // Persistent top bar: avatar + theme never re-created, so no flicker.
+    // Animates width + slide-in only when the action set actually changes.
+    function updateTopBar(session) {
+      const bar = ensureTopBar();
+      bar.style.display = isRecording ? 'none' : 'flex';
+      const actions = document.getElementById('topBarActions');
+      const mode = session ? (isMySession(session) ? 'session-own' : 'session-shared') : 'home';
+
+      if (bar.dataset.mode === mode) {
+        if (session) {
+          // Same mode (e.g. session → session): swap ids without animating
+          actions.innerHTML = topBarActionsHTML(session);
+          actions.querySelectorAll('.bar-action').forEach(el => el.classList.add('in'));
+        }
+        return;
+      }
+      bar.dataset.mode = mode;
+      if (!session) renderSelfAvatar(); // drop remote presence avatars when leaving a session
+
+      const prevW = bar.getBoundingClientRect().width;
+      bar.style.width = '';
+      bar.style.transition = '';
+      actions.innerHTML = session ? topBarActionsHTML(session) : '';
+      const target = bar.getBoundingClientRect().width;
+      if (prevW > 1 && Math.abs(prevW - target) > 1) {
+        bar.style.overflow = 'hidden';
+        bar.style.width = `${prevW}px`;
+        void bar.offsetWidth;
+        bar.style.transition = 'width 400ms var(--ease-out)';
+        bar.style.width = `${target}px`;
+        clearTimeout(bar._widthTimer);
+        bar._widthTimer = setTimeout(() => {
+          bar.style.width = '';
+          bar.style.transition = '';
+          bar.style.overflow = '';
+        }, 450);
+      }
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        actions.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
+      }));
     }
 
     function renderSelfAvatar() {
@@ -3469,29 +3512,6 @@
         const initials = (currentUser.fullName || currentUser.email || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
         container.innerHTML = `<div class="presence-avatar-placeholder" title="${currentUser.fullName || currentUser.email}">${initials}</div>`;
       }
-    }
-
-    let lastTopBarWidth = null;
-    function animateTopBarWidth() {
-      const bar = document.getElementById('topBar');
-      if (!bar) return;
-      bar.style.width = '';
-      bar.style.transition = '';
-      const target = bar.getBoundingClientRect().width;
-      if (lastTopBarWidth !== null && Math.abs(lastTopBarWidth - target) > 1) {
-        bar.style.overflow = 'hidden';
-        bar.style.width = `${lastTopBarWidth}px`;
-        void bar.offsetWidth;
-        bar.style.transition = 'width 400ms var(--ease-out)';
-        bar.style.width = `${target}px`;
-        clearTimeout(bar._widthTimer);
-        bar._widthTimer = setTimeout(() => {
-          bar.style.width = '';
-          bar.style.transition = '';
-          bar.style.overflow = '';
-        }, 450);
-      }
-      lastTopBarWidth = target;
     }
 
     function renderHomeHiddenNotes() {
@@ -3544,6 +3564,7 @@
 
       if (isRecording) {
         main.innerHTML = renderRecordingView();
+        updateTopBar(null);
         setupRecordingVideo();
         return;
       }
@@ -3552,7 +3573,7 @@
         const session = allSessions.find(s => s.id === activeSessionId);
         if (session) {
           main.innerHTML = renderReviewView(session);
-          animateBarActionsIn();
+          updateTopBar(session);
           return;
         }
       }
@@ -3560,7 +3581,6 @@
       // Empty state
       main.innerHTML = `
         <div class="grid-bg" id="gridBg">${renderHomeHiddenNotes()}</div>
-        ${renderTopBar(null)}
         <div class="empty-state" id="emptyState">
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>
@@ -3570,8 +3590,7 @@
           </button>
         </div>
       `;
-      renderSelfAvatar();
-      animateTopBarWidth();
+      updateTopBar(null);
     }
 
     function renderRecordingView() {
@@ -3744,7 +3763,6 @@
       return `
         <div class="review-view">
           <div class="canvas-viewport" id="canvasViewport">
-            ${renderTopBar(session)}
             <div class="canvas-world" id="canvasWorld"></div>
 
             <div class="canvas-help" id="canvasHelp">
