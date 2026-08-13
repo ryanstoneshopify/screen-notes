@@ -1320,6 +1320,7 @@
       border-color: transparent;
       color: var(--ink-black);
     }
+    .presence-avatars:empty { display: none; }
     .review-header-right .bar-action {
       opacity: 0;
       filter: blur(8px);
@@ -3408,6 +3409,8 @@
     }
 
     function animateBarActionsIn() {
+      renderSelfAvatar();
+      animateTopBarWidth();
       requestAnimationFrame(() => requestAnimationFrame(() => {
         document.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
       }));
@@ -3421,7 +3424,6 @@
           ${icon(isDarkMode() ? 'sun' : 'moon')}
         </button>`;
       const sessionActions = session ? `
-        <div class="presence-avatars bar-action" id="presenceAvatars"></div>
         <button class="btn btn-ghost review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Copy session link">
           Share
         </button>
@@ -3431,10 +3433,45 @@
           </button>
         ` : ''}` : '';
       return `
-        <div class="review-header-right">
+        <div class="review-header-right" id="topBar">
+          <div class="presence-avatars" id="presenceAvatars"></div>
           ${sessionActions}
           ${themeBtn}
         </div>`;
+    }
+
+    function renderSelfAvatar() {
+      const container = document.getElementById('presenceAvatars');
+      if (!container || !currentUser) return;
+      if (currentUser.slackImageUrl) {
+        container.innerHTML = `<img class="presence-avatar" src="${currentUser.slackImageUrl}" title="${currentUser.fullName || currentUser.email}">`;
+      } else {
+        const initials = (currentUser.fullName || currentUser.email || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        container.innerHTML = `<div class="presence-avatar-placeholder" title="${currentUser.fullName || currentUser.email}">${initials}</div>`;
+      }
+    }
+
+    let lastTopBarWidth = null;
+    function animateTopBarWidth() {
+      const bar = document.getElementById('topBar');
+      if (!bar) return;
+      bar.style.width = '';
+      bar.style.transition = '';
+      const target = bar.getBoundingClientRect().width;
+      if (lastTopBarWidth !== null && Math.abs(lastTopBarWidth - target) > 1) {
+        bar.style.overflow = 'hidden';
+        bar.style.width = `${lastTopBarWidth}px`;
+        void bar.offsetWidth;
+        bar.style.transition = 'width 400ms var(--ease-out)';
+        bar.style.width = `${target}px`;
+        clearTimeout(bar._widthTimer);
+        bar._widthTimer = setTimeout(() => {
+          bar.style.width = '';
+          bar.style.transition = '';
+          bar.style.overflow = '';
+        }, 450);
+      }
+      lastTopBarWidth = target;
     }
 
     function renderHomeHiddenNotes() {
@@ -3513,6 +3550,8 @@
           </button>
         </div>
       `;
+      renderSelfAvatar();
+      animateTopBarWidth();
     }
 
     function renderRecordingView() {
