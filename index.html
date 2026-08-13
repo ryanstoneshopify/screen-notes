@@ -541,8 +541,11 @@
       width: 260px;
       margin: 0;
       box-shadow: var(--shadow-soft);
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: grab;
+      user-select: none;
     }
+    .home-hidden-note.dragging { cursor: grabbing; }
     .home-hidden-note .note-card-screenshot {
       aspect-ratio: 16/9;
       background:
@@ -1900,6 +1903,29 @@
         console.log('Could not get user info');
       }
       initSidebarResize();
+      document.addEventListener('mousedown', (e) => {
+        const card = e.target.closest('.home-hidden-note');
+        if (!card) return;
+        e.preventDefault();
+        card.classList.add('dragging');
+        const ox = card.offsetLeft, oy = card.offsetTop;
+        card.style.left = `${ox}px`;
+        card.style.top = `${oy}px`;
+        card.style.right = 'auto';
+        card.style.bottom = 'auto';
+        const sx = e.clientX, sy = e.clientY;
+        const onMove = (ev) => {
+          card.style.left = `${ox + ev.clientX - sx}px`;
+          card.style.top = `${oy + ev.clientY - sy}px`;
+        };
+        const onUp = () => {
+          card.classList.remove('dragging');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
       document.addEventListener('mousemove', (e) => {
         const g = document.getElementById('gridBg');
         if (!g) return;
@@ -3288,8 +3314,8 @@
         { h: 'right', v: 'bottom' },
       ];
       return corners.map((c, i) => {
-        const hOff = Math.round(230 + Math.random() * 90);
-        const vOff = Math.round(230 + Math.random() * 90);
+        const hOff = Math.round(330 + Math.random() * 90);
+        const vOff = Math.round(180 + Math.random() * 90);
         const rot = (Math.random() * 16 - 8).toFixed(1);
         const s = samples[i];
         return `
