@@ -547,6 +547,21 @@
       user-select: none;
     }
     .home-hidden-note.dragging { cursor: grabbing; }
+    .home-note-resize {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: var(--ink-black);
+      border: 2px solid var(--vellum-white);
+      border-radius: 999px;
+      bottom: -7px;
+      right: -7px;
+      cursor: nwse-resize;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 140ms ease;
+    }
+    .home-hidden-note:hover .home-note-resize { opacity: 1; }
     .home-hidden-note .note-card-screenshot {
       aspect-ratio: 16/9;
       background:
@@ -1908,13 +1923,29 @@
         const card = e.target.closest('.home-hidden-note');
         if (!card) return;
         e.preventDefault();
+        const sx = e.clientX, sy = e.clientY;
+
+        if (e.target.classList.contains('home-note-resize')) {
+          const startW = card.offsetWidth;
+          const onMove = (ev) => {
+            const w = Math.min(480, Math.max(160, startW + (ev.clientX - sx)));
+            card.style.width = `${w}px`;
+          };
+          const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+          return;
+        }
+
         card.classList.add('dragging');
         const ox = card.offsetLeft, oy = card.offsetTop;
         card.style.left = `${ox}px`;
         card.style.top = `${oy}px`;
         card.style.right = 'auto';
         card.style.bottom = 'auto';
-        const sx = e.clientX, sy = e.clientY;
         const onMove = (ev) => {
           card.style.left = `${ox + ev.clientX - sx}px`;
           card.style.top = `${oy + ev.clientY - sy}px`;
@@ -3327,6 +3358,7 @@
               <div class="note-card-text">${s.text}</div>
               <div class="note-card-meta"><span>${s.time}</span></div>
             </div>
+            <div class="home-note-resize"></div>
           </div>
         `;
       }).join('');
