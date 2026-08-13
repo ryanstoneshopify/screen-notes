@@ -380,8 +380,11 @@
       background: var(--snow-white);
     }
     .session-item.active {
-      background: var(--snow-white);
+      background: rgba(0, 0, 0, 0.10);
       border-color: transparent;
+    }
+    html.dark .session-item.active {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .session-item-title {
