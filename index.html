@@ -3664,7 +3664,7 @@
         'notes/n-claude.jpg':   { fx: 0.40,  fy: 0.04, rot: 2.5 },
         'notes/n-airbnb.jpg':   { fx: 0.84,  fy: 0.33, rot: 4.5 },
         'notes/n-metrics.jpg':  { fx: 0.17,  fy: 0.17, rot: -3.5 },
-        'notes/n-ryan.jpg':     { fx: 0.345, fy: 0.70, rot: 5 },
+        'notes/n-ryan.jpg':     { fx: 0.345, fy: 0.70, rot: 5, dx: 200, noPush: true },
       };
       // Keep the hero area clear of notes
       const centerBox = { x: W / 2 - 350, w: 700, y: H * 0.34, h: H * 0.45 };
@@ -3674,11 +3674,11 @@
       return samples.map((s) => {
         const cardH = Math.round(cardW * s.aspect) + textBlock;
         const l = layout[s.img] || { fx: 0.5, fy: 0.5, rot: 0 };
-        let x = Math.round(l.fx * W);
+        let x = Math.round(l.fx * W) + (l.dx || 0);
         let y = Math.round(Math.min(l.fy * H, H - cardH - margin));
         // Push out of the center zone (notes may hang off screen edges instead)
         const rect = { x, y, w: cardW, h: cardH };
-        if (rectsOverlap(rect, centerBox)) {
+        if (!l.noPush && rectsOverlap(rect, centerBox)) {
           const centerX = W / 2;
           x = (x + cardW / 2) < centerX
             ? Math.round(centerBox.x - cardW - gap)
