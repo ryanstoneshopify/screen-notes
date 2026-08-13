@@ -3632,36 +3632,45 @@
     }
 
     function renderHomeHiddenNotes() {
+      // aspect = image height / width, used to estimate real card heights
       const samples = [
-        { text: 'The onboarding flow skips step 2 when you resize — capture this for the team.', time: '0:42', img: 'notes/n-login.jpg' },
-        { text: "Candidate demo'd their recent project at Apple. Shows high taste! Follow up on decision to use sheet vs page.", time: '1:15', img: 'notes/n-music.jpg' },
-        { text: 'Bug: Tiles are not resizing properly on POS home screen.', time: '3:08', img: 'notes/n-pos-grid.jpg' },
-        { text: 'Voice note: UI for adding to a project in Claude desktop app.', time: '5:27', img: 'notes/n-claude.jpg' },
-        { text: "Airbnb's new search redesign is so nice — explore the expanding filter interaction for our picker.", time: '2:34', img: 'notes/n-airbnb.jpg', portrait: true },
-        { text: 'Follow up on the usage metrics shown in townhall — grab the dashboard link from the deck.', time: '4:51', img: 'notes/n-metrics.jpg' },
-        { text: 'Made with 💚 by Ryan Stone', time: '6:12', img: 'notes/n-ryan.jpg' },
+        { text: 'The onboarding flow skips step 2 when you resize — capture this for the team.', time: '0:42', img: 'notes/n-login.jpg', aspect: 626 / 900 },
+        { text: "Candidate demo'd their recent project at Apple. Shows high taste! Follow up on decision to use sheet vs page.", time: '1:15', img: 'notes/n-music.jpg', aspect: 582 / 900 },
+        { text: 'Bug: Tiles are not resizing properly on POS home screen.', time: '3:08', img: 'notes/n-pos-grid.jpg', aspect: 696 / 900 },
+        { text: 'Voice note: UI for adding to a project in Claude desktop app.', time: '5:27', img: 'notes/n-claude.jpg', aspect: 598 / 900 },
+        { text: "Airbnb's new search redesign is so nice — explore the expanding filter interaction for our picker.", time: '2:34', img: 'notes/n-airbnb.jpg', aspect: 900 / 416 },
+        { text: 'Follow up on the usage metrics shown in townhall — grab the dashboard link from the deck.', time: '4:51', img: 'notes/n-metrics.jpg', aspect: 505 / 900 },
+        { text: 'Made with 💚 by Ryan Stone', time: '6:12', img: 'notes/n-ryan.jpg', aspect: 900 / 839 },
       ];
       const W = window.innerWidth, H = window.innerHeight;
-      const cardW = 260, margin = 24;
+      const cardW = 260, margin = 24, gap = 16, textBlock = 100;
       const sidebarRight = (document.querySelector('.sidebar')?.getBoundingClientRect().right || 312) + margin;
-      // Random non-overlapping-ish placement: sample positions, reject ones too close to existing.
+      // Center hero exclusion zone
+      const centerBox = { x: W / 2 - 340, y: H / 2 - 300, w: 680, h: 600 };
+      const rectsOverlap = (a, b) =>
+        a.x < b.x + b.w + gap && a.x + a.w + gap > b.x &&
+        a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
       const placed = [];
-      const randomPos = () => ({
-        x: Math.round(sidebarRight + Math.random() * Math.max(1, W - cardW - margin - sidebarRight)),
-        y: Math.round(margin + Math.random() * Math.max(1, H - 320 - margin * 2)),
-      });
-      const pick = () => {
-        for (let attempt = 0; attempt < 30; attempt++) {
-          const p = randomPos();
-          const cx = W / 2, cy = H / 2;
-          const nearCenter = Math.abs(p.x + cardW / 2 - cx) < 320 && Math.abs(p.y + 140 - cy) < 260;
-          const overlaps = placed.some(q => Math.abs(q.x - p.x) < cardW + 20 && Math.abs(q.y - p.y) < 280);
-          if (!nearCenter && !overlaps) { placed.push(p); return p; }
+      const pick = (cardH) => {
+        const maxX = Math.max(sidebarRight + 1, W - cardW - margin);
+        const maxY = Math.max(margin + 1, H - cardH - margin);
+        let best = null;
+        for (let attempt = 0; attempt < 200; attempt++) {
+          const p = {
+            x: Math.round(sidebarRight + Math.random() * (maxX - sidebarRight)),
+            y: Math.round(margin + Math.random() * (maxY - margin)),
+            w: cardW, h: cardH,
+          };
+          const bad = rectsOverlap(p, centerBox) || placed.some(q => rectsOverlap(p, q));
+          if (!bad) { placed.push(p); return p; }
+          if (!best) best = p;
         }
-        const p = randomPos(); placed.push(p); return p;
+        placed.push(best);
+        return best;
       };
       return samples.map((s) => {
-        const p = pick();
+        const cardH = Math.round(cardW * s.aspect) + textBlock;
+        const p = pick(cardH);
         const rot = (Math.random() * 16 - 8).toFixed(1);
         return `
           <div class="note-card home-hidden-note"
