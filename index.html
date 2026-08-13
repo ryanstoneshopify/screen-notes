@@ -1298,11 +1298,20 @@
       box-shadow: 0 0 0 3px rgba(204,219,232,.5);
     }
     .review-header-right {
-      position: relative;
+      position: absolute;
+      top: 24px;
+      right: 24px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
+      background: var(--vellum-white);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      padding: 6px;
+      z-index: 20;
+      box-shadow: var(--shadow-pop);
     }
+    .review-header-right .btn { border-radius: 999px; }
 
     .review-meta {
       font-size: 13px;
@@ -3636,6 +3645,8 @@
                      onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                      placeholder="Untitled session">
             </div>
+          </div>
+          <div class="canvas-viewport" id="canvasViewport">
             <div class="review-header-right">
               <div class="presence-avatars" id="presenceAvatars"></div>
               <button class="btn btn-ghost review-share-btn" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Copy session link">
@@ -3646,10 +3657,7 @@
                   Delete
                 </button>
               ` : ''}
-
             </div>
-          </div>
-          <div class="canvas-viewport" id="canvasViewport">
             <div class="canvas-world" id="canvasWorld"></div>
 
             <div class="canvas-help" id="canvasHelp">
@@ -3665,7 +3673,6 @@
             </div>
             <button class="help-fab" onclick="toggleCanvasHelp(event)" title="Canvas help">?</button>
             <div class="remote-cursors" id="remoteCursors"></div>
-            <div class="zoom-indicator" id="zoomIndicator">100%</div>
             <div class="alignment-guide vertical" id="guideVertical"></div>
             <div class="alignment-guide horizontal" id="guideHorizontal"></div>
             <div class="selection-rect" id="selectionRect"></div>
