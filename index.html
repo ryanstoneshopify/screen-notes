@@ -225,16 +225,18 @@
 
     /* ── Sidebar ── */
     .sidebar {
-      position: relative;
-      flex: 0 0 auto;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      bottom: 12px;
+      z-index: 200;
       width: 300px;
       min-width: 240px;
       max-width: 400px;
-      margin: 12px;
       background: var(--snow-white);
       border: 1px solid var(--parchment);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-soft);
+      box-shadow: var(--shadow-pop);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -1718,9 +1720,17 @@
       display: none;
     }
 
+    :root { --sidebar-w: 300px; }
+    .app-layout.session-active .main-content {
+      padding-left: calc(var(--sidebar-w) + 24px);
+    }
+
     @media (max-width: 900px) {
       .app-layout.session-active .sidebar {
         display: none;
+      }
+      .app-layout.session-active .main-content {
+        padding-left: 0;
       }
       .notes-panel { width: 320px; min-width: 320px; }
       .empty-state h2 { font-size: 40px; }
@@ -3238,6 +3248,7 @@
         const onMove = (ev) => {
           const w = Math.min(400, Math.max(240, startW + (ev.clientX - startX)));
           sidebar.style.width = `${w}px`;
+          document.documentElement.style.setProperty('--sidebar-w', `${w}px`);
         };
         const onUp = () => {
           handle.classList.remove('dragging');
