@@ -479,12 +479,18 @@
       outline: none;
     }
 
-    /* ── Center toast ── */
+    /* ── Bottom toast ── */
+    :root {
+      --ease-out-spring: cubic-bezier(0.1, 1.25, 0, 1);
+      --ease-out-spring-duration: 1000ms;
+      --ease-out: cubic-bezier(0.2, 0.8, 0, 1);
+      --ease-out-duration: 400ms;
+    }
     .toast-center {
       position: fixed;
-      top: 50%;
+      bottom: 24px;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0.95);
+      transform: translate(-50%, calc(100% + 24px + 16px));
       z-index: 500;
       padding: 12px 24px;
       border-radius: 999px;
@@ -494,14 +500,13 @@
       font-size: 14px;
       font-weight: 500;
       box-shadow: var(--shadow-pop);
-      opacity: 0;
       pointer-events: none;
-      transition: opacity 180ms ease, transform 180ms ease;
+      transition: transform var(--ease-out-duration) var(--ease-out);
       white-space: nowrap;
     }
     .toast-center.visible {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
+      transform: translate(-50%, 0);
+      transition: transform var(--ease-out-spring-duration) var(--ease-out-spring);
     }
 
     /* ── Main ── */
@@ -3187,8 +3192,10 @@
       }
       toast.textContent = message;
       clearTimeout(toastTimer);
+      toast.classList.remove('visible');
+      void toast.offsetHeight; // restart animation from below
       requestAnimationFrame(() => toast.classList.add('visible'));
-      toastTimer = setTimeout(() => toast.classList.remove('visible'), 1800);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 1000 + 1000);
     }
 
     // ── Sidebar resize ──
