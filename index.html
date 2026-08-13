@@ -224,13 +224,92 @@
       background: var(--vellum-white);
     }
 
-    /* ── Sidebar ── */
+    /* ── Nav pill (collapsed nav, all breakpoints) ── */
+    .nav-pill {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 210;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      box-shadow: var(--shadow-pop);
+    }
+    .nav-pill-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      background: transparent;
+      padding: 6px 4px 6px 10px;
+      border-radius: 999px;
+      color: var(--ink-black);
+      cursor: pointer;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      max-width: 300px;
+    }
+    .nav-pill-home .logo-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--terra-cotta);
+      flex: 0 0 auto;
+    }
+    .nav-pill-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nav-pill-drawer {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--graphite);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .nav-pill-drawer:hover,
+    .nav-pill-home:hover {
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
+      color: var(--ink-black);
+    }
+    html.dark .nav-pill-drawer:hover,
+    html.dark .nav-pill-home:hover {
+      background: var(--surface-hover-strong);
+    }
+    .nav-pill-drawer .icon { width: 17px; height: 17px; }
+    body.recording-active .nav-pill { display: none; }
+
+    .session-item.new-session-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink-black);
+      font-size: 14px;
+      font-weight: 500;
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+    .session-item.new-session-row .icon { width: 15px; height: 15px; }
+
+    /* ── Sidebar (drawer, opens from nav pill) ── */
     .sidebar {
+      display: none;
       position: fixed;
       top: 12px;
       left: 12px;
       bottom: 12px;
-      z-index: 200;
+      z-index: 220;
       width: 300px;
       min-width: 240px;
       max-width: 400px;
@@ -240,10 +319,11 @@
       border: 1px solid var(--parchment);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-pop);
-      display: flex;
       flex-direction: column;
       overflow: hidden;
     }
+    .sidebar.open { display: flex; }
+    .sidebar-new-btn { display: none; }
 
     .sidebar-resize {
       position: absolute;
@@ -1923,12 +2003,6 @@
     }
 
     @media (max-width: 900px) {
-      .app-layout.session-active .sidebar {
-        display: none;
-      }
-      .app-layout.session-active .review-header {
-        padding-left: 24px;
-      }
       .notes-panel { width: 320px; min-width: 320px; }
       .empty-state h2 { font-size: 40px; }
     }
@@ -1936,9 +2010,28 @@
 </head>
 <body>
 
+  <div class="nav-pill" id="navPill">
+    <button class="nav-pill-home" onclick="goHome()" title="Home">
+      <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 4H6.4C5.1 4 4 5.1 4 6.4V8"/>
+        <path d="M16 4h1.6C18.9 4 20 5.1 20 6.4V8"/>
+        <path d="M20 16v1.6c0 1.3-1.1 2.4-2.4 2.4H16"/>
+        <path d="M8 20H6.4C5.1 20 4 18.9 4 17.6V16"/>
+        <path d="M8.2 16.1l.7-2.6 5.3-5.3 2 2-5.3 5.3-2.7.6Z"/>
+        <path d="M13.1 9.3l2 2"/>
+      </svg>
+      <span class="nav-pill-label" id="navPillLabel">Screen Notes</span>
+    </button>
+    <button class="nav-pill-drawer" id="navDrawerBtn" onclick="toggleNavDrawer(event)" title="Sessions">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/>
+      </svg>
+    </button>
+  </div>
+
   <div class="app-layout" id="appLayout">
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebarDrawer">
       <div class="sidebar-header">
         <button class="sidebar-home-btn" onclick="goHome()" title="Home">
           <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2273,6 +2366,7 @@
     }
 
     async function goHome() {
+      closeNavDrawer();
       if (isRecording) {
         if (!confirm('Stop current recording and return home?')) return;
         await stopRecording();
@@ -3347,8 +3441,45 @@
       appLayout?.classList.toggle('recording-active', isRecording);
       appLayout?.classList.toggle('session-active', !!activeSessionId && !isRecording);
       document.body.classList.toggle('recording-active', isRecording);
+      updateNavPill();
       renderSidebar();
       renderMain();
+    }
+
+    function updateNavPill() {
+      const label = document.getElementById('navPillLabel');
+      if (!label) return;
+      const session = activeSessionId && !isRecording
+        ? allSessions.find(s => s.id === activeSessionId) : null;
+      label.textContent = session ? (session.title || 'Untitled Session') : 'Screen Notes';
+    }
+
+    function toggleNavDrawer(e) {
+      e?.stopPropagation();
+      const drawer = document.getElementById('sidebarDrawer');
+      if (!drawer) return;
+      const opening = !drawer.classList.contains('open');
+      drawer.classList.toggle('open', opening);
+      if (opening) {
+        setTimeout(() => document.addEventListener('mousedown', onNavDrawerOutside, true), 0);
+      } else {
+        document.removeEventListener('mousedown', onNavDrawerOutside, true);
+      }
+    }
+
+    function closeNavDrawer() {
+      const drawer = document.getElementById('sidebarDrawer');
+      if (drawer?.classList.contains('open')) {
+        drawer.classList.remove('open');
+        document.removeEventListener('mousedown', onNavDrawerOutside, true);
+      }
+    }
+
+    function onNavDrawerOutside(e) {
+      const drawer = document.getElementById('sidebarDrawer');
+      if (!drawer) return;
+      if (drawer.contains(e.target) || e.target.closest('.nav-pill') || e.target.closest('.session-menu-popover')) return;
+      closeNavDrawer();
     }
 
     function ownerLabel(session) {
@@ -3388,13 +3519,19 @@
         </div>
       `;
 
+      const newSessionRow = `
+        <div class="session-item new-session-row" onclick="closeNavDrawer(); startRecording()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          New session
+        </div>`;
+
       const list = document.getElementById('sessionList');
       const visibleSessions = sessionListTab === 'others' ? sharedSessions : sessions;
       if (sessionListTab === 'others' && visibleSessions.length === 0) {
-        list.innerHTML = '<div class="session-empty-state">No sessions shared with you</div>';
+        list.innerHTML = newSessionRow + '<div class="session-empty-state">No sessions shared with you</div>';
         return;
       }
-      list.innerHTML = visibleSessions.map(renderSessionItem).join('');
+      list.innerHTML = newSessionRow + visibleSessions.map(renderSessionItem).join('');
 
       if (renamingSessionId) {
         const input = list.querySelector('.session-title-input');
@@ -3958,6 +4095,7 @@
     }
 
     async function viewSession(id, options = {}) {
+      closeNavDrawer();
       if (isRecording && id !== activeSessionId) {
         if (!confirm('Stop current recording to view this session?')) return;
         await stopRecording();
