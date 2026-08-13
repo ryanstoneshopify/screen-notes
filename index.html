@@ -616,10 +616,13 @@
       transition: opacity 140ms ease;
     }
     .home-hidden-note:hover .home-note-resize { opacity: 1; }
+    /* Home note images render at their natural proportions, fully visible */
     .home-hidden-note .note-card-screenshot {
-      aspect-ratio: 16/9;
-      background:
-        linear-gradient(135deg, var(--surface-hover) 0%, var(--surface-hover-strong) 100%);
+      aspect-ratio: auto;
+      height: auto;
+      width: 100%;
+      object-fit: contain;
+      background: transparent;
       cursor: grab;
     }
     .home-hidden-note.dragging .note-card-screenshot { cursor: grabbing; }
@@ -3634,7 +3637,7 @@
         { text: "Candidate demo'd their recent project at Apple. Shows high taste! Follow up on decision to use sheet vs page.", time: '1:15', img: 'notes/n-music.jpg' },
         { text: 'Bug: Tiles are not resizing properly on POS home screen.', time: '3:08', img: 'notes/n-pos-grid.jpg' },
         { text: 'Voice note: UI for adding to a project in Claude desktop app.', time: '5:27', img: 'notes/n-claude.jpg' },
-        { text: "Airbnb's new search redesign is so nice — explore the expanding filter interaction for our picker.", time: '2:34', img: 'notes/n-airbnb.jpg' },
+        { text: "Airbnb's new search redesign is so nice — explore the expanding filter interaction for our picker.", time: '2:34', img: 'notes/n-airbnb.jpg', portrait: true },
         { text: 'Follow up on the usage metrics shown in townhall — grab the dashboard link from the deck.', time: '4:51', img: 'notes/n-metrics.jpg' },
         { text: 'Made with 💚 by Ryan Stone', time: '6:12', img: 'notes/n-ryan.jpg' },
       ];
@@ -3663,7 +3666,7 @@
         return `
           <div class="note-card home-hidden-note"
                style="left: ${p.x}px; top: ${p.y}px; transform: rotate(${rot}deg);">
-            <div class="note-card-screenshot-wrap"><img class="note-card-screenshot" src="${s.img}" alt="" draggable="false"></div>
+            <div class="note-card-screenshot-wrap"><img class="note-card-screenshot${s.portrait ? ' portrait' : ''}" src="${s.img}" alt="" draggable="false"></div>
             <div class="note-card-body">
               <div class="note-card-text" contenteditable="true" spellcheck="false">${s.text}</div>
               <div class="note-card-meta"><span>${s.time}</span></div>
