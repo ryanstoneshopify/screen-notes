@@ -1312,6 +1312,19 @@
       box-shadow: var(--shadow-pop);
     }
     .review-header-right .btn { border-radius: 999px; }
+    .review-header-right .bar-action {
+      opacity: 0;
+      filter: blur(8px);
+      transform: scale(0.8);
+      transition: opacity 400ms var(--ease-out),
+                  filter 400ms var(--ease-out),
+                  transform 400ms var(--ease-out);
+    }
+    .review-header-right .bar-action.in {
+      opacity: 1;
+      filter: blur(0);
+      transform: scale(1);
+    }
     .review-theme-btn {
       width: 34px;
       height: 34px;
@@ -3395,6 +3408,36 @@
       });
     }
 
+    function animateBarActionsIn() {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
+      }));
+    }
+
+    function renderTopBar(session) {
+      const themeBtn = `
+        <button class="btn btn-ghost review-theme-btn" id="themeToggle" onclick="toggleTheme()"
+                title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
+                aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
+          ${icon(isDarkMode() ? 'sun' : 'moon')}
+        </button>`;
+      const sessionActions = session ? `
+        <div class="presence-avatars bar-action" id="presenceAvatars"></div>
+        <button class="btn btn-ghost review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Copy session link">
+          Share
+        </button>
+        ${isMySession(session) ? `
+          <button class="btn btn-ghost review-delete-btn bar-action" onclick="deleteSession('${session.id}')" title="Delete session">
+            Delete
+          </button>
+        ` : ''}` : '';
+      return `
+        <div class="review-header-right">
+          ${sessionActions}
+          ${themeBtn}
+        </div>`;
+    }
+
     function renderHomeHiddenNotes() {
       const samples = [
         { text: 'The onboarding flow skips step 2 when you resize — capture this for the team.', time: '0:42', image: true },
@@ -3453,6 +3496,7 @@
         const session = allSessions.find(s => s.id === activeSessionId);
         if (session) {
           main.innerHTML = renderReviewView(session);
+          animateBarActionsIn();
           return;
         }
       }
@@ -3460,11 +3504,7 @@
       // Empty state
       main.innerHTML = `
         <div class="grid-bg" id="gridBg">${renderHomeHiddenNotes()}</div>
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"
-                title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
-                aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
-          ${icon(isDarkMode() ? 'sun' : 'moon')}
-        </button>
+        ${renderTopBar(null)}
         <div class="empty-state" id="emptyState">
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>
@@ -3646,22 +3686,7 @@
       return `
         <div class="review-view">
           <div class="canvas-viewport" id="canvasViewport">
-            <div class="review-header-right">
-              <div class="presence-avatars" id="presenceAvatars"></div>
-              <button class="btn btn-ghost review-share-btn" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Copy session link">
-                Share
-              </button>
-              ${isMySession(session) ? `
-                <button class="btn btn-ghost review-delete-btn" onclick="deleteSession('${session.id}')" title="Delete session">
-                  Delete
-                </button>
-              ` : ''}
-              <button class="btn btn-ghost review-theme-btn" id="themeToggle" onclick="toggleTheme()"
-                      title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
-                      aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
-                ${icon(isDarkMode() ? 'sun' : 'moon')}
-              </button>
-            </div>
+            ${renderTopBar(session)}
             <div class="canvas-world" id="canvasWorld"></div>
 
             <div class="canvas-help" id="canvasHelp">
