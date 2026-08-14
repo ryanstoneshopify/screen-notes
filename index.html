@@ -762,6 +762,11 @@
       box-shadow: var(--shadow-soft);
       transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
     }
+    .theme-toggle {
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
     .theme-toggle:hover {
       background: var(--surface-hover);
       color: var(--ink-black);
@@ -963,7 +968,9 @@
       bottom: 32px;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--snow-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       color: var(--graphite);
       padding: 8px 12px;
       border: 1px solid var(--parchment);
@@ -1845,7 +1852,9 @@
     .zoom-indicator,
     .canvas-help {
       position: absolute;
-      background: var(--bg-translucent);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
       border-radius: 9.6px;
       color: var(--graphite);
@@ -2150,6 +2159,7 @@
         moon: '<path d="M20 13.2A8 8 0 0 1 10.8 4 8 8 0 1 0 20 13.2z"/>',
         more: '<circle cx="5" cy="12" r="1.7" class="icon-filled"/><circle cx="12" cy="12" r="1.7" class="icon-filled"/><circle cx="19" cy="12" r="1.7" class="icon-filled"/>',
         link: '<path d="M10 14a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/>',
+        download: '<path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M4.5 19.5h15"/>',
         pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
@@ -3719,10 +3729,95 @@
       });
     }
 
+    // ── Session export (zip of SESSION.md + screenshots, agent-ready) ──
+    function slugifyForFile(s) {
+      return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'note';
+    }
+
+    let jszipPromise = null;
+    function loadJSZip() {
+      if (window.JSZip) return Promise.resolve(window.JSZip);
+      jszipPromise = jszipPromise || new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = () => resolve(window.JSZip);
+        s.onerror = () => { jszipPromise = null; reject(new Error('Could not load zip library')); };
+        document.head.appendChild(s);
+      });
+      return jszipPromise;
+    }
+
+    async function exportSessionPackage(sessionId) {
+      const session = allSessions.find(s => s.id === sessionId);
+      if (!session) return;
+      const btn = document.getElementById('exportSessionBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const JSZip = await loadJSZip();
+        const zip = new JSZip();
+        const folderName = `session-${slugifyForFile(session.title || 'untitled')}`;
+        const root = zip.folder(folderName);
+        const shots = root.folder('screenshots');
+        const notes = session.notes || [];
+
+        const lines = [
+          `# ${session.title || 'Untitled Session'}`,
+          '',
+          `Recorded: ${new Date(session.created_at).toLocaleString()}`,
+          `Notes: ${notes.length}`,
+          '',
+          'Notes captured during a live screen-share session in Screen Notes.',
+          'Timestamps are elapsed recording time. Each screenshot shows what was',
+          'on screen at the moment the note was taken.',
+          '',
+        ];
+
+        let shotNum = 0;
+        for (let i = 0; i < notes.length; i++) {
+          const note = notes[i];
+          lines.push(`## Note ${i + 1} — ${formatDuration(note.timestamp || 0)}`, '');
+          if (note.text) lines.push(note.text, '');
+          const src = note.screenshotUrl || note.screenshot;
+          if (src) {
+            try {
+              const resp = await fetch(src);
+              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+              const blob = await resp.blob();
+              shotNum++;
+              const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type];
+              const ext = typeExt || (src.match(/\.(png|jpe?g|webp|gif)(\?|$)/i)?.[1] || 'png').replace(/jpeg/i, 'jpg');
+              const name = `${String(shotNum).padStart(2, '0')}-${slugifyForFile(note.text)}.${ext}`;
+              shots.file(name, blob);
+              lines.push(`![screenshot](screenshots/${name})`, '');
+            } catch (_) {
+              lines.push('_(screenshot unavailable)_', '');
+            }
+          }
+        }
+
+        root.file('SESSION.md', lines.join('\n'));
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${folderName}.zip`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        showToast('Session exported');
+      } catch (e) {
+        console.error('Export failed', e);
+        showToast('Export failed');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     function topBarActionsHTML(session) {
       return `
         <button class="btn btn-ghost review-theme-btn review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Share — copy session link" aria-label="Share">
           ${icon('link')}
+        </button>
+        <button class="btn btn-ghost review-theme-btn bar-action" id="exportSessionBtn" onclick="exportSessionPackage('${session.id}')" title="Export notes + screenshots for AI agents" aria-label="Export session">
+          ${icon('download')}
         </button>
         ${isMySession(session) ? `
           <button class="btn btn-ghost review-theme-btn review-delete-btn bar-action" onclick="menuDeleteSession('${session.id}')" title="Delete session" aria-label="Delete">
