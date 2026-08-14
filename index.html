@@ -54,6 +54,7 @@
       --bg-translucent: rgba(250, 249, 245, 0.92);
       --shadow-soft: 0 1px 0 rgba(20,20,19,0.04), 0 8px 24px rgba(20,20,19,0.045);
       --shadow-pop: 0 16px 40px rgba(20,20,19,0.10);
+      --floating-bg: rgba(255, 255, 255, 0.95);
     }
 
     html.dark {
@@ -74,6 +75,7 @@
       --border-strong: rgba(240, 239, 233, 0.30);
       --accent-soft: #33465c;
       --bg-translucent: rgba(27, 26, 23, 0.92);
+      --floating-bg: rgba(36, 35, 32, 0.95);
       --shadow-soft: 0 1px 0 rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35);
       --shadow-pop: 0 16px 40px rgba(0,0,0,0.5);
     }
@@ -83,7 +85,6 @@
     html.dark .note-delete-link:hover { color: #f08a80; }
     html.dark .session-tabs::before {
       background: #403e36;
-      border-color: rgba(240,239,233,0.14);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -223,15 +224,156 @@
       background: var(--vellum-white);
     }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 300px;
-      min-width: 300px;
-      background: var(--vellum-white);
-      border-right: 1px solid var(--parchment);
+    /* ── Nav pill (collapsed nav, all breakpoints) ── */
+    .nav-pill {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 210;
       display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      box-shadow: var(--shadow-pop);
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out);
+    }
+    .nav-pill.drawer-open {
+      transform: translateX(calc(-100% - 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+    .nav-pill-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      background: transparent;
+      padding: 0 8px 0 0;
+      border-radius: 999px;
+      color: var(--ink-black);
+      cursor: default;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      max-width: 300px;
+    }
+    .nav-pill-logo {
+      cursor: pointer;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    .nav-pill-logo:hover {
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
+    }
+    html.dark .nav-pill-logo:hover {
+      background: var(--surface-hover-strong);
+    }
+    .nav-pill-home .logo-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--terra-cotta);
+      flex: 0 0 auto;
+    }
+    .nav-pill-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nav-pill-drawer {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--graphite);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .nav-pill-drawer:hover {
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
+      color: var(--ink-black);
+    }
+    html.dark .nav-pill-drawer:hover {
+      background: var(--surface-hover-strong);
+    }
+    .nav-pill-drawer .icon { width: 17px; height: 17px; }
+    body.recording-active .nav-pill { display: none; }
+
+    .session-item.new-session-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink-black);
+      font-size: 14px;
+      font-weight: 500;
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+    .session-item.new-session-row .icon { width: 15px; height: 15px; }
+
+    /* ── Sidebar (drawer, opens from nav pill) ── */
+    .sidebar {
+      display: flex;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      bottom: 12px;
+      z-index: 220;
+      width: 300px;
+      min-width: 240px;
+      max-width: 400px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-pop);
       flex-direction: column;
       overflow: hidden;
+      visibility: hidden;
+      opacity: 0;
+      transform: translateX(calc(-100% - 24px));
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out),
+                  visibility 0s linear var(--ease-out-duration);
+    }
+    .sidebar.open {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(0);
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out);
+    }
+    .sidebar-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .sidebar-resize {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 5;
+    }
+    .sidebar-resize:hover,
+    .sidebar-resize.dragging {
+      background: var(--pale-azure);
     }
 
     .sidebar-header {
@@ -278,7 +420,10 @@
       transition: background 160ms ease;
     }
     .sidebar-new-btn:hover {
-      background: var(--surface-hover);
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
+    }
+    html.dark .sidebar-new-btn:hover {
+      background: var(--surface-hover-strong);
     }
 
     .session-tabs {
@@ -287,8 +432,8 @@
       gap: 0;
       margin: 8px 12px 16px;
       padding: 4px;
-      background: var(--surface-hover);
-      border: 1px solid var(--parchment);
+      background: color-mix(in srgb, var(--surface-hover) 75%, transparent);
+      border: none;
       border-radius: 99px;
       overflow: hidden;
     }
@@ -300,7 +445,7 @@
       left: 4px;
       width: calc((100% - 12px) / 2);
       background: var(--snow-white);
-      border: 1px solid rgba(31,30,29,0.12);
+      border: none;
       border-radius: 99px;
       box-shadow: 0 1px 2px rgba(20,20,19,.04);
       transition: left 180ms ease;
@@ -342,6 +487,7 @@
     }
 
     .session-item {
+      position: relative;
       padding: 14px 12px;
       border-radius: 9.6px;
       cursor: pointer;
@@ -349,10 +495,21 @@
       border: 1px solid transparent;
       transition: background 160ms ease, border-color 160ms ease;
     }
-    .session-item:hover { background: var(--surface-hover); }
+    .session-item:hover {
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
+    }
+    html.dark .session-item:hover {
+      background: rgba(48, 46, 39, 0.5);
+    }
     .session-item.active {
-      background: var(--snow-white);
-      border-color: var(--pale-azure);
+      background: color-mix(in srgb, var(--surface-hover) 75%, transparent);
+      border-color: transparent;
+    }
+    html.dark .session-item.active {
+      background: rgba(48, 46, 39, 0.75);
+    }
+    html.dark .session-tabs {
+      background: color-mix(in srgb, #403e36 50%, transparent);
     }
 
     .session-item-title {
@@ -360,6 +517,7 @@
       font-weight: 500;
       color: var(--ink-black);
       margin-bottom: 6px;
+      padding-right: 36px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -386,6 +544,119 @@
     .session-item:hover .session-actions { opacity: 1; }
     .session-actions .btn { padding: 5px 10px; font-size: 12px; }
 
+    .session-menu-btn {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--dusty-gray);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 140ms ease, background 140ms ease, color 140ms ease;
+    }
+    .session-item:hover .session-menu-btn,
+    .session-menu-btn.open { opacity: 1; }
+    .session-menu-btn:hover, .session-menu-btn.open {
+      background: var(--surface-hover-strong);
+      color: var(--ink-black);
+    }
+    .session-menu-btn .icon { width: 16px; height: 16px; }
+
+    .session-menu-popover {
+      position: fixed;
+      z-index: 300;
+      min-width: 160px;
+      padding: 6px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 12px;
+      box-shadow: var(--shadow-pop);
+    }
+    .session-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-black);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .session-menu-item:hover { background: color-mix(in srgb, var(--surface-hover) 60%, transparent); }
+    html.dark .session-menu-item:hover { background: var(--surface-hover-strong); }
+    .session-menu-item .icon { width: 15px; height: 15px; color: var(--dusty-gray); flex: 0 0 auto; }
+    .session-menu-item.danger { color: #d0453c; }
+    .session-menu-item.danger .icon { color: #d0453c; }
+    html.dark .session-menu-item.danger { color: #e0655a; }
+    html.dark .session-menu-item.danger .icon { color: #e0655a; }
+
+    .session-title-input {
+      width: 100%;
+      padding: 2px 6px;
+      margin: -3px 0 3px -7px;
+      border: 1px solid var(--pale-azure);
+      border-radius: 6px;
+      background: var(--snow-white);
+      color: var(--ink-black);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+    }
+
+    /* ── Bottom toast ── */
+    :root {
+      --ease-out-spring: cubic-bezier(0.1, 1.25, 0, 1);
+      --ease-out-spring-duration: 1000ms;
+      --ease-out: cubic-bezier(0.2, 0.8, 0, 1);
+      --ease-out-duration: 400ms;
+    }
+    .toast-center {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translate(-50%, calc(100% + 24px)) scale(0.8);
+      z-index: 500;
+      padding: 12px 24px;
+      border-radius: 999px;
+      background: var(--ink-black);
+      color: var(--vellum-white);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: var(--shadow-pop);
+      pointer-events: none;
+      filter: blur(8px);
+      opacity: 0;
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  filter var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out);
+      white-space: nowrap;
+    }
+    .toast-center.visible {
+      transform: translate(-50%, 0) scale(1);
+      filter: blur(0);
+      opacity: 1;
+      transition: transform var(--ease-out-spring-duration) var(--ease-out-spring),
+                  filter 400ms var(--ease-out),
+                  opacity 400ms var(--ease-out);
+    }
+
     /* ── Main ── */
     .main-content {
       position: relative;
@@ -395,6 +666,83 @@
       overflow: hidden;
       background: var(--vellum-white);
     }
+
+    /* ── Home grid backdrop ── */
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(var(--border-soft) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+      background-size: 32px 32px;
+      -webkit-mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+      mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+    }
+    .empty-state { position: relative; z-index: 1; pointer-events: none; }
+    .empty-state .btn { pointer-events: auto; }
+
+    .home-hidden-note {
+      position: absolute;
+      width: 260px;
+      margin: 0;
+      box-shadow: var(--shadow-soft);
+      pointer-events: auto;
+      cursor: grab;
+      user-select: none;
+    }
+    .home-hidden-note.dragging { cursor: grabbing; }
+    .note-card.home-hidden-note { overflow: visible; }
+    .home-hidden-note .note-card-screenshot-wrap {
+      border-radius: 23px 23px 0 0;
+      overflow: hidden;
+    }
+    .home-hidden-note .note-card-text {
+      cursor: text;
+      user-select: text;
+      outline: none;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 4px 6px;
+      margin: -4px -6px 0;
+      transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .home-hidden-note .note-card-text:hover:not(:focus) { background: var(--surface-hover); }
+    .home-hidden-note .note-card-text:focus {
+      background: var(--snow-white);
+      border-color: var(--pale-azure);
+      box-shadow: 0 0 0 3px rgba(204,219,232,.5);
+    }
+    .note-card.home-hidden-note:hover {
+      outline: 2px solid var(--terra-cotta);
+      outline-offset: 0;
+    }
+    .home-note-resize {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: var(--terra-cotta);
+      border: 2px solid var(--vellum-white);
+      border-radius: 999px;
+      bottom: -7px;
+      right: -7px;
+      cursor: nwse-resize;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 140ms ease;
+    }
+    .home-hidden-note:hover .home-note-resize { opacity: 1; }
+    /* Home note images render at their natural proportions, fully visible */
+    .home-hidden-note .note-card-screenshot {
+      aspect-ratio: auto;
+      height: auto;
+      width: 100%;
+      object-fit: contain;
+      background: transparent;
+      cursor: grab;
+    }
+    .home-hidden-note.dragging .note-card-screenshot { cursor: grabbing; }
 
     .theme-toggle {
       position: absolute;
@@ -413,6 +761,11 @@
       z-index: 50;
       box-shadow: var(--shadow-soft);
       transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    .theme-toggle {
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
     }
     .theme-toggle:hover {
       background: var(--surface-hover);
@@ -573,12 +926,29 @@
       flex: 1;
       min-width: 0;
       padding: 24px;
+      padding-right: calc(var(--notes-w, 400px) + 24px + 24px); /* clear floating notes panel */
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       background: var(--surface-sunken);
-      border-right: 1px solid var(--parchment);
+    }
+
+    .rec-pill {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      box-shadow: var(--shadow-pop);
     }
 
     video {
@@ -598,7 +968,9 @@
       bottom: 32px;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--snow-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       color: var(--graphite);
       padding: 8px 12px;
       border: 1px solid var(--parchment);
@@ -609,11 +981,48 @@
     }
 
     .notes-panel {
-      width: 390px;
-      min-width: 390px;
-      background: var(--vellum-white);
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 150;
+      width: var(--notes-w, 400px);
+      min-width: 300px;
+      max-width: 800px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-pop);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+    }
+
+    body.recording-active .review-header-right {
+      right: calc(var(--notes-w, 400px) + 12px + 12px + 12px);
+    }
+
+    .notes-panel-resize {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 5;
+    }
+    .notes-panel-resize:hover,
+    .notes-panel-resize.dragging {
+      background: var(--pale-azure);
+    }
+    .review-header-right .tb-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      white-space: nowrap;
     }
 
     .notes-panel-header {
@@ -635,7 +1044,8 @@
       font-size: 13px;
     }
 
-    .note-input-area { padding: 0 20px 20px; flex-shrink: 0; }
+    .note-input-area { padding: 0 20px 20px; flex-shrink: 0; position: relative; z-index: 2; }
+    .notes-list { position: relative; z-index: 1; }
     .note-input-wrapper {
       position: relative;
       background: var(--snow-white);
@@ -930,6 +1340,7 @@
       pointer-events: none;
     }
     .screenshot-preview.has-image .screenshot-preview-timestamp { display: inline-flex; }
+    html.dark .screenshot-preview-timestamp { color: #1f1e1d; }
     .screenshot-preview.has-image.saving-out .screenshot-preview-actions,
     .screenshot-preview.has-image.saving-out .screenshot-preview-timestamp { display: none; }
 
@@ -950,19 +1361,7 @@
       overflow: hidden;
       margin-bottom: 12px;
     }
-    .note-card.note-card-entering {
-      animation: noteCardEnter 450ms cubic-bezier(0.4, 0.22, 0.28, 1);
-    }
-    @keyframes noteCardEnter {
-      from {
-        opacity: 0;
-        transform: translateY(-36px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+    /* Enter animation for new notes is driven by the Web Animations API in renderNotesList */
     .note-card-screenshot-wrap {
       position: relative;
       border-bottom: 1px solid var(--border-soft);
@@ -1099,11 +1498,59 @@
       box-shadow: 0 0 0 3px rgba(204,219,232,.5);
     }
     .review-header-right {
-      position: relative;
+      position: fixed;
+      top: 12px;
+      right: 12px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 6px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      padding: 6px;
+      z-index: 20;
+      box-shadow: var(--shadow-pop);
     }
+    .review-header-right .btn {
+      border-radius: 999px;
+      border-color: transparent;
+    }
+    .review-header-right .btn:hover {
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
+      border-color: transparent;
+      color: var(--ink-black);
+    }
+    html.dark .review-header-right .btn:hover,
+    html.dark .tb-btn:hover {
+      background: var(--surface-hover-strong);
+    }
+    .presence-avatars:empty { display: none; }
+    .review-header-right > *, .top-bar-actions > * { flex: 0 0 auto; }
+    .top-bar-actions { display: contents; }
+    .review-header-right .bar-action {
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateX(var(--slide, 32px)) scale(0.8);
+      transition: opacity 400ms var(--ease-out),
+                  filter 400ms var(--ease-out),
+                  transform 400ms var(--ease-out);
+    }
+    .review-header-right .bar-action.in {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateX(0) scale(1);
+    }
+    .review-theme-btn {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .review-theme-btn .icon { width: 16px; height: 16px; }
 
     .review-meta {
       font-size: 13px;
@@ -1194,11 +1641,12 @@
       outline-offset: 0;
       border-radius: 9.6px;
     }
+    .canvas-item.ci-screenshot.selected { border-radius: 24px; }
 
     .ci-screenshot {
       background: var(--vellum-white);
       border: 1px solid var(--parchment);
-      border-radius: 9.6px;
+      border-radius: 24px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -1243,7 +1691,7 @@
       cursor: text;
       min-height: 22px;
     }
-    .ci-note-text:hover { border-color: var(--parchment); }
+    .ci-note-text:hover:not([contenteditable="true"]) { background: var(--surface-hover); }
     .ci-note-text[contenteditable="true"] {
       background: var(--snow-white);
       border-color: var(--pale-azure);
@@ -1260,10 +1708,6 @@
       width: fit-content;
       font-size: 12px;
       color: var(--dusty-gray);
-      background: var(--surface-hover);
-      border: 1px solid var(--parchment);
-      border-radius: 999px;
-      padding: 2px 8px;
     }
     .ci-text .ci-note-time { margin-top: 10px; }
     .ci-text-note {
@@ -1323,17 +1767,29 @@
       pointer-events: none;
     }
 
-    /* Let selected resize handles render outside the card instead of being clipped. */
+    /* Let selected resize handles render outside the card instead of being clipped,
+       while inner corners stay rounded so the card never "un-crops". */
     .ci-screenshot.selected,
     .ci-image.selected {
       overflow: visible;
+    }
+    .ci-screenshot .ci-screenshot-img-wrap {
+      border-radius: 23px 23px 0 0;
+    }
+    .ci-screenshot .ci-note,
+    .ci-image .ci-note {
+      border-radius: 0 0 23px 23px;
+    }
+    .ci-image .ci-image-img-wrap {
+      border-radius: 23px 23px 0 0;
+      overflow: hidden;
     }
 
     .resize-handle {
       position: absolute;
       width: 14px;
       height: 14px;
-      background: var(--ink-black);
+      background: var(--terra-cotta);
       border: 2px solid var(--vellum-white);
       border-radius: 999px;
       bottom: -7px;
@@ -1360,11 +1816,13 @@
     .canvas-toolbar {
       position: absolute;
       left: 50%;
-      bottom: 24px;
+      bottom: 12px;
       transform: translateX(-50%);
-      background: var(--vellum-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
-      border-radius: 16px;
+      border-radius: 999px;
       padding: 6px;
       display: flex;
       gap: 4px;
@@ -1386,8 +1844,7 @@
       font-family: var(--font-sans);
     }
     .tb-btn:hover {
-      background: var(--snow-white);
-      border-color: var(--border-soft);
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
       color: var(--ink-black);
     }
     .tb-icon { color: var(--terra-cotta); }
@@ -1396,7 +1853,9 @@
     .zoom-indicator,
     .canvas-help {
       position: absolute;
-      background: var(--bg-translucent);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
       border-radius: 9.6px;
       color: var(--graphite);
@@ -1412,8 +1871,8 @@
       font-variant-numeric: tabular-nums;
     }
     .canvas-help {
-      right: 24px;
-      bottom: 84px;
+      right: 12px;
+      bottom: 68px;
       padding: 14px 16px;
       font-size: 13px;
       line-height: 1.8;
@@ -1434,13 +1893,15 @@
 
     .help-fab {
       position: absolute;
-      right: 24px;
-      bottom: 24px;
+      right: 12px;
+      bottom: 12px;
       width: 44px;
       height: 44px;
       border-radius: 999px;
       border: 1px solid var(--parchment);
-      background: var(--vellum-white);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       color: var(--graphite);
       font-size: 22px;
       line-height: 1;
@@ -1454,9 +1915,12 @@
       transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
     }
     .help-fab:hover {
-      background: var(--snow-white);
+      background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
       border-color: var(--border-soft);
       color: var(--ink-black);
+    }
+    html.dark .help-fab:hover {
+      background: var(--surface-hover-strong);
     }
 
     .alignment-guide {
@@ -1580,10 +2044,12 @@
       display: none;
     }
 
+    :root { --sidebar-w: 300px; --notes-w: 400px; }
+    .app-layout.session-active .review-header {
+      padding-left: calc(var(--sidebar-w) + 12px + 24px);
+    }
+
     @media (max-width: 900px) {
-      .app-layout.session-active .sidebar {
-        display: none;
-      }
       .notes-panel { width: 320px; min-width: 320px; }
       .empty-state h2 { font-size: 40px; }
     }
@@ -1591,9 +2057,28 @@
 </head>
 <body>
 
+  <div class="nav-pill" id="navPill">
+    <button class="nav-pill-home">
+      <span class="nav-pill-logo" onclick="goHome()" title="Home"><svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 4H6.4C5.1 4 4 5.1 4 6.4V8"/>
+        <path d="M16 4h1.6C18.9 4 20 5.1 20 6.4V8"/>
+        <path d="M20 16v1.6c0 1.3-1.1 2.4-2.4 2.4H16"/>
+        <path d="M8 20H6.4C5.1 20 4 18.9 4 17.6V16"/>
+        <path d="M8.2 16.1l.7-2.6 5.3-5.3 2 2-5.3 5.3-2.7.6Z"/>
+        <path d="M13.1 9.3l2 2"/>
+      </svg></span>
+      <span class="nav-pill-label" id="navPillLabel">Screen Notes</span>
+    </button>
+    <button class="nav-pill-drawer" id="navDrawerBtn" onclick="toggleNavDrawer(event)" title="Sessions">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/>
+      </svg>
+    </button>
+  </div>
+
   <div class="app-layout" id="appLayout">
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebarDrawer">
       <div class="sidebar-header">
         <button class="sidebar-home-btn" onclick="goHome()" title="Home">
           <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1606,17 +2091,25 @@
           </svg>
           <span>Screen Notes</span>
         </button>
-        <button class="sidebar-new-btn" id="newSessionBtn" title="New session">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 5v14"/><path d="M5 12h14"/>
-          </svg>
-        </button>
+        <div class="sidebar-header-actions">
+          <button class="sidebar-new-btn" id="drawerCloseBtn" title="Close sessions" onclick="closeNavDrawer(true)">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/>
+            </svg>
+          </button>
+          <button class="sidebar-new-btn" id="newSessionBtn" title="New session">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5v14"/><path d="M5 12h14"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="session-tabs" id="sessionTabs" data-active="yours">
         <button class="session-tab active" id="sessionsTabYours" onclick="setSessionListTab('yours')">Yours</button>
         <button class="session-tab" id="sessionsTabOthers" onclick="setSessionListTab('others')">Others</button>
       </div>
       <div class="session-list" id="sessionList"></div>
+      <div class="sidebar-resize" id="sidebarResize"></div>
     </div>
 
     <!-- Main content -->
@@ -1634,27 +2127,10 @@
           </svg>
         </div>
         <h2>Screen Notes</h2>
-        <p>Get automatic screenshots with every note</p>
+        <p>Type or speak notes while you share screen.<br>Screenshots happen automatically.</p>
         <button class="btn btn-primary" id="emptyStartBtn">
           New session
         </button>
-        <div class="use-cases">
-          <div class="use-cases-label">Great for</div>
-          <div class="use-cases-grid">
-            <div class="use-case-card">
-              <h4>Live demos</h4>
-              <p>Capture key moments by annotating as presentations happen.</p>
-            </div>
-            <div class="use-case-card">
-              <h4>Design reviews</h4>
-              <p>Get timestamped annotated screenshots for your async demo feedback.</p>
-            </div>
-            <div class="use-case-card">
-              <h4>QA documentation</h4>
-              <p>Reproduce a bug step-by-step with screenshots and share a visual timeline with your team.</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -1682,6 +2158,10 @@
         mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3"/><path d="M9 21h6"/>',
         sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/>',
         moon: '<path d="M20 13.2A8 8 0 0 1 10.8 4 8 8 0 1 0 20 13.2z"/>',
+        more: '<circle cx="5" cy="12" r="1.7" class="icon-filled"/><circle cx="12" cy="12" r="1.7" class="icon-filled"/><circle cx="19" cy="12" r="1.7" class="icon-filled"/>',
+        link: '<path d="M10 14a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/>',
+        download: '<path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M4.5 19.5h15"/>',
+        pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
@@ -1750,6 +2230,59 @@
       } catch(e) {
         console.log('Could not get user info');
       }
+      initSidebarResize();
+      // Drawer open by default on larger screens
+      if (window.innerWidth >= 900) {
+        document.getElementById('sidebarDrawer')?.classList.add('open');
+        document.getElementById('navPill')?.classList.add('drawer-open');
+      }
+      document.addEventListener('mousedown', (e) => {
+        const card = e.target.closest('.home-hidden-note');
+        if (!card) return;
+        if (e.target.closest('.note-card-text')) return; // allow text editing
+        e.preventDefault();
+        const sx = e.clientX, sy = e.clientY;
+
+        if (e.target.classList.contains('home-note-resize')) {
+          const startW = card.offsetWidth;
+          const onMove = (ev) => {
+            const w = Math.min(480, Math.max(160, startW + (ev.clientX - sx)));
+            card.style.width = `${w}px`;
+          };
+          const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+          return;
+        }
+
+        card.classList.add('dragging');
+        const ox = card.offsetLeft, oy = card.offsetTop;
+        card.style.left = `${ox}px`;
+        card.style.top = `${oy}px`;
+        card.style.right = 'auto';
+        card.style.bottom = 'auto';
+        const onMove = (ev) => {
+          card.style.left = `${ox + ev.clientX - sx}px`;
+          card.style.top = `${oy + ev.clientY - sy}px`;
+        };
+        const onUp = () => {
+          card.classList.remove('dragging');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+      document.addEventListener('mousemove', (e) => {
+        const g = document.getElementById('gridBg');
+        if (!g) return;
+        const r = g.getBoundingClientRect();
+        g.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        g.style.setProperty('--my', `${e.clientY - r.top}px`);
+      });
       await loadSessions();
 
       const sessionId = getSessionIdFromUrl();
@@ -1825,8 +2358,8 @@
       }
       const container = document.getElementById('remoteCursors');
       if (container) container.innerHTML = '';
-      const avatars = document.getElementById('presenceAvatars');
-      if (avatars) avatars.innerHTML = '';
+      // Keep your own avatar locked in place; just drop remote users
+      renderSelfAvatar();
     }
 
     function renderPresenceAvatars() {
@@ -1834,7 +2367,7 @@
       if (!container || !presenceRoom) return;
 
       let html = '';
-      // Include current user
+      // Include current user (guard below avoids re-creating identical DOM)
       if (currentUser) {
         if (currentUser.slackImageUrl) {
           html += `<img class="presence-avatar" src="${currentUser.slackImageUrl}" title="${currentUser.fullName || currentUser.email}">`;
@@ -1856,7 +2389,7 @@
         }
       });
 
-      container.innerHTML = html;
+      if (container.innerHTML !== html) container.innerHTML = html;
     }
 
     function broadcastCursorPosition(e) {
@@ -1893,6 +2426,7 @@
     }
 
     async function goHome() {
+      closeNavDrawer();
       if (isRecording) {
         if (!confirm('Stop current recording and return home?')) return;
         await stopRecording();
@@ -2013,20 +2547,15 @@
         document.execCommand('copy');
         input.remove();
       }
-      const button = document.getElementById('shareSessionBtn');
-      if (button) {
-        button.textContent = 'Link copied';
-        button.classList.add('copied');
-        clearTimeout(button._resetTimer);
-        button._resetTimer = setTimeout(() => {
-          button.textContent = 'Share';
-          button.classList.remove('copied');
-        }, 1600);
-      }
+    }
+
+    async function shareSessionFromHeader(id) {
+      await shareSession(id);
+      showToast('Link copied');
     }
 
     async function deleteSession(id) {
-      if (!confirm('Delete this session and all its notes?')) return;
+      if (!confirm('Delete this session and all its notes?')) return false;
       try {
         await sessionsDb.delete(id);
         if (activeSessionId === id) {
@@ -2035,8 +2564,10 @@
         }
         await loadSessions();
         render();
+        return true;
       } catch(e) {
         console.error('Failed to delete:', e);
+        return false;
       }
     }
 
@@ -2093,7 +2624,16 @@
 
       render();
       startTimer();
-      if (voiceCommandsEnabledPreference) enableVoiceCommands(false);
+      if (voiceCommandsEnabledPreference) {
+        // Start in dictation mode right away: marker visible, speech transcribed,
+        // and the first spoken words auto-capture a screenshot (same as tapping the mic).
+        voiceNoteDictationActive = true;
+        voiceCaptureOnFirstDictationText = true;
+        voiceInterimStart = null;
+        voiceInterimText = '';
+        enableVoiceCommands(false);
+        updateVoiceCommandControl();
+      }
     }
 
     async function stopRecording() {
@@ -2903,6 +3443,32 @@
       }
     }
 
+    function startNotesPanelResize(e) {
+      e.preventDefault();
+      const handle = e.currentTarget;
+      handle.classList.add('dragging');
+      const root = document.documentElement;
+      const startX = e.clientX;
+      const startW = parseFloat(getComputedStyle(root).getPropertyValue('--notes-w')) || 400;
+      const onMove = (ev) => {
+        // Dragging left grows the panel
+        const w = Math.min(800, Math.max(300, startW + (startX - ev.clientX)));
+        root.style.setProperty('--notes-w', `${w}px`);
+      };
+      const onUp = () => {
+        handle.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        growAllNoteTextareas();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    function growAllNoteTextareas() {
+      document.querySelectorAll('.recording-note-edit').forEach(autoGrowTextarea);
+    }
+
     function autoGrowTextarea(el) {
       el.style.height = 'auto';
       el.style.height = `${el.scrollHeight}px`;
@@ -2944,8 +3510,51 @@
       appLayout?.classList.toggle('recording-active', isRecording);
       appLayout?.classList.toggle('session-active', !!activeSessionId && !isRecording);
       document.body.classList.toggle('recording-active', isRecording);
+      updateNavPill();
       renderSidebar();
       renderMain();
+    }
+
+    function updateNavPill() {
+      const label = document.getElementById('navPillLabel');
+      if (!label) return;
+      const session = activeSessionId && !isRecording
+        ? allSessions.find(s => s.id === activeSessionId) : null;
+      label.textContent = session ? (session.title || 'Untitled Session') : 'Screen Notes';
+    }
+
+    function toggleNavDrawer(e) {
+      e?.stopPropagation();
+      const drawer = document.getElementById('sidebarDrawer');
+      if (!drawer) return;
+      const opening = !drawer.classList.contains('open');
+      drawer.classList.toggle('open', opening);
+      document.getElementById('navPill')?.classList.toggle('drawer-open', opening);
+      if (opening) {
+        setTimeout(() => document.addEventListener('mousedown', onNavDrawerOutside, true), 0);
+      } else {
+        document.removeEventListener('mousedown', onNavDrawerOutside, true);
+      }
+    }
+
+    // force = explicit user action (close button). Automatic closes only apply below 900px.
+    function closeNavDrawer(force = false) {
+      if (!force && window.innerWidth >= 900) return;
+      const drawer = document.getElementById('sidebarDrawer');
+      if (drawer?.classList.contains('open')) {
+        drawer.classList.remove('open');
+        document.getElementById('navPill')?.classList.remove('drawer-open');
+        document.removeEventListener('mousedown', onNavDrawerOutside, true);
+      }
+    }
+
+    window.addEventListener('resize', () => closeNavDrawer());
+
+    function onNavDrawerOutside(e) {
+      const drawer = document.getElementById('sidebarDrawer');
+      if (!drawer) return;
+      if (drawer.contains(e.target) || e.target.closest('.nav-pill') || e.target.closest('.session-menu-popover')) return;
+      closeNavDrawer();
     }
 
     function ownerLabel(session) {
@@ -2965,8 +3574,16 @@
 
       const renderSessionItem = (s) => `
         <div class="session-item ${s.id === activeSessionId ? 'active' : ''}"
+             data-session-id="${s.id}"
              onclick="viewSession('${s.id}')">
-          <div class="session-item-title">${escapeHtml(s.title)}</div>
+          ${renamingSessionId === s.id
+            ? `<input class="session-title-input" value="${escapeHtml(s.title)}"
+                      onclick="event.stopPropagation()"
+                      onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){renamingSessionId=null;renderSidebar();}"
+                      onblur="commitRenameSession('${s.id}', this.value)">`
+            : `<div class="session-item-title">${escapeHtml(s.title)}</div>`}
+          <button class="session-menu-btn" title="More actions"
+                  onclick="event.stopPropagation(); openSessionMenu(event, '${s.id}')">${icon('more')}</button>
           <div class="session-item-meta">
             ${sessionListTab === 'others' ? `
               <span>${escapeHtml(ownerLabel(s))}</span>
@@ -2984,6 +3601,391 @@
         return;
       }
       list.innerHTML = visibleSessions.map(renderSessionItem).join('');
+
+      if (renamingSessionId) {
+        const input = list.querySelector('.session-title-input');
+        if (input) { input.focus(); input.select(); }
+      }
+    }
+
+    // ── Session item menu ──
+    let renamingSessionId = null;
+    let openMenuEl = null;
+
+    function closeSessionMenu() {
+      if (openMenuEl) { openMenuEl.remove(); openMenuEl = null; }
+      document.querySelectorAll('.session-menu-btn.open').forEach(b => b.classList.remove('open'));
+      document.removeEventListener('mousedown', onSessionMenuOutside, true);
+    }
+
+    function onSessionMenuOutside(e) {
+      if (openMenuEl && !openMenuEl.contains(e.target)) closeSessionMenu();
+    }
+
+    function openSessionMenu(event, id) {
+      if (openMenuEl) { closeSessionMenu(); return; }
+      const btn = event.currentTarget;
+      btn.classList.add('open');
+      const menu = document.createElement('div');
+      menu.className = 'session-menu-popover';
+      menu.innerHTML = `
+        <button class="session-menu-item" onclick="menuShareSession('${id}')">${icon('link')} Share</button>
+        <button class="session-menu-item" onclick="menuRenameSession('${id}')">${icon('pencil')} Rename</button>
+        <button class="session-menu-item danger" onclick="menuDeleteSession('${id}')">${icon('trash')} Delete</button>
+      `;
+      document.body.appendChild(menu);
+      const r = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let left = r.right - mw;
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = r.top - mh - 6;
+      if (left < 8) left = 8;
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      openMenuEl = menu;
+      document.addEventListener('mousedown', onSessionMenuOutside, true);
+    }
+
+    async function menuShareSession(id) {
+      closeSessionMenu();
+      await shareSession(id);
+      showToast('Link copied');
+    }
+
+    function menuRenameSession(id) {
+      closeSessionMenu();
+      renamingSessionId = id;
+      renderSidebar();
+    }
+
+    async function menuDeleteSession(id) {
+      closeSessionMenu();
+      const deleted = await deleteSession(id);
+      if (deleted) showToast('Session deleted');
+    }
+
+    async function commitRenameSession(id, value) {
+      if (renamingSessionId !== id) return;
+      renamingSessionId = null;
+      const session = allSessions.find(s => s.id === id);
+      const newTitle = value.trim() || 'Untitled Session';
+      const changed = session && session.title !== newTitle;
+      await renameSession(id, newTitle);
+      renderSidebar();
+      if (activeSessionId === id) {
+        renderMain();
+        const s2 = allSessions.find(s => s.id === id);
+        if (s2) requestAnimationFrame(() => initCanvas(s2));
+      }
+      if (changed) showToast('Session renamed');
+    }
+
+    // ── Center toast ──
+    let toastTimer = null;
+    function showToast(message) {
+      let toast = document.getElementById('centerToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'centerToast';
+        toast.className = 'toast-center';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      const toolbar = document.querySelector('.canvas-toolbar');
+      if (toolbar) {
+        // Emerge from behind the canvas toolbar, resting 24px above it
+        const r = toolbar.getBoundingClientRect();
+        toast.style.left = `${r.left + r.width / 2}px`;
+        toast.style.bottom = `${window.innerHeight - r.top + 24}px`;
+        toast.style.zIndex = '15'; // below .canvas-toolbar (20)
+      } else {
+        const main = document.getElementById('mainContent');
+        if (main) {
+          const r = main.getBoundingClientRect();
+          toast.style.left = `${r.left + r.width / 2}px`;
+        }
+        toast.style.bottom = '24px';
+        toast.style.zIndex = '500';
+      }
+      clearTimeout(toastTimer);
+      toast.classList.remove('visible');
+      void toast.offsetHeight; // restart animation from below
+      requestAnimationFrame(() => toast.classList.add('visible'));
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 1000 + 1000);
+    }
+
+    // ── Sidebar resize ──
+    function initSidebarResize() {
+      const handle = document.getElementById('sidebarResize');
+      const sidebar = document.querySelector('.sidebar');
+      if (!handle || !sidebar) return;
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        handle.classList.add('dragging');
+        const startX = e.clientX;
+        const startW = sidebar.getBoundingClientRect().width;
+        const onMove = (ev) => {
+          const w = Math.min(400, Math.max(240, startW + (ev.clientX - startX)));
+          sidebar.style.width = `${w}px`;
+          document.documentElement.style.setProperty('--sidebar-w', `${w}px`);
+        };
+        const onUp = () => {
+          handle.classList.remove('dragging');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    }
+
+    // ── Session export (zip of SESSION.md + screenshots, agent-ready) ──
+    function slugifyForFile(s) {
+      return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'note';
+    }
+
+    let jszipPromise = null;
+    function loadJSZip() {
+      if (window.JSZip) return Promise.resolve(window.JSZip);
+      jszipPromise = jszipPromise || new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = () => resolve(window.JSZip);
+        s.onerror = () => { jszipPromise = null; reject(new Error('Could not load zip library')); };
+        document.head.appendChild(s);
+      });
+      return jszipPromise;
+    }
+
+    async function exportSessionPackage(sessionId) {
+      const session = allSessions.find(s => s.id === sessionId);
+      if (!session) return;
+      const btn = document.getElementById('exportSessionBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const JSZip = await loadJSZip();
+        const zip = new JSZip();
+        const folderName = `session-${slugifyForFile(session.title || 'untitled')}`;
+        const root = zip.folder(folderName);
+        const shots = root.folder('screenshots');
+        const notes = session.notes || [];
+
+        const lines = [
+          `# ${session.title || 'Untitled Session'}`,
+          '',
+          `Recorded: ${new Date(session.created_at).toLocaleString()}`,
+          `Notes: ${notes.length}`,
+          '',
+          'Notes captured during a live screen-share session in Screen Notes.',
+          'Timestamps are elapsed recording time. Each screenshot shows what was',
+          'on screen at the moment the note was taken.',
+          '',
+        ];
+
+        let shotNum = 0;
+        for (let i = 0; i < notes.length; i++) {
+          const note = notes[i];
+          lines.push(`## Note ${i + 1} — ${formatDuration(note.timestamp || 0)}`, '');
+          if (note.text) lines.push(note.text, '');
+          const src = note.screenshotUrl || note.screenshot;
+          if (src) {
+            try {
+              const resp = await fetch(src);
+              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+              const blob = await resp.blob();
+              shotNum++;
+              const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type];
+              const ext = typeExt || (src.match(/\.(png|jpe?g|webp|gif)(\?|$)/i)?.[1] || 'png').replace(/jpeg/i, 'jpg');
+              const name = `${String(shotNum).padStart(2, '0')}-${slugifyForFile(note.text)}.${ext}`;
+              shots.file(name, blob);
+              lines.push(`![screenshot](screenshots/${name})`, '');
+            } catch (_) {
+              lines.push('_(screenshot unavailable)_', '');
+            }
+          }
+        }
+
+        root.file('SESSION.md', lines.join('\n'));
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${folderName}.zip`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        showToast('Session exported');
+      } catch (e) {
+        console.error('Export failed', e);
+        showToast('Export failed');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function topBarActionsHTML(session) {
+      return `
+        <button class="btn btn-ghost review-theme-btn review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Share — copy session link" aria-label="Share">
+          ${icon('link')}
+        </button>
+        <button class="btn btn-ghost review-theme-btn bar-action" id="exportSessionBtn" onclick="exportSessionPackage('${session.id}')" title="Export notes + screenshots for AI agents" aria-label="Export session">
+          ${icon('download')}
+        </button>
+        ${isMySession(session) ? `
+          <button class="btn btn-ghost review-theme-btn review-delete-btn bar-action" onclick="menuDeleteSession('${session.id}')" title="Delete session" aria-label="Delete">
+            ${icon('trash')}
+          </button>
+        ` : ''}`;
+    }
+
+    function ensureTopBar() {
+      let bar = document.getElementById('topBar');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'topBar';
+        bar.className = 'review-header-right';
+        bar.innerHTML = `
+          <div class="presence-avatars" id="presenceAvatars"></div>
+          <button class="btn btn-ghost review-theme-btn" id="themeToggle" onclick="toggleTheme()"
+                  title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
+                  aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
+            ${icon(isDarkMode() ? 'sun' : 'moon')}
+          </button>
+          <span class="top-bar-actions" id="topBarActions"></span>`;
+        document.body.appendChild(bar);
+        renderSelfAvatar();
+      }
+      return bar;
+    }
+
+    // Persistent top bar: avatar + theme never re-created, so no flicker.
+    // Animates width + slide-in only when the action set actually changes.
+    function updateTopBar(session) {
+      const bar = ensureTopBar();
+      bar.style.display = 'flex';
+      const actions = document.getElementById('topBarActions');
+      const mode = isRecording ? 'recording'
+        : session ? (isMySession(session) ? 'session-own' : 'session-shared') : 'home';
+
+      if (bar.dataset.mode === mode) {
+        if (session && !isRecording) {
+          // Same mode (e.g. session → session): swap ids without animating
+          actions.innerHTML = topBarActionsHTML(session);
+          actions.querySelectorAll('.bar-action').forEach(el => el.classList.add('in'));
+        }
+        return;
+      }
+      bar.dataset.mode = mode;
+      if (!session) renderSelfAvatar(); // drop remote presence avatars when leaving a session
+
+      const prevW = bar.getBoundingClientRect().width;
+      bar.style.width = '';
+      bar.style.transition = '';
+      actions.innerHTML = isRecording
+        ? `<button class="tb-btn bar-action" onclick="stopRecording()" title="Stop recording">${icon('stop', 'icon icon-filled')} Stop recording</button>`
+        : session ? topBarActionsHTML(session) : '';
+      const target = bar.getBoundingClientRect().width;
+      // Slide distance = width delta so icons travel at the exact pace the bar grows
+      const delta = Math.max(target - prevW, 0);
+      actions.querySelectorAll('.bar-action').forEach(el => {
+        el.style.setProperty('--slide', `${delta || 32}px`);
+      });
+      if (prevW > 1 && Math.abs(prevW - target) > 1) {
+        bar.style.overflow = 'hidden';
+        bar.style.width = `${prevW}px`;
+        void bar.offsetWidth;
+        bar.style.transition = 'width 400ms var(--ease-out)';
+        bar.style.width = `${target}px`;
+        // Start icon transition in the same frame as the width transition
+        actions.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
+        clearTimeout(bar._widthTimer);
+        bar._widthTimer = setTimeout(() => {
+          bar.style.width = '';
+          bar.style.transition = '';
+          bar.style.overflow = '';
+        }, 450);
+      } else {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          actions.querySelectorAll('.bar-action:not(.in)').forEach(el => el.classList.add('in'));
+        }));
+      }
+    }
+
+    function renderSelfAvatar() {
+      const container = document.getElementById('presenceAvatars');
+      if (!container || !currentUser) return;
+      let html;
+      if (currentUser.slackImageUrl) {
+        html = `<img class="presence-avatar" src="${currentUser.slackImageUrl}" title="${currentUser.fullName || currentUser.email}">`;
+      } else {
+        const initials = (currentUser.fullName || currentUser.email || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        html = `<div class="presence-avatar-placeholder" title="${currentUser.fullName || currentUser.email}">${initials}</div>`;
+      }
+      if (container.innerHTML !== html) container.innerHTML = html;
+    }
+
+    function renderHomeHiddenNotes() {
+      // aspect = image height / width, used to estimate real card heights
+      const samples = [
+        { text: 'The onboarding flow skips step 2 when you resize — capture this for the team.', time: '0:42', img: 'notes/n-login.jpg', aspect: 626 / 900 },
+        { text: "Candidate demo'd their recent project at Apple. Shows high taste! Follow up on decision to use sheet vs page.", time: '1:15', img: 'notes/n-music.jpg', aspect: 582 / 900 },
+        { text: 'Bug: Tiles are not resizing properly on POS home screen.', time: '3:08', img: 'notes/n-pos-grid.jpg', aspect: 696 / 900 },
+        { text: 'Voice note: UI for adding to a project in Claude desktop app.', time: '5:27', img: 'notes/n-claude.jpg', aspect: 598 / 900 },
+        { text: "Airbnb's new search redesign is so nice — explore the expanding filter interaction for our picker.", time: '2:34', img: 'notes/n-airbnb.jpg', aspect: 900 / 416 },
+        { text: 'Follow up on the usage metrics shown in townhall — grab the dashboard link from the deck.', time: '4:51', img: 'notes/n-metrics.jpg', aspect: 505 / 900 },
+        { text: 'Made with 💚 by Ryan Stone', time: '6:12', img: 'notes/n-ryan.jpg', aspect: 900 / 839 },
+      ];
+      const W = window.innerWidth, H = window.innerHeight;
+      const cardW = 260, margin = 24, gap = 16, textBlock = 100;
+      const small = W < 1500;
+      const mobile = W < 900;
+      // Fixed arrangements (fractions of viewport)
+      const layout = small ? {
+        // Small screens: fewer notes, hugging the edges
+        'notes/n-claude.jpg':   { fx: 0.01, fy: 0.05, rot: 2.5, noPush: true, dx: mobile ? -150 : 100 },
+        'notes/n-metrics.jpg':  { fx: 0.05, fy: 0.59, rot: -3.5, noPush: true, dx: mobile ? -150 : 100 },
+        'notes/n-pos-grid.jpg': { fx: 0.45, fy: 0.04, rot: -4, noPush: true, dy: -100 },
+        'notes/n-music.jpg':    { fx: 0.80, fy: 0.10, rot: 3, noPush: true },
+        'notes/n-ryan.jpg':     { fx: 0.71, fy: 0.61, rot: 5, noPush: true, dy: mobile ? 50 : 0 },
+      } : {
+        'notes/n-login.jpg':    { fx: 0.615, fy: 0.07, rot: -5 },
+        'notes/n-music.jpg':    { fx: 0.68,  fy: 0.67, rot: 3 },
+        'notes/n-pos-grid.jpg': { fx: 0.20,  fy: 0.55, rot: -4 },
+        'notes/n-claude.jpg':   { fx: 0.40,  fy: 0.04, rot: 2.5 },
+        'notes/n-airbnb.jpg':   { fx: 0.84,  fy: 0.33, rot: 4.5 },
+        'notes/n-metrics.jpg':  { fx: 0.17,  fy: 0.17, rot: -3.5 },
+        'notes/n-ryan.jpg':     { fx: 0.345, fy: 0.70, rot: 5, dx: 200, noPush: true },
+      };
+      // Keep the hero area clear of notes
+      const centerBox = { x: W / 2 - 350, w: 700, y: H * 0.34, h: H * 0.45 };
+      const rectsOverlap = (a, b) =>
+        a.x < b.x + b.w + gap && a.x + a.w + gap > b.x &&
+        a.y < b.y + b.h + gap && a.y + a.h + gap > b.y;
+      return samples.filter(s => layout[s.img]).map((s) => {
+        const cardH = Math.round(cardW * s.aspect) + textBlock;
+        const l = layout[s.img];
+        let x = Math.round(l.fx * W) + (l.dx || 0);
+        let y = Math.round(Math.min(l.fy * H, H - cardH - margin)) + (l.dy || 0);
+        // Push out of the center zone (notes may hang off screen edges instead)
+        const rect = { x, y, w: cardW, h: cardH };
+        if (!l.noPush && rectsOverlap(rect, centerBox)) {
+          const centerX = W / 2;
+          x = (x + cardW / 2) < centerX
+            ? Math.round(centerBox.x - cardW - gap)
+            : Math.round(centerBox.x + centerBox.w + gap);
+        }
+        const p = { x, y };
+        const rot = l.rot;
+        return `
+          <div class="note-card home-hidden-note"
+               style="left: ${p.x}px; top: ${p.y}px; transform: rotate(${rot}deg);">
+            <div class="note-card-screenshot-wrap"><img class="note-card-screenshot${s.portrait ? ' portrait' : ''}" src="${s.img}" alt="" draggable="false"></div>
+            <div class="note-card-body">
+              <div class="note-card-text" contenteditable="true" spellcheck="false">${s.text}</div>
+              <div class="note-card-meta"><span>${s.time}</span></div>
+            </div>
+            <div class="home-note-resize"></div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderMain() {
@@ -2991,6 +3993,7 @@
 
       if (isRecording) {
         main.innerHTML = renderRecordingView();
+        updateTopBar(null);
         setupRecordingVideo();
         return;
       }
@@ -2999,59 +4002,33 @@
         const session = allSessions.find(s => s.id === activeSessionId);
         if (session) {
           main.innerHTML = renderReviewView(session);
+          updateTopBar(session);
           return;
         }
       }
 
       // Empty state
       main.innerHTML = `
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"
-                title="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}"
-                aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
-          ${icon(isDarkMode() ? 'sun' : 'moon')}
-        </button>
+        <div class="grid-bg" id="gridBg">${renderHomeHiddenNotes()}</div>
         <div class="empty-state" id="emptyState">
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>
-          <p>Get automatic screenshots with every note</p>
+          <p>Type or speak notes while you share screen.<br>Screenshots happen automatically.</p>
           <button class="btn btn-primary" onclick="startRecording()">
             New session
           </button>
-          <div class="use-cases">
-            <div class="use-cases-label">Great for</div>
-            <div class="use-cases-grid">
-              <div class="use-case-card">
-                <h4>Live demos</h4>
-                <p>Capture key moments by annotating as presentations happen.</p>
-              </div>
-              <div class="use-case-card">
-                <h4>Design reviews</h4>
-                <p>Get timestamped annotated screenshots for your async demo feedback.</p>
-              </div>
-              <div class="use-case-card">
-                <h4>QA documentation</h4>
-                <p>Reproduce a bug step-by-step with screenshots and share a visual timeline with your team.</p>
-              </div>
-            </div>
-          </div>
         </div>
       `;
+      updateTopBar(null);
     }
 
     function renderRecordingView() {
       return `
         <div class="recording-view">
-          <div class="recording-header">
-            <div class="recording-status">
-              <div class="rec-dot"></div>
-              <span class="rec-timer" id="recTimer">00:00</span>
-              <span style="color:var(--text-dim);font-size:13px;">Recording</span>
-            </div>
-            <div>
-              <button class="btn btn-danger" style="padding-left:12px" onclick="stopRecording()">
-                ${icon('stop', 'icon icon-filled')} Stop recording
-              </button>
-            </div>
+          <div class="rec-pill">
+            <div class="rec-dot"></div>
+            <span class="rec-timer" id="recTimer">00:00</span>
+            <span class="rec-status-label">Recording</span>
           </div>
           <div class="recording-body">
             <div class="video-panel">
@@ -3059,6 +4036,8 @@
 
             </div>
             <div class="notes-panel">
+              <div class="notes-panel-resize" id="notesPanelResize"
+                   onmousedown="startNotesPanelResize(event)"></div>
               <div class="notes-panel-header">
                 <h3>Notes</h3>
                 <span style="font-size:12px;color:var(--text-dim);" id="noteCountLabel">${currentNotes.length} notes</span>
@@ -3178,6 +4157,26 @@
         `;
       }).join('');
 
+      // Size textareas to their content immediately (long notes were cropped until focused)
+      growAllNoteTextareas();
+
+      // Animate the newly saved note in (ease-out slide + blur + scale)
+      if (enteringNoteCreatedAt) {
+        const enteringCard = list.querySelector(
+          `.note-card[data-note-key="${CSS.escape(enteringNoteCreatedAt)}"]`
+        );
+        enteringNoteCreatedAt = null; // consume immediately, no timers
+        if (enteringCard) {
+          enteringCard.animate(
+            [
+              { transform: 'translateY(-48px) scale(0.8)', opacity: 0, filter: 'blur(8px)' },
+              { transform: 'translateY(0) scale(1)', opacity: 1, filter: 'blur(0px)' },
+            ],
+            { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0, 1)', fill: 'both' }
+          );
+        }
+      }
+
       if (previousTops.size) {
         list.querySelectorAll('.note-card[data-note-key]:not(.note-card-entering)').forEach(card => {
           const previousTop = previousTops.get(card.dataset.noteKey);
@@ -3198,37 +4197,12 @@
         });
       }
 
-      if (enteringNoteCreatedAt) {
-        window.setTimeout(() => { enteringNoteCreatedAt = null; }, 470);
-      }
     }
 
     function renderReviewView(session) {
       const notes = session.notes || [];
       return `
         <div class="review-view">
-          <div class="review-header">
-            <div class="review-header-left">
-              <input class="review-title-input"
-                     value="${escapeHtml(session.title)}"
-                     onchange="renameSession('${session.id}', this.value)"
-                     onblur="renameSession('${session.id}', this.value)"
-                     onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-                     placeholder="Untitled session">
-            </div>
-            <div class="review-header-right">
-              <div class="presence-avatars" id="presenceAvatars"></div>
-              <button class="btn btn-ghost review-share-btn" id="shareSessionBtn" onclick="shareSession('${session.id}')" title="Copy session link">
-                Share
-              </button>
-              ${isMySession(session) ? `
-                <button class="btn btn-ghost review-delete-btn" onclick="deleteSession('${session.id}')" title="Delete session">
-                  Delete
-                </button>
-              ` : ''}
-
-            </div>
-          </div>
           <div class="canvas-viewport" id="canvasViewport">
             <div class="canvas-world" id="canvasWorld"></div>
 
@@ -3245,7 +4219,6 @@
             </div>
             <button class="help-fab" onclick="toggleCanvasHelp(event)" title="Canvas help">?</button>
             <div class="remote-cursors" id="remoteCursors"></div>
-            <div class="zoom-indicator" id="zoomIndicator">100%</div>
             <div class="alignment-guide vertical" id="guideVertical"></div>
             <div class="alignment-guide horizontal" id="guideHorizontal"></div>
             <div class="selection-rect" id="selectionRect"></div>
@@ -3273,6 +4246,7 @@
     }
 
     async function viewSession(id, options = {}) {
+      closeNavDrawer();
       if (isRecording && id !== activeSessionId) {
         if (!confirm('Stop current recording to view this session?')) return;
         await stopRecording();
@@ -3826,6 +4800,12 @@
       if (noteText) {
         const parentItem = noteText.closest('.canvas-item');
         if (parentItem) setSelectedItem(parentItem.dataset.id);
+        // Single click starts editing right away
+        if (noteText.contentEditable !== 'true') {
+          if (noteText.dataset.imageNoteId) startEditingImageNoteText(noteText);
+          else startEditingNoteText(noteText);
+          e.preventDefault();
+        }
         return;
       }
       if (e.target.closest('.ci-text[contenteditable="true"]')) {
