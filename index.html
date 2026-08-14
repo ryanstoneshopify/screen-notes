@@ -5425,7 +5425,7 @@
           <div>
             <label id="ghTokenLabel" for="ghTokenInput">Access token${hasToken ? ' (saved)' : ''}</label>
             <input type="password" id="ghTokenInput" value="${hasToken ? GH_TOKEN_MASK : ''}" placeholder="github_pat_…" autocomplete="off" onfocus="if(this.value===window.GH_TOKEN_MASK)this.select()">
-            <div class="gh-dialog-hint"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a> for this resource owner with <b>Issues: write</b> and <b>Contents: write</b>. Saved per owner, locally in this browser.</div>
+            <div class="gh-dialog-hint"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a> for this resource owner with <b>Issues: Read & write</b> and <b>Contents: Read & write</b>.</div>
           </div>
           <div class="gh-dialog-status" id="ghStatus"></div>
           <div class="gh-dialog-actions">
