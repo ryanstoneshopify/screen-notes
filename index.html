@@ -2144,6 +2144,8 @@
     .share-role-btn:hover { background: var(--surface-hover-strong); }
     .share-role-btn .icon { width: 13px; height: 13px; color: var(--graphite); }
     .role-check { display: inline-flex; width: 16px; justify-content: center; }
+    /* Role popovers must stack above the share modal overlay (z-index 400) */
+    .session-menu-popover.role-popover { z-index: 500; }
     .share-footer { justify-content: space-between; align-items: center; }
     .share-footer-right { display: flex; gap: 8px; }
     .share-copy-btn { display: inline-flex; align-items: center; gap: 6px; }
@@ -3185,6 +3187,8 @@
       overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeShareModal(); });
       document.body.appendChild(overlay);
       renderShareAccessList();
+      // Warm the directory so access rows can resolve avatars
+      loadPeopleDirectory().then(() => { if (shareModalSessionId === id) renderShareAccessList(); });
       requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('in')));
       document.getElementById('shareSearchInput')?.focus();
     }
@@ -3254,7 +3258,7 @@
           if (!line.trim()) return;
           try {
             const p = JSON.parse(line);
-            if (p.email) byEmail.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.name || p.email, image: null });
+            if (p.email) byEmail.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.name || p.email, image: p.image || null });
           } catch (_) {}
         });
       } catch (_) {}
@@ -3328,7 +3332,7 @@
     function openRolePopover(btn, options, current, onPick) {
       if (rolePopoverEl) { closeRolePopover(); return; }
       const menu = document.createElement('div');
-      menu.className = 'session-menu-popover';
+      menu.className = 'session-menu-popover role-popover';
       menu.innerHTML = options.map(o => `
         <button class="session-menu-item" data-value="${o.value}">
           <span class="role-check">${o.value === current ? icon('check', 'icon icon-sm') : ''}</span>${o.label}
@@ -3392,10 +3396,14 @@
           <div class="share-person-role">Owner</div>
         </div>`];
       (shareDraft?.people || []).forEach(p => {
+        // Prefer live directory data (Slack avatars from quick.id) over stored values
+        const dir = (peopleDirectory || []).find(d => d.email === p.email.toLowerCase());
+        const image = p.image || dir?.image || null;
+        const name = p.name || dir?.name || p.email;
         rows.push(`
           <div class="share-person">
-            ${p.image ? `<img class="share-avatar" src="${escapeHtml(p.image)}" alt="">` : `<div class="share-avatar share-avatar-initials">${escapeHtml(shareInitials(p.email))}</div>`}
-            <div class="share-person-name">${escapeHtml(p.name || p.email)}</div>
+            ${image ? `<img class="share-avatar" src="${escapeHtml(image)}" alt="">` : `<div class="share-avatar share-avatar-initials">${escapeHtml(shareInitials(p.email))}</div>`}
+            <div class="share-person-name">${escapeHtml(name)}</div>
             <button class="share-role-btn" onclick="openPersonRolePopover(event, '${escapeHtml(p.email)}')">
               <span>${p.role === 'editor' ? 'Editor' : 'Viewer'}</span>${icon('chevron', 'icon icon-sm')}
             </button>

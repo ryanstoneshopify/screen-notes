@@ -25,19 +25,33 @@ generate_users() {
     ORDER BY o.full_name
   " > /tmp/screen-notes-users-raw.json
 
+  # Avatar/title enrichment from artifact's identity dump (public CDN image URLs)
+  quick curl https://artifact.quick.shopify.io/users.json > /tmp/screen-notes-users-artifact.json 2>/dev/null || echo -n > /tmp/screen-notes-users-artifact.json
+
   node -e "
-  const rows = JSON.parse(require('fs').readFileSync('/tmp/screen-notes-users-raw.json', 'utf8'));
+  const fs = require('fs');
+  const parseNd = (t) => t.split('\n').filter(l => l.trim()).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  const rows = JSON.parse(fs.readFileSync('/tmp/screen-notes-users-raw.json', 'utf8'));
+  const extraRows = parseNd(fs.readFileSync('/tmp/screen-notes-users-artifact.json', 'utf8'));
+  const extra = new Map(extraRows.map(p => [(p.email || '').toLowerCase(), p]));
   const seen = new Set();
   const out = [];
   rows.forEach(r => {
     const email = (r.email || '').toLowerCase();
     if (!email || seen.has(email)) return;
     seen.add(email);
-    out.push(JSON.stringify({ name: r.name || email, email, slack_id: r.slack_id || null, slack_handle: r.slack_handle || null }));
+    const e = extra.get(email) || {};
+    out.push(JSON.stringify({ name: r.name || email, email, slack_id: r.slack_id || e.slack_id || null, slack_handle: r.slack_handle || e.slack_handle || null, image: e.slack_image_url || null, title: e.title || null }));
+  });
+  extraRows.forEach(p => {
+    const email = (p.email || '').toLowerCase();
+    if (!email || seen.has(email)) return;
+    seen.add(email);
+    out.push(JSON.stringify({ name: p.name || email, email, slack_id: p.slack_id || null, slack_handle: p.slack_handle || null, image: p.slack_image_url || null, title: p.title || null }));
   });
   if (out.length < 1000) { console.error('[update-users] suspiciously few rows (' + out.length + '), aborting'); process.exit(1); }
-  require('fs').writeFileSync('$target_dir/users.json', out.join('\n'));
-  console.log('[update-users] wrote users.json with', out.length, 'people');
+  fs.writeFileSync('$target_dir/users.json', out.join('\n'));
+  console.log('[update-users] wrote users.json with', out.length, 'people,', out.filter(l => l.includes('cdn.shopify.com')).length, 'with avatars');
   "
 }
 
