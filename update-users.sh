@@ -50,8 +50,8 @@ generate_users() {
     out.push(JSON.stringify({ name: p.name || email, email, slack_id: p.slack_id || null, slack_handle: p.slack_handle || null, image: p.slack_image_url || null, title: p.title || null }));
   });
   if (out.length < 1000) { console.error('[update-users] suspiciously few rows (' + out.length + '), aborting'); process.exit(1); }
-  fs.writeFileSync('$target_dir/users.json', out.join('\n'));
-  console.log('[update-users] wrote users.json with', out.length, 'people,', out.filter(l => l.includes('cdn.shopify.com')).length, 'with avatars');
+  fs.writeFileSync('$target_dir/people-directory.json', out.join('\n'));
+  console.log('[update-users] wrote people-directory.json with', out.length, 'people,', out.filter(l => l.includes('cdn.shopify.com')).length, 'with avatars');
   "
 }
 

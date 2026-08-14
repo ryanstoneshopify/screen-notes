@@ -3253,12 +3253,12 @@
       // merged with quick.db people (Screen Notes users) who carry Slack avatars.
       const byEmail = new Map();
       try {
-        const text = await (await fetch('/users.json')).text();
+        const text = await (await fetch(`/people-directory.json?v=${Date.now()}`)).text();
         text.split('\n').forEach(line => {
           if (!line.trim()) return;
           try {
             const p = JSON.parse(line);
-            if (p.email) byEmail.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.name || p.email, image: p.image || null });
+            if (p.email) byEmail.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.name || p.email, image: p.image || p.slack_image_url || null });
           } catch (_) {}
         });
       } catch (_) {}
@@ -3266,7 +3266,7 @@
         ((await peopleDb.find()) || []).forEach(p => {
           if (!p.email) return;
           const key = p.email.toLowerCase();
-          byEmail.set(key, { ...(byEmail.get(key) || {}), email: key, name: p.name || byEmail.get(key)?.name || key, image: p.image || null });
+          byEmail.set(key, { ...(byEmail.get(key) || {}), email: key, name: p.name || byEmail.get(key)?.name || key, image: p.image || p.slack_image_url || null });
         });
       } catch (_) {}
       peopleDirectory = [...byEmail.values()];
