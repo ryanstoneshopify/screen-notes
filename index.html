@@ -2058,6 +2058,24 @@
       box-sizing: border-box;
     }
     .gh-owner-select:focus { border-color: var(--onyx); }
+    .gh-owner-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px !important; /* opt out of the global pill-button rule */
+      background: var(--snow-white);
+      color: var(--ink-black);
+      font-size: 13.5px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .gh-owner-btn:hover { border-color: var(--onyx); }
+    .gh-owner-btn .icon { width: 14px; height: 14px; color: var(--graphite); flex: 0 0 auto; }
 
     /* ── Share modal ── */
     .share-dialog { width: 480px; gap: 16px; }
@@ -2135,13 +2153,14 @@
       padding: 9px 14px;
       border: none;
       border-radius: 999px;
-      background: var(--surface-hover);
+      /* Same treatment as the active mode toggle in the bottom toolbar */
+      background: var(--surface-hover-strong);
       color: var(--ink-black);
       font-family: var(--font-sans);
       font-size: 13.5px;
       cursor: pointer;
     }
-    .share-role-btn:hover { background: var(--surface-hover-strong); }
+    .share-role-btn:hover { background: color-mix(in srgb, var(--surface-hover-strong) 80%, var(--ink-black) 8%); }
     .share-role-btn .icon { width: 13px; height: 13px; color: var(--graphite); }
     .role-check { display: inline-flex; width: 16px; justify-content: center; }
     /* Role popovers must stack above the share modal overlay (z-index 400) */
@@ -2155,7 +2174,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px 14px;
+      padding: 16px;
       border: 1px solid var(--parchment);
       border-radius: 14px;
     }
@@ -3137,12 +3156,19 @@
     // ── Share modal (draft model: changes apply on Save) ──
     let shareModalSessionId = null;
     let shareDraft = null;
+    let shareBaseline = null;
+
+    function updateShareSaveEnabled() {
+      const btn = document.getElementById('shareSaveBtn');
+      if (btn) btn.disabled = !shareDraft || JSON.stringify(shareDraft) === shareBaseline;
+    }
 
     function openShareModal(id) {
       const session = allSessions.find(s => s.id === id);
       if (!session) return;
       shareModalSessionId = id;
       shareDraft = JSON.parse(JSON.stringify(sessionSharing(session)));
+      shareBaseline = JSON.stringify(shareDraft);
       document.getElementById('shareOverlay')?.remove();
       const overlay = document.createElement('div');
       overlay.className = 'gh-dialog-overlay';
@@ -3180,7 +3206,7 @@
             <button class="btn btn-ghost share-copy-btn" onclick="shareModalCopyLink()">${icon('link', 'icon icon-sm')} Copy link</button>
             <span class="share-footer-right">
               <button class="btn btn-ghost" onclick="closeShareModal()">Cancel</button>
-              <button class="btn btn-primary" onclick="shareModalSave()">Save</button>
+              <button class="btn btn-primary" id="shareSaveBtn" onclick="shareModalSave()" disabled>Save</button>
             </span>
           </div>
         </div>`;
@@ -3197,13 +3223,20 @@
       const session = shareModalSession();
       if (session && shareDraft) {
         session.sharing = shareDraft;
+        shareDraft = null; // consumed — close won't report a discard
         await saveSession(session);
+        showToast('Changes saved');
       }
       closeShareModal();
     }
 
     function closeShareModal() {
       const overlay = document.getElementById('shareOverlay');
+      const session = shareModalSession();
+      // Unsaved edits on the way out → they're being discarded
+      if (session && shareDraft && JSON.stringify(shareDraft) !== shareBaseline) {
+        showToast('Changes discarded');
+      }
       shareModalSessionId = null;
       shareDraft = null;
       closeRolePopover();
@@ -3317,6 +3350,7 @@
       if (input) input.value = '';
       hideShareSuggestions();
       renderShareAccessList();
+      updateShareSaveEnabled();
     }
 
     // ── Role popovers (shared pattern with the nav more-menu) ──
@@ -3329,12 +3363,13 @@
       if (rolePopoverEl && !rolePopoverEl.contains(e.target)) closeRolePopover();
     }
 
-    function openRolePopover(btn, options, current, onPick) {
+    function openRolePopover(btn, options, current, onPick, { fullWidth = false } = {}) {
       if (rolePopoverEl) { closeRolePopover(); return; }
       const menu = document.createElement('div');
       menu.className = 'session-menu-popover role-popover';
+      if (fullWidth) menu.style.width = `${btn.getBoundingClientRect().width}px`;
       menu.innerHTML = options.map(o => `
-        <button class="session-menu-item" data-value="${o.value}">
+        <button class="session-menu-item${o.danger ? ' danger' : ''}" data-value="${o.value}">
           <span class="role-check">${o.value === current ? icon('check', 'icon icon-sm') : ''}</span>${o.label}
         </button>`).join('');
       document.body.appendChild(menu);
@@ -3365,13 +3400,12 @@
     }
 
     function openPersonRolePopover(event, email) {
-      const session = shareModalSession();
-      const person = session && sessionSharing(session).people.find(p => p.email.toLowerCase() === email.toLowerCase());
+      const person = shareDraft?.people.find(p => p.email.toLowerCase() === email.toLowerCase());
       if (!person) return;
       openRolePopover(event.currentTarget, [
         { value: 'editor', label: 'Editor' },
         { value: 'viewer', label: 'Viewer' },
-        { value: 'remove', label: 'Remove' },
+        { value: 'remove', label: 'Remove', danger: true },
       ], person.role, (value) => shareModalSetRole(email, value));
     }
 
@@ -3435,6 +3469,7 @@
         if (person) person.role = value;
       }
       renderShareAccessList();
+      updateShareSaveEnabled();
     }
 
     function shareModalTogglePublic() {
@@ -3443,6 +3478,7 @@
       const toggle = document.getElementById('sharePublicToggle');
       toggle?.classList.toggle('on', shareDraft.publicView);
       toggle?.setAttribute('aria-checked', String(shareDraft.publicView));
+      updateShareSaveEnabled();
     }
 
     async function deleteSession(id) {
@@ -5326,8 +5362,28 @@
       localStorage.setItem(GH_TOKENS_KEY, JSON.stringify(tokens));
     }
 
+    function ghOwnerLabel(key) {
+      if (key === 'personal') {
+        const personalLogin = currentUser?.github || ghLoadTokens().personal?.login;
+        if (personalLogin) return personalLogin;
+      }
+      return GH_OWNERS.find(o => o.key === key)?.label || key;
+    }
+
+    function openGhOwnerPopover(event) {
+      const btn = document.getElementById('ghOwnerBtn');
+      openRolePopover(event.currentTarget, GH_OWNERS.map(o => ({
+        value: o.key,
+        label: ghOwnerLabel(o.key),
+      })), btn.dataset.value, (value) => {
+        btn.dataset.value = value;
+        document.getElementById('ghOwnerBtnLabel').textContent = ghOwnerLabel(value);
+        ghOwnerChanged();
+      }, { fullWidth: true });
+    }
+
     function ghOwnerChanged() {
-      const ownerKey = document.getElementById('ghOwnerSelect')?.value;
+      const ownerKey = document.getElementById('ghOwnerBtn')?.dataset.value;
       const input = document.getElementById('ghTokenInput');
       if (!input) return;
       const saved = ghLoadTokens()[ownerKey];
@@ -5357,14 +5413,10 @@
         <div class="gh-dialog">
           <h3>Export ${totalCount} note${totalCount === 1 ? '' : 's'} to GitHub</h3>
           <div>
-            <label for="ghOwnerSelect">Resource owner</label>
-            <select id="ghOwnerSelect" class="gh-owner-select" onchange="ghOwnerChanged()">
-              ${GH_OWNERS.map(o => {
-                const personalLogin = currentUser?.github || savedTokens.personal?.login;
-                const label = o.key === 'personal' && personalLogin ? personalLogin : o.label;
-                return `<option value="${o.key}"${o.key === lastOwner ? ' selected' : ''}>${escapeHtml(label)}</option>`;
-              }).join('')}
-            </select>
+            <label>Resource owner</label>
+            <button class="gh-owner-btn" id="ghOwnerBtn" data-value="${lastOwner}" onclick="openGhOwnerPopover(event)">
+              <span id="ghOwnerBtnLabel">${escapeHtml(ghOwnerLabel(lastOwner))}</span>${icon('chevron', 'icon icon-sm')}
+            </button>
           </div>
           <div>
             <label for="ghRepoInput">Repository name</label>
@@ -5432,7 +5484,7 @@
       if (!session) return;
       const repoName = document.getElementById('ghRepoInput')?.value.trim();
       if (!/^[\w.-]+$/.test(repoName || '')) return ghSetStatus('Enter a repository name', true);
-      const ownerKey = document.getElementById('ghOwnerSelect')?.value || 'personal';
+      const ownerKey = document.getElementById('ghOwnerBtn')?.dataset.value || 'personal';
       const tokens = ghLoadTokens();
       let tokenInput = document.getElementById('ghTokenInput')?.value.trim() || '';
       if (tokenInput === GH_TOKEN_MASK) tokenInput = '';
