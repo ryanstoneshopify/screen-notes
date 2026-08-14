@@ -677,8 +677,8 @@
         linear-gradient(var(--border-soft) 1px, transparent 1px),
         linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
       background-size: 32px 32px;
-      -webkit-mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
-      mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+      -webkit-mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0.99) 10%, rgba(0,0,0,0.96) 20%, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.48) 60%, rgba(0,0,0,0.31) 70%, rgba(0,0,0,0.16) 80%, rgba(0,0,0,0.05) 90%, rgba(0,0,0,0) 100%);
+      mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0.99) 10%, rgba(0,0,0,0.96) 20%, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.48) 60%, rgba(0,0,0,0.31) 70%, rgba(0,0,0,0.16) 80%, rgba(0,0,0,0.05) 90%, rgba(0,0,0,0) 100%);
     }
     .empty-state { position: relative; z-index: 1; pointer-events: none; }
     .empty-state .btn { pointer-events: auto; }
@@ -1923,6 +1923,69 @@
       background: var(--surface-hover-strong);
     }
 
+    /* ── GitHub export dialog ── */
+    .gh-dialog-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(20, 20, 19, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity var(--ease-out-duration) var(--ease-out);
+    }
+    .gh-dialog-overlay.in { opacity: 1; }
+    .gh-dialog {
+      width: 380px;
+      max-width: calc(100vw - 48px);
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-pop);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transform: translateY(100px);
+      transition: transform var(--ease-out-duration) var(--ease-out);
+    }
+    .gh-dialog-overlay.in .gh-dialog { transform: translateY(0); }
+    .gh-dialog h3 {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink-black);
+      margin: 0;
+    }
+    .gh-dialog label {
+      font-size: 12px;
+      color: var(--graphite);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .gh-dialog input[type="text"],
+    .gh-dialog input[type="password"] {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: var(--snow-white);
+      color: var(--ink-black);
+      font-size: 13.5px;
+      font-family: var(--font-sans);
+      outline: none;
+      box-sizing: border-box;
+    }
+    .gh-dialog input:focus { border-color: var(--onyx); }
+    .gh-dialog-hint { font-size: 11.5px; color: var(--graphite); line-height: 1.5; padding-top: 8px; }
+    .gh-dialog-hint a { color: inherit; }
+    .gh-dialog-status { font-size: 12.5px; color: var(--graphite); min-height: 16px; }
+    .gh-dialog-status.error { color: #c0392b; }
+    .gh-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
     .alignment-guide {
       position: absolute;
       pointer-events: none;
@@ -2161,6 +2224,7 @@
         more: '<circle cx="5" cy="12" r="1.7" class="icon-filled"/><circle cx="12" cy="12" r="1.7" class="icon-filled"/><circle cx="19" cy="12" r="1.7" class="icon-filled"/>',
         link: '<path d="M10 14a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/>',
         download: '<path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M4.5 19.5h15"/>',
+        github: '<path class="icon-filled" d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.72.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.63.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.57 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 2.5-.34c.85 0 1.71.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.25 10.25 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/>',
         pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
@@ -3739,6 +3803,166 @@
       });
     }
 
+    // ── GitHub export (one issue per note, screenshots committed to the repo) ──
+    const GH_TOKEN_KEY = 'screenNotesGithubToken';
+    const GH_REPO_KEY = 'screenNotesGithubRepo';
+    const GH_TOKEN_MASK = '••••••••••••••••••••••••';
+    window.GH_TOKEN_MASK = GH_TOKEN_MASK;
+
+    function openGithubExportDialog(sessionId) {
+      document.getElementById('ghDialogOverlay')?.remove();
+      const savedRepo = localStorage.getItem(GH_REPO_KEY) || '';
+      const hasToken = !!localStorage.getItem(GH_TOKEN_KEY);
+      const overlay = document.createElement('div');
+      overlay.className = 'gh-dialog-overlay';
+      overlay.id = 'ghDialogOverlay';
+      overlay.innerHTML = `
+        <div class="gh-dialog">
+          <h3>Export notes as GitHub issues</h3>
+          <div>
+            <label for="ghRepoInput">Repository (owner/repo)</label>
+            <input type="text" id="ghRepoInput" placeholder="shop/issues-retail" value="${escapeHtml(savedRepo)}" spellcheck="false">
+          </div>
+          <div>
+            <label for="ghTokenInput">Personal access token${hasToken ? ' (saved)' : ''}</label>
+            <input type="password" id="ghTokenInput" value="${hasToken ? GH_TOKEN_MASK : ''}" placeholder="github_pat_…" autocomplete="off" onfocus="if(this.value===window.GH_TOKEN_MASK)this.select()">
+            <div class="gh-dialog-hint"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a> with <b>Issues: write</b> and <b>Contents: write</b> on the repo. Stored locally in this browser.</div>
+          </div>
+          <div class="gh-dialog-status" id="ghStatus"></div>
+          <div class="gh-dialog-actions">
+            <button class="btn btn-ghost" onclick="closeGithubExportDialog()">Cancel</button>
+            <button class="btn btn-primary" id="ghExportGo" onclick="runGithubExport('${sessionId}')">Export</button>
+          </div>
+        </div>`;
+      overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeGithubExportDialog(); });
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('in')));
+      document.getElementById(savedRepo ? (hasToken ? 'ghExportGo' : 'ghTokenInput') : 'ghRepoInput')?.focus();
+    }
+
+    function closeGithubExportDialog() {
+      const overlay = document.getElementById('ghDialogOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('in');
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => overlay.remove(), 400);
+    }
+
+    function ghSetStatus(msg, isError = false) {
+      const el = document.getElementById('ghStatus');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.toggle('error', isError);
+    }
+
+    async function ghApi(path, token, options = {}) {
+      const resp = await fetch(`https://api.github.com${path}`, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          ...(options.headers || {}),
+        },
+      });
+      if (!resp.ok) {
+        const detail = (await resp.json().catch(() => null))?.message || `HTTP ${resp.status}`;
+        throw new Error(detail);
+      }
+      return resp.json();
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function runGithubExport(sessionId) {
+      const session = allSessions.find(s => s.id === sessionId);
+      if (!session) return;
+      const repo = document.getElementById('ghRepoInput')?.value.trim();
+      let tokenInput = document.getElementById('ghTokenInput')?.value.trim();
+      if (tokenInput === GH_TOKEN_MASK) tokenInput = '';
+      const token = tokenInput || localStorage.getItem(GH_TOKEN_KEY);
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repo || '')) return ghSetStatus('Enter a repo as owner/repo', true);
+      if (!token) return ghSetStatus('Enter a personal access token', true);
+
+      const goBtn = document.getElementById('ghExportGo');
+      if (goBtn) goBtn.disabled = true;
+      try {
+        ghSetStatus('Checking repo…');
+        const repoInfo = await ghApi(`/repos/${repo}`, token);
+        const branch = repoInfo.default_branch || 'main';
+        localStorage.setItem(GH_REPO_KEY, repo);
+        if (tokenInput) localStorage.setItem(GH_TOKEN_KEY, tokenInput);
+
+        const notes = session.notes || [];
+        const sessionSlug = slugifyForFile(session.title || 'untitled');
+        const sessionUrl = `${window.location.origin}${window.location.pathname}#session=${encodeURIComponent(sessionId)}`;
+        const stamp = Date.now();
+        let created = 0, failed = 0;
+
+        for (let i = 0; i < notes.length; i++) {
+          const note = notes[i];
+          ghSetStatus(`Creating issue ${i + 1} of ${notes.length}…`);
+          try {
+            let imageMarkdown = '';
+            const src = note.screenshotUrl || note.screenshot;
+            if (src) {
+              try {
+                const blob = await (await fetch(src)).blob();
+                const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type] || 'png';
+                const path = `.screen-notes/${sessionSlug}-${stamp}/${String(i + 1).padStart(2, '0')}-${slugifyForFile(note.text)}.${typeExt}`;
+                await ghApi(`/repos/${repo}/contents/${path}`, token, {
+                  method: 'PUT',
+                  body: JSON.stringify({
+                    message: `Screen Notes: screenshot for "${(note.text || 'note').slice(0, 60)}"`,
+                    content: await blobToBase64(blob),
+                    branch,
+                  }),
+                });
+                imageMarkdown = `\n\n<img src="https://github.com/${repo}/blob/${branch}/${path}?raw=true" width="600">`;
+              } catch (imgErr) {
+                imageMarkdown = `\n\n_(screenshot upload failed: ${imgErr.message})_`;
+              }
+            }
+            const firstLine = (note.text || '').split('\n')[0].trim();
+            const title = firstLine
+              ? (firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine)
+              : `Note ${i + 1} — ${session.title || 'Untitled Session'}`;
+            const body = [
+              note.text || '',
+              imageMarkdown,
+              `\n\n---\nFrom [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled Session'}” at ${formatDuration(note.timestamp || 0)}.`,
+            ].join('');
+            await ghApi(`/repos/${repo}/issues`, token, {
+              method: 'POST',
+              body: JSON.stringify({ title, body }),
+            });
+            created++;
+          } catch (noteErr) {
+            console.error('Issue creation failed', noteErr);
+            failed++;
+          }
+        }
+
+        if (failed) {
+          ghSetStatus(`Created ${created} issue${created === 1 ? '' : 's'}, ${failed} failed`, true);
+          if (goBtn) goBtn.disabled = false;
+        } else {
+          closeGithubExportDialog();
+          showToast(`Created ${created} issue${created === 1 ? '' : 's'} in ${repo}`);
+        }
+      } catch (e) {
+        ghSetStatus(e.message === 'Bad credentials' ? 'Bad credentials — check your token' : e.message, true);
+        if (e.message === 'Bad credentials') localStorage.removeItem(GH_TOKEN_KEY);
+        if (goBtn) goBtn.disabled = false;
+      }
+    }
+
     // ── Session export (zip of SESSION.md + screenshots, agent-ready) ──
     function slugifyForFile(s) {
       return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'note';
@@ -3828,6 +4052,9 @@
         </button>
         <button class="btn btn-ghost review-theme-btn bar-action" id="exportSessionBtn" onclick="exportSessionPackage('${session.id}')" title="Export notes + screenshots for AI agents" aria-label="Export session">
           ${icon('download')}
+        </button>
+        <button class="btn btn-ghost review-theme-btn bar-action" id="githubExportBtn" onclick="openGithubExportDialog('${session.id}')" title="Export notes as GitHub issues" aria-label="Export to GitHub">
+          ${icon('github')}
         </button>
         ${isMySession(session) ? `
           <button class="btn btn-ghost review-theme-btn review-delete-btn bar-action" onclick="menuDeleteSession('${session.id}')" title="Delete session" aria-label="Delete">
