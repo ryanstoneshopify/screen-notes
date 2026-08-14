@@ -579,7 +579,7 @@
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
       border: 1px solid var(--parchment);
-      border-radius: 12px;
+      border-radius: 24px;
       box-shadow: var(--shadow-pop);
     }
     .session-menu-item {
@@ -589,7 +589,7 @@
       width: 100%;
       padding: 8px 10px;
       border: none;
-      border-radius: 8px;
+      border-radius: 18px;
       background: transparent;
       color: var(--ink-black);
       font-family: var(--font-sans);
@@ -680,6 +680,39 @@
       -webkit-mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0.99) 10%, rgba(0,0,0,0.96) 20%, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.48) 60%, rgba(0,0,0,0.31) 70%, rgba(0,0,0,0.16) 80%, rgba(0,0,0,0.05) 90%, rgba(0,0,0,0) 100%);
       mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0.99) 10%, rgba(0,0,0,0.96) 20%, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.48) 60%, rgba(0,0,0,0.31) 70%, rgba(0,0,0,0.16) 80%, rgba(0,0,0,0.05) 90%, rgba(0,0,0,0) 100%);
     }
+    /* grid-bg is pointer-events:none, so the crosshair + draw events live on main-content */
+    .main-content:has(> .home-draw-svg) { cursor: crosshair; }
+    .home-draw-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .home-hidden-note { cursor: grab; }
+    /* Note silhouette sweeping through the button / logo */
+    .home-sil-host { position: relative; overflow: hidden; }
+    .home-silhouette {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 24px;
+      background: var(--snow-white);
+      display: none;
+      z-index: 0;
+    }
+    .empty-state { position: relative; }
+    .btn-label-wrap { position: relative; z-index: 1; }
+    /* Inverted clones — clipped to the note shape while it sweeps through.
+       ID selector outranks the element color rules the clones inherit. */
+    #emptyState .home-invert-overlay,
+    #emptyState .home-invert-overlay * {
+      color: var(--snow-white);
+      pointer-events: none;
+    }
+    .home-invert-overlay { z-index: 2; }
+    #emptyState .btn .home-invert-overlay { color: var(--ink-black); }
+    .empty-state-icon { position: relative; }
     .empty-state { position: relative; z-index: 1; pointer-events: none; }
     .empty-state .btn { pointer-events: auto; }
 
@@ -1118,6 +1151,16 @@
       color: var(--terra-cotta);
       background: rgba(64, 146, 229, 0.10);
     }
+    /* Dark mode: mic matches the Save note button — solid white bg, dark icon */
+    html.dark .voice-input-toggle:not(.listening) {
+      background: #ffffff;
+      color: #141413;
+    }
+    html.dark .voice-input-toggle:not(.listening):hover {
+      background: #f4f2ec;
+    }
+    /* Dark mode: dictation marker mic stays white on the blue dot */
+    html.dark .voice-dictation-marker { color: #ffffff; }
     .voice-input-toggle.listening .icon { animation: pulse 1.6s ease-in-out infinite; }
 
     .voice-dictation-marker {
@@ -1320,6 +1363,13 @@
       transition: background 120ms ease;
     }
     .screenshot-preview-btn:hover { background: var(--snow-white); }
+    /* Dark mode: preview action buttons keep their light-mode look */
+    html.dark .screenshot-preview-btn {
+      background: #ffffff;
+      color: #141413;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+    html.dark .screenshot-preview-btn:hover { background: #f4f2ec; }
     .screenshot-preview-timestamp {
       position: absolute;
       left: 8px;
@@ -1641,7 +1691,8 @@
       outline-offset: 0;
       border-radius: 9.6px;
     }
-    .canvas-item.ci-screenshot.selected { border-radius: 24px; }
+    .canvas-item.ci-screenshot.selected,
+    .canvas-item.ci-image.selected { border-radius: 24px; }
 
     .ci-screenshot {
       background: var(--vellum-white);
@@ -1742,7 +1793,7 @@
     }
 
     .ci-image {
-      border-radius: 9.6px;
+      border-radius: 24px;
       overflow: hidden;
       border: 1px solid var(--parchment);
       background: var(--snow-white);
@@ -1881,6 +1932,14 @@
       pointer-events: auto;
     }
     .canvas-help.visible { display: block; }
+    .canvas-help { width: max-content; max-width: none; }
+    .canvas-help .ch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+    }
+    .canvas-help .ch-keys { white-space: nowrap; }
     .canvas-help kbd {
       background: var(--snow-white);
       border: 1px solid var(--parchment);
@@ -1985,6 +2044,349 @@
     .gh-dialog-status { font-size: 12.5px; color: var(--graphite); min-height: 16px; }
     .gh-dialog-status.error { color: #c0392b; }
     .gh-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    .gh-owner-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: var(--snow-white);
+      color: var(--ink-black);
+      font-size: 13.5px;
+      font-family: var(--font-sans);
+      outline: none;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .gh-owner-select:focus { border-color: var(--onyx); }
+
+    /* ── Share modal ── */
+    .share-dialog { width: 480px; gap: 16px; }
+    .share-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .share-head h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .share-head-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .share-copy-btn { display: inline-flex; align-items: center; gap: 6px; }
+    .share-close-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--graphite);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .share-close-btn:hover { background: var(--surface-hover); color: var(--ink-black); }
+    .share-close-btn .icon { width: 16px; height: 16px; }
+    .share-add-row { display: flex; gap: 8px; }
+    .share-add-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--snow-white);
+      color: var(--ink-black);
+      font-size: 13.5px;
+      font-family: var(--font-sans);
+      outline: none;
+      box-sizing: border-box;
+    }
+    .share-add-row input:focus { border-color: var(--onyx); }
+    .share-search-wrap { position: relative; flex: 1; }
+    .share-search-wrap input { width: 100%; }
+    .share-suggest {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      padding: 6px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 16px;
+      box-shadow: var(--shadow-pop);
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .share-suggest-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 7px 10px;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--ink-black);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .share-suggest-row:hover { background: color-mix(in srgb, var(--surface-hover) 60%, transparent); }
+    .share-avatar-sm { width: 26px; height: 26px; }
+    .share-role-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      padding: 9px 14px;
+      border: none;
+      border-radius: 999px;
+      background: var(--surface-hover);
+      color: var(--ink-black);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+    .share-role-btn:hover { background: var(--surface-hover-strong); }
+    .share-role-btn .icon { width: 13px; height: 13px; color: var(--graphite); }
+    .role-check { display: inline-flex; width: 16px; justify-content: center; }
+    .share-footer { justify-content: space-between; align-items: center; }
+    .share-footer-right { display: flex; gap: 8px; }
+    .share-copy-btn { display: inline-flex; align-items: center; gap: 6px; }
+    html.dark .share-switch.on { background: var(--terra-cotta); }
+    .share-public-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--parchment);
+      border-radius: 14px;
+    }
+    .share-public-info { display: flex; align-items: center; gap: 12px; }
+    .share-public-info .icon { width: 20px; height: 20px; color: var(--graphite); flex: 0 0 auto; }
+    .share-public-title { font-size: 14px; font-weight: 600; color: var(--ink-black); }
+    .share-public-sub { font-size: 12.5px; color: var(--graphite); }
+    .share-switch {
+      width: 44px;
+      height: 26px;
+      flex: 0 0 auto;
+      border: none;
+      border-radius: 999px;
+      background: var(--border-strong);
+      position: relative;
+      cursor: pointer;
+      padding: 0;
+      transition: background 160ms ease;
+    }
+    .share-switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      transition: transform 160ms ease;
+    }
+    .share-switch.on { background: var(--ink-black); }
+    .share-switch.on::after { transform: translateX(18px); }
+    .share-access-label { font-size: 13px; color: var(--graphite); }
+    .share-access-list { display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto; }
+    .share-person { display: flex; align-items: center; gap: 12px; }
+    .share-avatar { width: 36px; height: 36px; border-radius: 999px; object-fit: cover; flex: 0 0 auto; }
+    .share-avatar-initials {
+      background: var(--surface-hover-strong);
+      color: var(--ink-black);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .share-person-name { flex: 1; font-size: 14px; color: var(--ink-black); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .share-you { color: var(--graphite); }
+    .share-person-role { font-size: 13.5px; color: var(--graphite); }
+    .tb-readonly { font-size: 13.5px; color: var(--graphite); padding: 8px 14px; white-space: nowrap; }
+    .canvas-viewport.read-only .resize-handle { display: none; }
+
+    /* ── Markup (draw on images / canvas) ── */
+    .canvas-toolbar { overflow: hidden; }
+    .tb-swap { position: relative; display: flex; align-items: center; }
+    .tb-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out);
+    }
+    .tb-group.tb-markup-controls {
+      position: absolute;
+      inset: 0;
+      justify-content: center;
+      gap: 10px;
+      transform: translateY(-250%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .canvas-toolbar.markup-mode .tb-group.tb-default {
+      transform: translateY(250%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .canvas-toolbar.markup-mode .tb-group.tb-markup-controls {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .tb-markup-toggle.active,
+    .mk-style-btn.active {
+      background: var(--surface-hover-strong);
+      color: var(--ink-black);
+    }
+    .mk-style-btn { padding: 8px 10px; }
+    .mk-style-btn .icon { width: 18px; height: 18px; }
+    .mk-color {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+    .mk-color::-webkit-color-swatch-wrapper { padding: 2px; }
+    .mk-color::-webkit-color-swatch { border: none; border-radius: 5px; }
+    .mk-width {
+      width: 96px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 99px;
+      /* filled (blue) portion is set inline via --mk-fill */
+      background: linear-gradient(to right,
+        var(--terra-cotta) 0%,
+        var(--terra-cotta) var(--mk-fill, 20%),
+        color-mix(in srgb, var(--ink-black) 10%, transparent) var(--mk-fill, 20%),
+        color-mix(in srgb, var(--ink-black) 10%, transparent) 100%);
+    }
+    .mk-width::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 99px;
+      background: var(--terra-cotta);
+      border: none;
+      cursor: pointer;
+    }
+    .mk-width::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 99px;
+      background: var(--terra-cotta);
+      border: none;
+      cursor: pointer;
+    }
+    .mk-width-val {
+      font-size: 12px;
+      color: var(--graphite);
+      min-width: 16px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .mk-style {
+      border: 1px solid var(--border-strong);
+      background: var(--snow-white);
+      color: var(--ink-black);
+      border-radius: 8px;
+      font-size: 12.5px;
+      padding: 5px 8px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .canvas-item.ci-stroke {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .canvas-item.ci-stroke svg { overflow: visible; display: block; width: 100%; height: 100%; }
+    .canvas-item.ci-stroke path { pointer-events: stroke; cursor: grab; }
+    .canvas-item.ci-stroke .resize-handle { pointer-events: auto; }
+    /* Once selected, the whole bounding box is draggable, not just the line */
+    .canvas-item.ci-stroke.selected { pointer-events: auto; cursor: grab; }
+    .canvas-viewport.markup-mode .canvas-item.ci-stroke { pointer-events: none; }
+    .canvas-viewport.markup-mode { cursor: crosshair; }
+    .canvas-viewport.markup-mode .canvas-item.ci-stroke path { pointer-events: none; }
+    .markup-live { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+
+    .markup-lightbox { cursor: default; }
+    .markup-stage { position: relative; }
+    .markup-lightbox img { max-height: 84vh; }
+    .markup-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      border-radius: 16px;
+    }
+    .markup-svg path { pointer-events: none; }
+    .markup-svg.cursor-mode { cursor: default; }
+    .markup-svg.cursor-mode path { pointer-events: stroke; cursor: grab; }
+    .markup-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: max-width 400ms var(--ease-out), opacity 400ms var(--ease-out);
+    }
+    .markup-toolbar.cursor-mode .markup-tools { opacity: 0; margin-right: -4px; /* swallow the flex gap */ }
+    .markup-tools .tb-divider { align-self: stretch; margin: 0 4px 0 0; }
+    .markup-toolbar {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 10px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      box-shadow: var(--shadow-pop);
+      transform: translate(-50%, 100px);
+      opacity: 0;
+      transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out);
+    }
+    .markup-lightbox.in .markup-toolbar { transform: translate(-50%, 0); opacity: 1; }
+    /* Lightbox toolbar keeps its light-mode look even in dark mode */
+    html.dark .markup-toolbar {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: #dedcd1;
+    }
+    html.dark .markup-toolbar .tb-btn { color: #3d3d3a; }
+    html.dark .markup-toolbar .tb-btn:hover { background: rgba(31, 30, 29, 0.06); color: #141413; }
+    html.dark .markup-toolbar .tb-markup-toggle.active,
+    html.dark .markup-toolbar .mk-style-btn.active {
+      background: rgba(31, 30, 29, 0.1);
+      color: #141413;
+    }
+    html.dark .markup-toolbar .mk-width-val { color: #3d3d3a; }
+    html.dark .markup-toolbar .tb-divider { background: #dedcd1; }
+    html.dark .markup-toolbar .mk-color { border-color: rgba(31, 30, 29, 0.3); }
+    html.dark .markup-toolbar .mk-width {
+      background: linear-gradient(to right,
+        var(--terra-cotta) 0%,
+        var(--terra-cotta) var(--mk-fill, 20%),
+        rgba(20, 20, 19, 0.1) var(--mk-fill, 20%),
+        rgba(20, 20, 19, 0.1) 100%);
+    }
 
     .alignment-guide {
       position: absolute;
@@ -2132,9 +2534,14 @@
       </svg></span>
       <span class="nav-pill-label" id="navPillLabel">Screen Notes</span>
     </button>
-    <button class="nav-pill-drawer" id="navDrawerBtn" onclick="toggleNavDrawer(event)" title="Sessions">
+    <button class="nav-pill-drawer" id="navDrawerBtn" onclick="toggleNavDrawer(event)" title="Open drawer">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/>
+      </svg>
+    </button>
+    <button class="nav-pill-drawer" id="navNewSessionBtn" onclick="startRecording()" title="New session">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5v14"/><path d="M5 12h14"/>
       </svg>
     </button>
   </div>
@@ -2155,9 +2562,9 @@
           <span>Screen Notes</span>
         </button>
         <div class="sidebar-header-actions">
-          <button class="sidebar-new-btn" id="drawerCloseBtn" title="Close sessions" onclick="closeNavDrawer(true)">
+          <button class="sidebar-new-btn" id="drawerCloseBtn" title="Close drawer" onclick="closeNavDrawer(true)">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/>
+              <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/><path d="M16.2 9.5L13.7 12l2.5 2.5"/>
             </svg>
           </button>
           <button class="sidebar-new-btn" id="newSessionBtn" title="New session">
@@ -2224,8 +2631,13 @@
         more: '<circle cx="5" cy="12" r="1.7" class="icon-filled"/><circle cx="12" cy="12" r="1.7" class="icon-filled"/><circle cx="19" cy="12" r="1.7" class="icon-filled"/>',
         link: '<path d="M10 14a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/>',
         download: '<path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M4.5 19.5h15"/>',
+        globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a13.5 13.5 0 0 1 0 18"/><path d="M12 3a13.5 13.5 0 0 0 0 18"/>',
+        share: '<path d="M12 14V4"/><path d="M8.5 7.5L12 4l3.5 3.5"/><path d="M5 12v6.6c0 .8.6 1.4 1.4 1.4h11.2c.8 0 1.4-.6 1.4-1.4V12"/>',
+        chevron: '<path d="M6 9.5l6 6 6-6"/>',
         github: '<path class="icon-filled" d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.72.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.63.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.57 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 2.5-.34c.85 0 1.71.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.25 10.25 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/>',
         pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
+        scribble: '<path d="M4 16.5c3-7 5.5-10.1 7-9.2 1.7 1-4.2 8.6-2.3 9.8 1.9 1.2 6-7.8 8-6.7 1.9 1-2.3 6-.8 6.9 1 .6 2.4-.7 3.6-2.3"/>',
+        cursor: '<path d="M5.5 3.5l14.2 6.6-6.3 1.7-2.7 6L5.5 3.5z"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
@@ -2291,6 +2703,7 @@
       try {
         currentUser = await quick.id.waitForUser();
         renderUserInfo();
+        upsertSelfToDirectory();
       } catch(e) {
         console.log('Could not get user info');
       }
@@ -2309,13 +2722,15 @@
 
         if (e.target.classList.contains('home-note-resize')) {
           const startW = card.offsetWidth;
+          const prevW = card.style.width;
           const onMove = (ev) => {
             const w = Math.min(480, Math.max(160, startW + (ev.clientX - sx)));
             card.style.width = `${w}px`;
           };
-          const onUp = () => {
+          const onUp = (ev) => {
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
+            if (Math.abs(ev.clientX - sx) > 2) homeDraw.undo.push({ type: 'resize', el: card, w: prevW });
           };
           document.addEventListener('mousemove', onMove);
           document.addEventListener('mouseup', onUp);
@@ -2323,7 +2738,9 @@
         }
 
         card.classList.add('dragging');
+        homeCharsStart(card);
         const ox = card.offsetLeft, oy = card.offsetTop;
+        const prevLeft = card.style.left, prevTop = card.style.top;
         card.style.left = `${ox}px`;
         card.style.top = `${oy}px`;
         card.style.right = 'auto';
@@ -2331,14 +2748,70 @@
         const onMove = (ev) => {
           card.style.left = `${ox + ev.clientX - sx}px`;
           card.style.top = `${oy + ev.clientY - sy}px`;
+          homeCharsUpdate(card);
         };
-        const onUp = () => {
+        const onUp = (ev) => {
           card.classList.remove('dragging');
+          homeCharsEnd();
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
+          if (Math.abs(ev.clientX - sx) > 2 || Math.abs(ev.clientY - sy) > 2) {
+            homeDraw.undo.push({ type: 'move', el: card, left: prevLeft, top: prevTop });
+          }
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
+      });
+
+      // Home background drawing (red pen)
+      document.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        const svg = document.getElementById('homeDrawSvg');
+        if (!svg) return; // only on home
+        const main = document.getElementById('mainContent');
+        if (e.target !== main && e.target !== svg && !e.target.closest('#gridBg')) return;
+        if (e.target.closest('.home-hidden-note, button, input, select, textarea, [contenteditable="true"]')) return;
+        e.preventDefault();
+        const r = svg.getBoundingClientRect();
+        const pt = ev => [Math.round(ev.clientX - r.left), Math.round(ev.clientY - r.top)];
+        const stroke = { color: '#e5484d', width: 3, dash: 'solid', points: [pt(e)] };
+        homeDraw.strokes.push(stroke);
+        const onMove = ev => { stroke.points.push(pt(ev)); renderHomeDrawSvg(); };
+        const onUp = () => {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          if (stroke.points.length < 2) {
+            homeDraw.strokes = homeDraw.strokes.filter(s => s !== stroke);
+          } else {
+            homeDraw.undo.push({ type: 'stroke', stroke });
+          }
+          renderHomeDrawSvg();
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+
+      // Home note text edits are undoable
+      document.addEventListener('focusin', (e) => {
+        if (e.target.matches?.('.home-hidden-note .note-card-text')) {
+          e.target._prevText = e.target.textContent;
+        }
+      });
+      document.addEventListener('focusout', (e) => {
+        if (e.target.matches?.('.home-hidden-note .note-card-text')
+            && e.target._prevText !== undefined && e.target._prevText !== e.target.textContent) {
+          homeDraw.undo.push({ type: 'text', el: e.target, text: e.target._prevText });
+          delete e.target._prevText;
+        }
+      });
+
+      // ⌘Z on home — undo drawings, moves, resizes, and text edits
+      document.addEventListener('keydown', (e) => {
+        if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.shiftKey) return;
+        if (activeSessionId || isRecording) return; // canvas has its own undo
+        if (document.activeElement?.isContentEditable) return;
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+        if (undoHomeAction()) e.preventDefault();
       });
       document.addEventListener('mousemove', (e) => {
         const g = document.getElementById('gridBg');
@@ -2495,6 +2968,9 @@
         if (!confirm('Stop current recording and return home?')) return;
         await stopRecording();
       }
+      // Fresh home canvas: drawings clear on every home load
+      homeDraw.strokes = [];
+      homeDraw.undo = [];
       activeSessionId = null;
       currentNotes = [];
       setSelectedItems?.([]);
@@ -2522,6 +2998,33 @@
       return owner === currentUserEmail();
     }
 
+    // ── Sharing model ──
+    // Legacy sessions (created before sharing existed) stay link-visible.
+    function sessionSharing(session) {
+      return session?.sharing || { publicView: true, people: [] };
+    }
+
+    function sharingEntryFor(session) {
+      return sessionSharing(session).people.find(p => (p.email || '').toLowerCase() === currentUserEmail()) || null;
+    }
+
+    function canViewSession(session) {
+      if (!session) return false;
+      if (isMySession(session)) return true;
+      return sessionSharing(session).publicView || !!sharingEntryFor(session);
+    }
+
+    function canEditSession(session) {
+      if (!session) return true;
+      if (isMySession(session)) return true;
+      return sharingEntryFor(session)?.role === 'editor';
+    }
+
+    function canvasReadOnly() {
+      const s = canvas.session || allSessions.find(x => x.id === activeSessionId);
+      return s ? !canEditSession(s) : false;
+    }
+
     function sharedSessionIds() {
       try { return JSON.parse(localStorage.getItem('screenNotesSharedSessionIds') || '[]'); }
       catch(_) { return []; }
@@ -2533,7 +3036,7 @@
 
     function rememberSharedSessionIfNeeded(id) {
       const session = allSessions.find(s => s.id === id);
-      if (!session || isMySession(session)) return;
+      if (!session || isMySession(session) || !canViewSession(session)) return;
       setSharedSessionIds([id, ...sharedSessionIds()]);
     }
 
@@ -2545,7 +3048,9 @@
         );
         const sharedIds = new Set(sharedSessionIds());
         sessions = allSessions.filter(isMySession);
-        sharedSessions = allSessions.filter(s => sharedIds.has(s.id) && !isMySession(s));
+        // Others: sessions explicitly shared with me, or public ones I opened via link
+        sharedSessions = allSessions.filter(s => !isMySession(s) && canViewSession(s)
+          && (sharedIds.has(s.id) || !!sharingEntryFor(s)));
       } catch(e) {
         allSessions = [];
         sessions = [];
@@ -2567,6 +3072,8 @@
           if (typeof n.screenshotUrl === 'string' && n.screenshotUrl.startsWith('data:')) {
             delete n.screenshotUrl;
           }
+          // Display-only markup composite is a data URL — never persist it
+          delete n._mkPreview;
         });
       }
       if (clone.canvas && Array.isArray(clone.canvas.items)) {
@@ -2582,6 +3089,8 @@
     }
 
     async function saveSession(session) {
+      // Read-only viewers never write
+      if (session.id && !canEditSession(session)) return;
       try {
         const payload = sanitizeForPersist(session);
         if (session.id) {
@@ -2614,8 +3123,318 @@
     }
 
     async function shareSessionFromHeader(id) {
-      await shareSession(id);
-      showToast('Link copied');
+      const session = allSessions.find(s => s.id === id);
+      if (session && isMySession(session)) {
+        openShareModal(id);
+      } else {
+        await shareSession(id);
+        showToast('Link copied');
+      }
+    }
+
+    // ── Share modal (draft model: changes apply on Save) ──
+    let shareModalSessionId = null;
+    let shareDraft = null;
+
+    function openShareModal(id) {
+      const session = allSessions.find(s => s.id === id);
+      if (!session) return;
+      shareModalSessionId = id;
+      shareDraft = JSON.parse(JSON.stringify(sessionSharing(session)));
+      document.getElementById('shareOverlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'gh-dialog-overlay';
+      overlay.id = 'shareOverlay';
+      overlay.innerHTML = `
+        <div class="gh-dialog share-dialog">
+          <div class="share-head">
+            <h3>Share ${escapeHtml(session.title || 'Untitled Session')}</h3>
+            <button class="share-close-btn" onclick="closeShareModal()" title="Close">${icon('close')}</button>
+          </div>
+          <div class="share-add-row">
+            <div class="share-search-wrap">
+              <input type="text" id="shareSearchInput" placeholder="Search and add people…" spellcheck="false" autocomplete="off"
+                     oninput="renderShareSuggestions()"
+                     onkeydown="if(event.key==='Enter')shareModalAddPerson();if(event.key==='Escape')hideShareSuggestions()">
+              <div class="share-suggest" id="shareSuggest" style="display:none"></div>
+            </div>
+            <button class="share-role-btn" id="shareRoleBtn" data-value="editor" onclick="openShareRolePopover(event)">
+              <span id="shareRoleBtnLabel">Editor</span>${icon('chevron', 'icon icon-sm')}
+            </button>
+          </div>
+          <div class="share-public-row">
+            <div class="share-public-info">
+              ${icon('globe')}
+              <div>
+                <div class="share-public-title">Visible to all of Shopify</div>
+                <div class="share-public-sub">Anyone at Shopify can view with the link</div>
+              </div>
+            </div>
+            <button class="share-switch${shareDraft.publicView ? ' on' : ''}" id="sharePublicToggle" role="switch" aria-checked="${shareDraft.publicView}" onclick="shareModalTogglePublic()"></button>
+          </div>
+          <div class="share-access-label">Who has access</div>
+          <div class="share-access-list" id="shareAccessList"></div>
+          <div class="gh-dialog-actions share-footer">
+            <button class="btn btn-ghost share-copy-btn" onclick="shareModalCopyLink()">${icon('link', 'icon icon-sm')} Copy link</button>
+            <span class="share-footer-right">
+              <button class="btn btn-ghost" onclick="closeShareModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="shareModalSave()">Save</button>
+            </span>
+          </div>
+        </div>`;
+      overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeShareModal(); });
+      document.body.appendChild(overlay);
+      renderShareAccessList();
+      requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('in')));
+      document.getElementById('shareSearchInput')?.focus();
+    }
+
+    async function shareModalSave() {
+      const session = shareModalSession();
+      if (session && shareDraft) {
+        session.sharing = shareDraft;
+        await saveSession(session);
+      }
+      closeShareModal();
+    }
+
+    function closeShareModal() {
+      const overlay = document.getElementById('shareOverlay');
+      shareModalSessionId = null;
+      shareDraft = null;
+      closeRolePopover();
+      if (!overlay) return;
+      overlay.classList.remove('in');
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => overlay.remove(), 400);
+    }
+
+    function shareModalSession() {
+      return allSessions.find(s => s.id === shareModalSessionId);
+    }
+
+    async function shareModalCopyLink() {
+      if (!shareModalSessionId) return;
+      await shareSession(shareModalSessionId);
+      const btn = document.querySelector('#shareOverlay .share-copy-btn');
+      if (btn) {
+        btn.innerHTML = `${icon('link', 'icon icon-sm')} Link copied`;
+        setTimeout(() => {
+          if (document.body.contains(btn)) btn.innerHTML = `${icon('link', 'icon icon-sm')} Copy link`;
+        }, 2000);
+      }
+    }
+
+    // ── People directory (everyone who has used Screen Notes) ──
+    const peopleDb = quick.db.collection('people');
+    let peopleDirectory = null;
+
+    async function upsertSelfToDirectory() {
+      if (!currentUser?.email) return;
+      try {
+        const existing = (await peopleDb.where({ email: currentUser.email }).find()) || [];
+        const data = {
+          email: currentUser.email,
+          name: currentUser.fullName || currentUser.email,
+          image: currentUser.slackImageUrl || null,
+        };
+        if (existing[0]) await peopleDb.update(existing[0].id, data);
+        else await peopleDb.create(data);
+      } catch (_) {}
+    }
+
+    async function loadPeopleDirectory() {
+      if (peopleDirectory) return peopleDirectory;
+      // Full Shopify directory ships as a static NDJSON dump (all active employees),
+      // merged with quick.db people (Screen Notes users) who carry Slack avatars.
+      const byEmail = new Map();
+      try {
+        const text = await (await fetch('/users.json')).text();
+        text.split('\n').forEach(line => {
+          if (!line.trim()) return;
+          try {
+            const p = JSON.parse(line);
+            if (p.email) byEmail.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.name || p.email, image: null });
+          } catch (_) {}
+        });
+      } catch (_) {}
+      try {
+        ((await peopleDb.find()) || []).forEach(p => {
+          if (!p.email) return;
+          const key = p.email.toLowerCase();
+          byEmail.set(key, { ...(byEmail.get(key) || {}), email: key, name: p.name || byEmail.get(key)?.name || key, image: p.image || null });
+        });
+      } catch (_) {}
+      peopleDirectory = [...byEmail.values()];
+      return peopleDirectory;
+    }
+
+    function hideShareSuggestions() {
+      const el = document.getElementById('shareSuggest');
+      if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+    }
+
+    async function renderShareSuggestions() {
+      const input = document.getElementById('shareSearchInput');
+      const el = document.getElementById('shareSuggest');
+      const session = shareModalSession();
+      if (!input || !el || !session) return;
+      const q = input.value.trim().toLowerCase();
+      if (!q) return hideShareSuggestions();
+      const people = await loadPeopleDirectory();
+      const taken = new Set([sessionOwnerEmail(session), ...(shareDraft?.people || []).map(p => p.email.toLowerCase())]);
+      const matches = people
+        .filter(p => p.email && !taken.has(p.email.toLowerCase())
+          && (`${p.name || ''} ${p.email}`).toLowerCase().includes(q))
+        .sort((a, b) => {
+          // Prefix matches on first/last name rank first
+          const aHit = (`${a.name || ''} ${a.email}`).toLowerCase().split(/[\s@.]+/).some(w => w.startsWith(q));
+          const bHit = (`${b.name || ''} ${b.email}`).toLowerCase().split(/[\s@.]+/).some(w => w.startsWith(q));
+          return (bHit ? 1 : 0) - (aHit ? 1 : 0);
+        })
+        .slice(0, 6);
+      if (!matches.length) return hideShareSuggestions();
+      el.innerHTML = matches.map(p => `
+        <button class="share-suggest-row" onmousedown="event.preventDefault()" onclick="shareModalAddPersonEntry('${escapeHtml(p.email)}', '${escapeHtml(p.name || '')}', '${escapeHtml(p.image || '')}')">
+          ${p.image ? `<img class="share-avatar share-avatar-sm" src="${escapeHtml(p.image)}" alt="">` : `<div class="share-avatar share-avatar-sm share-avatar-initials">${escapeHtml(shareInitials(p.email))}</div>`}
+          <span>${escapeHtml(p.name || p.email)}</span>
+        </button>`).join('');
+      el.style.display = 'block';
+    }
+
+    function shareModalAddPersonEntry(email, name, image) {
+      if (!shareDraft) return;
+      const role = document.getElementById('shareRoleBtn')?.dataset.value || 'viewer';
+      const lower = email.toLowerCase();
+      const existing = shareDraft.people.find(p => p.email.toLowerCase() === lower);
+      if (existing) existing.role = role;
+      else shareDraft.people.push({ email: lower, role, name: name || null, image: image || null });
+      const input = document.getElementById('shareSearchInput');
+      if (input) input.value = '';
+      hideShareSuggestions();
+      renderShareAccessList();
+    }
+
+    // ── Role popovers (shared pattern with the nav more-menu) ──
+    let rolePopoverEl = null;
+    function closeRolePopover() {
+      if (rolePopoverEl) { rolePopoverEl.remove(); rolePopoverEl = null; }
+      document.removeEventListener('mousedown', onRolePopoverOutside, true);
+    }
+    function onRolePopoverOutside(e) {
+      if (rolePopoverEl && !rolePopoverEl.contains(e.target)) closeRolePopover();
+    }
+
+    function openRolePopover(btn, options, current, onPick) {
+      if (rolePopoverEl) { closeRolePopover(); return; }
+      const menu = document.createElement('div');
+      menu.className = 'session-menu-popover';
+      menu.innerHTML = options.map(o => `
+        <button class="session-menu-item" data-value="${o.value}">
+          <span class="role-check">${o.value === current ? icon('check', 'icon icon-sm') : ''}</span>${o.label}
+        </button>`).join('');
+      document.body.appendChild(menu);
+      menu.querySelectorAll('.session-menu-item').forEach(item => {
+        item.onclick = () => { closeRolePopover(); onPick(item.dataset.value); };
+      });
+      const r = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let left = r.right - mw;
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = r.top - mh - 6;
+      if (left < 8) left = 8;
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      rolePopoverEl = menu;
+      document.addEventListener('mousedown', onRolePopoverOutside, true);
+    }
+
+    function openShareRolePopover(event) {
+      const btn = document.getElementById('shareRoleBtn');
+      openRolePopover(event.currentTarget, [
+        { value: 'editor', label: 'Editor' },
+        { value: 'viewer', label: 'Viewer' },
+      ], btn.dataset.value, (value) => {
+        btn.dataset.value = value;
+        document.getElementById('shareRoleBtnLabel').textContent = value === 'editor' ? 'Editor' : 'Viewer';
+      });
+    }
+
+    function openPersonRolePopover(event, email) {
+      const session = shareModalSession();
+      const person = session && sessionSharing(session).people.find(p => p.email.toLowerCase() === email.toLowerCase());
+      if (!person) return;
+      openRolePopover(event.currentTarget, [
+        { value: 'editor', label: 'Editor' },
+        { value: 'viewer', label: 'Viewer' },
+        { value: 'remove', label: 'Remove' },
+      ], person.role, (value) => shareModalSetRole(email, value));
+    }
+
+    function shareInitials(email) {
+      const name = String(email || '?').split('@')[0];
+      return name.split(/[._-]/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    function renderShareAccessList() {
+      const list = document.getElementById('shareAccessList');
+      const session = shareModalSession();
+      if (!list || !session) return;
+      const ownerEmail = sessionOwnerEmail(session) || currentUserEmail();
+      const ownerIsMe = ownerEmail === currentUserEmail();
+      const ownerAvatar = ownerIsMe && currentUser?.slackImageUrl
+        ? `<img class="share-avatar" src="${currentUser.slackImageUrl}" alt="">`
+        : `<div class="share-avatar share-avatar-initials">${escapeHtml(shareInitials(ownerEmail))}</div>`;
+      const rows = [`
+        <div class="share-person">
+          ${ownerAvatar}
+          <div class="share-person-name">${escapeHtml(ownerEmail)}${ownerIsMe ? ' <span class="share-you">(you)</span>' : ''}</div>
+          <div class="share-person-role">Owner</div>
+        </div>`];
+      (shareDraft?.people || []).forEach(p => {
+        rows.push(`
+          <div class="share-person">
+            ${p.image ? `<img class="share-avatar" src="${escapeHtml(p.image)}" alt="">` : `<div class="share-avatar share-avatar-initials">${escapeHtml(shareInitials(p.email))}</div>`}
+            <div class="share-person-name">${escapeHtml(p.name || p.email)}</div>
+            <button class="share-role-btn" onclick="openPersonRolePopover(event, '${escapeHtml(p.email)}')">
+              <span>${p.role === 'editor' ? 'Editor' : 'Viewer'}</span>${icon('chevron', 'icon icon-sm')}
+            </button>
+          </div>`);
+      });
+      list.innerHTML = rows.join('');
+    }
+
+    function shareModalAddPerson() {
+      const input = document.getElementById('shareSearchInput');
+      if (!input) return;
+      // Prefer the top directory suggestion; otherwise treat input as an email
+      const first = document.querySelector('#shareSuggest .share-suggest-row');
+      if (first) { first.click(); return; }
+      let email = input.value.trim().toLowerCase();
+      if (!email) return;
+      if (!email.includes('@')) email = `${email.replace(/\s+/g, '.')}@shopify.com`;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showToast('Enter a valid email');
+      if (email === currentUserEmail()) return showToast('That\u2019s you — already the owner');
+      shareModalAddPersonEntry(email, '', '');
+    }
+
+    function shareModalSetRole(email, value) {
+      if (!shareDraft) return;
+      if (value === 'remove') {
+        shareDraft.people = shareDraft.people.filter(p => p.email.toLowerCase() !== email.toLowerCase());
+      } else {
+        const person = shareDraft.people.find(p => p.email.toLowerCase() === email.toLowerCase());
+        if (person) person.role = value;
+      }
+      renderShareAccessList();
+    }
+
+    function shareModalTogglePublic() {
+      if (!shareDraft) return;
+      shareDraft.publicView = !shareDraft.publicView;
+      const toggle = document.getElementById('sharePublicToggle');
+      toggle?.classList.toggle('on', shareDraft.publicView);
+      toggle?.setAttribute('aria-checked', String(shareDraft.publicView));
     }
 
     async function deleteSession(id) {
@@ -2677,6 +3496,8 @@
         ownerName: currentUser?.fullName || currentUser?.email || null,
         notes: [],
         duration: 0,
+        // New sessions are hidden from the rest of Shopify by default
+        sharing: { publicView: false, people: [] },
       };
       await saveSession(session);
       activeSessionId = session.id;
@@ -2720,6 +3541,8 @@
         if (session) {
           session.duration = Date.now() - recordingStartTime;
           session.notes = [...currentNotes];
+          // Lightbox squiggles get baked into their screenshots at session end
+          await bakeNoteMarkupsIntoImages(session);
           // If the canvas had not yet been created, create it now so stop lands
           // directly on a populated canvas without requiring refresh/navigation.
           if (!session.canvas || !session.canvas.items || session.canvas.items.length === 0) {
@@ -3366,9 +4189,7 @@
     }
 
     function openPendingScreenshotLightbox() {
-      const previewImg = document.getElementById('screenshotPreviewImg');
-      const src = pendingScreenshot?.previewDataUrl || previewImg?.src;
-      if (src) openLightbox(src);
+      openComposerMarkupLightbox();
     }
 
     async function addNote() {
@@ -3398,6 +4219,13 @@
         timestamp: Date.now() - recordingStartTime,
         createdAt: new Date().toISOString(),
       };
+      // Carry composer markup over so the saved note stays re-editable
+      if (url && pendingScreenshot?.markupStrokes) {
+        note.markupStrokes = pendingScreenshot.markupStrokes;
+        note.markupNatW = pendingScreenshot.markupNatW;
+        note.markupNatH = pendingScreenshot.markupNatH;
+        note._mkPreview = pendingScreenshot._mkPreview;
+      }
 
       const saveButton = document.getElementById('saveNoteBtn');
       if (saveButton) saveButton.disabled = true;
@@ -3646,8 +4474,8 @@
                       onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){renamingSessionId=null;renderSidebar();}"
                       onblur="commitRenameSession('${s.id}', this.value)">`
             : `<div class="session-item-title">${escapeHtml(s.title)}</div>`}
-          <button class="session-menu-btn" title="More actions"
-                  onclick="event.stopPropagation(); openSessionMenu(event, '${s.id}')">${icon('more')}</button>
+          ${isMySession(s) ? `<button class="session-menu-btn" title="More actions"
+                  onclick="event.stopPropagation(); openSessionMenu(event, '${s.id}')">${icon('more')}</button>` : ''}
           <div class="session-item-meta">
             ${sessionListTab === 'others' ? `
               <span>${escapeHtml(ownerLabel(s))}</span>
@@ -3712,8 +4540,9 @@
 
     async function menuShareSession(id) {
       closeSessionMenu();
-      await shareSession(id);
-      showToast('Link copied');
+      const session = allSessions.find(s => s.id === id);
+      if (session && isMySession(session)) openShareModal(id);
+      else { await shareSession(id); showToast('Link copied'); }
     }
 
     function menuRenameSession(id) {
@@ -3803,30 +4632,740 @@
       });
     }
 
+    // ── Markup (draw on images / canvas) ──
+    const markupStyle = { color: '#e5484d', width: 3, dash: 'solid' };
+    const canvasMarkup = { active: false };
+    let noteMarkup = null; // { noteIndex, strokes, src, natW, natH }
+
+    function markupControlsHTML() {
+      return `
+        <input type="color" class="mk-color" value="${markupStyle.color}" oninput="setMarkupStyle('color', this.value)" title="Line color">
+        <span class="mk-width-val">${markupStyle.width}</span>
+        <input type="range" class="mk-width" min="1" max="12" step="1" value="${markupStyle.width}" style="--mk-fill: ${(markupStyle.width - 1) / 11 * 100}%" oninput="setMarkupStyle('width', this.value)" title="Line width">
+        <button type="button" class="tb-btn mk-style-btn${markupStyle.dash === 'solid' ? ' active' : ''}" data-dash="solid" onclick="setMarkupStyle('dash', 'solid')" title="Solid line"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18"/></svg></button>
+        <button type="button" class="tb-btn mk-style-btn${markupStyle.dash === 'dashed' ? ' active' : ''}" data-dash="dashed" onclick="setMarkupStyle('dash', 'dashed')" title="Dashed line"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3.2" aria-hidden="true"><path d="M3 12h18"/></svg></button>`;
+    }
+
+    function setMarkupStyle(key, value) {
+      markupStyle[key] = key === 'width' ? Number(value) : value;
+      document.querySelectorAll('.mk-width-val').forEach(el => { el.textContent = markupStyle.width; });
+      if (key === 'width') {
+        document.querySelectorAll('.mk-width').forEach(el => {
+          el.style.setProperty('--mk-fill', `${(markupStyle.width - 1) / 11 * 100}%`);
+        });
+      }
+      if (key === 'dash') {
+        document.querySelectorAll('.mk-style-btn').forEach(el => {
+          el.classList.toggle('active', el.dataset.dash === markupStyle.dash);
+        });
+      }
+    }
+
+    function strokePathD(points) {
+      return points.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
+    }
+
+    function strokeDashAttr(stroke, scale = 1) {
+      return stroke.dash === 'dashed'
+        ? ` stroke-dasharray="${stroke.width * 3 * scale} ${stroke.width * 2.5 * scale}"`
+        : '';
+    }
+
+    function drawStrokesOnContext(ctx, strokes) {
+      strokes.forEach(s => {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = s.width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.setLineDash(s.dash === 'dashed' ? [s.width * 3, s.width * 2.5] : []);
+        ctx.beginPath();
+        s.points.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+      });
+    }
+
+    function loadMarkupImage(src) {
+      return new Promise((resolve, reject) => {
+        const im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = src;
+      });
+    }
+
+    // ── Note markup lightbox (recording rail) ──
+    function openMarkupLightbox(noteIndex) {
+      const note = currentNotes[noteIndex];
+      const src = note && (note.markupOriginalUrl || note.screenshotUrl || note.screenshot);
+      if (!src) return;
+      openMarkupSession({ mode: 'note', noteIndex, src, strokes: note.markupStrokes || [] });
+    }
+
+    async function openComposerMarkupLightbox(e) {
+      e?.stopPropagation();
+      if (!pendingScreenshot || screenshotRemoved) return;
+      const src = await pendingScreenshot.uploadPromise;
+      if (!src) return showToast('Screenshot is still uploading…');
+      if (!pendingScreenshot || screenshotRemoved) return; // may have changed while awaiting
+      openMarkupSession({ mode: 'composer', src, strokes: pendingScreenshot.markupStrokes || [] });
+    }
+
+    function openMarkupSession({ mode, noteIndex = null, src, strokes }) {
+      document.getElementById('markupLightbox')?.remove();
+      noteMarkup = {
+        mode, noteIndex, src,
+        strokes: JSON.parse(JSON.stringify(strokes || [])),
+        natW: 0, natH: 0, tool: 'cursor', selectedIds: [], marquee: null, dirty: false,
+      };
+      const lb = document.createElement('div');
+      lb.className = 'lightbox markup-lightbox';
+      lb.id = 'markupLightbox';
+      lb.innerHTML = `
+        <div class="markup-stage">
+          <img id="markupImg" src="${src}" alt="Screenshot" draggable="false">
+          <svg class="markup-svg" id="markupSvg" preserveAspectRatio="none"></svg>
+          <div class="markup-toolbar" id="markupToolbar">
+            <div class="markup-tools" id="markupTools">${markupControlsHTML()}<div class="tb-divider"></div></div>
+            <button class="tb-btn tb-markup-toggle" id="lbCursorBtn" onclick="setLightboxTool('cursor')" title="Cursor (⇧C)">${icon('cursor')}</button>
+            <button class="tb-btn tb-markup-toggle active" id="lbDrawBtn" onclick="setLightboxTool('draw')" title="Draw (⇧D)">${icon('scribble')}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(lb);
+      const img = lb.querySelector('#markupImg');
+      const ready = () => {
+        noteMarkup.natW = img.naturalWidth;
+        noteMarkup.natH = img.naturalHeight;
+        const svg = lb.querySelector('#markupSvg');
+        svg.setAttribute('viewBox', `0 0 ${noteMarkup.natW} ${noteMarkup.natH}`);
+        renderNoteMarkupSvg();
+        attachNoteMarkupDrawing(svg);
+        // Measured max-width so collapse/expand animate symmetrically
+        const tools = lb.querySelector('#markupTools');
+        if (tools) tools.style.maxWidth = noteMarkup.tool === 'cursor' ? '0px' : `${tools.scrollWidth}px`;
+      };
+      if (img.complete && img.naturalWidth) ready(); else img.onload = ready;
+      // Opens in cursor mode: tools collapsed, mode toggle visible
+      lb.querySelector('#markupToolbar')?.classList.add('cursor-mode');
+      lb.querySelector('#markupSvg')?.classList.add('cursor-mode');
+      lb.querySelector('#lbCursorBtn')?.classList.add('active');
+      lb.querySelector('#lbDrawBtn')?.classList.remove('active');
+      lb.addEventListener('mousedown', (e) => { if (e.target === lb) closeMarkupLightbox(); });
+      document.addEventListener('keydown', onMarkupKeydown);
+      requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('show', 'in')));
+    }
+
+    // Auto-save: every change persists after a short debounce
+    let markupSaveTimer = null;
+    function markupChanged() {
+      if (!noteMarkup) return;
+      noteMarkup.dirty = true;
+      clearTimeout(markupSaveTimer);
+      const state = noteMarkup;
+      markupSaveTimer = setTimeout(() => persistMarkup(state), 600);
+    }
+
+    function setLightboxTool(tool) {
+      if (!noteMarkup) return;
+      noteMarkup.tool = tool;
+      noteMarkup.selectedIds = [];
+      const tools = document.getElementById('markupTools');
+      if (tools) tools.style.maxWidth = tool === 'cursor' ? '0px' : `${tools.scrollWidth}px`;
+      document.getElementById('markupToolbar')?.classList.toggle('cursor-mode', tool === 'cursor');
+      document.getElementById('markupSvg')?.classList.toggle('cursor-mode', tool === 'cursor');
+      document.getElementById('lbCursorBtn')?.classList.toggle('active', tool === 'cursor');
+      document.getElementById('lbDrawBtn')?.classList.toggle('active', tool === 'draw');
+      renderNoteMarkupSvg();
+    }
+
+    function onMarkupKeydown(e) {
+      if (!noteMarkup) return;
+      if (e.key === 'Escape') {
+        closeMarkupLightbox();
+        e.preventDefault();
+        return;
+      }
+      // Shift+C / Shift+D — switch between cursor and draw mode
+      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && ['c', 'd'].includes(e.key.toLowerCase())
+          && !e.target.matches?.('input, textarea, select, [contenteditable="true"]')) {
+        setLightboxTool(e.key.toLowerCase() === 'd' ? 'draw' : 'cursor');
+        e.preventDefault();
+        return;
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && noteMarkup.selectedIds.length
+          && !e.target.matches?.('input, textarea, select, [contenteditable="true"]')) {
+        noteMarkup.strokes = noteMarkup.strokes.filter(s => !noteMarkup.selectedIds.includes(s.id));
+        noteMarkup.selectedIds = [];
+        renderNoteMarkupSvg();
+        markupChanged();
+        e.preventDefault();
+      }
+    }
+
+    function closeMarkupLightbox() {
+      const lb = document.getElementById('markupLightbox');
+      const state = noteMarkup;
+      noteMarkup = null;
+      clearTimeout(markupSaveTimer);
+      if (state?.dirty) persistMarkup(state); // flush pending auto-save
+      document.removeEventListener('keydown', onMarkupKeydown);
+      if (!lb) return;
+      lb.classList.remove('show', 'in');
+      lb.style.pointerEvents = 'none';
+      setTimeout(() => lb.remove(), 400);
+    }
+
+    function markupStrokeBBox(s) {
+      const xs = s.points.map(p => p[0]);
+      const ys = s.points.map(p => p[1]);
+      const pad = s.width / 2 + 4;
+      const x = Math.min(...xs) - pad;
+      const y = Math.min(...ys) - pad;
+      return { x, y, w: Math.max(...xs) - Math.min(...xs) + pad * 2, h: Math.max(...ys) - Math.min(...ys) + pad * 2 };
+    }
+
+    function markupNatScale() {
+      const svg = document.getElementById('markupSvg');
+      const w = svg?.getBoundingClientRect().width;
+      return w && noteMarkup ? noteMarkup.natW / w : 1;
+    }
+
+    function markupSelectedStrokes() {
+      return noteMarkup ? noteMarkup.strokes.filter(s => noteMarkup.selectedIds.includes(s.id)) : [];
+    }
+
+    function markupUnionBBox(strokes) {
+      const boxes = strokes.map(markupStrokeBBox);
+      const x = Math.min(...boxes.map(b => b.x));
+      const y = Math.min(...boxes.map(b => b.y));
+      return {
+        x, y,
+        w: Math.max(...boxes.map(b => b.x + b.w)) - x,
+        h: Math.max(...boxes.map(b => b.y + b.h)) - y,
+      };
+    }
+
+    function renderNoteMarkupSvg() {
+      const svg = document.getElementById('markupSvg');
+      if (!svg || !noteMarkup) return;
+      const k = markupNatScale(); // screen px → image px
+      const paths = noteMarkup.strokes.map(s =>
+        `<path d="${strokePathD(s.points)}" data-stroke-id="${s.id}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(s)}/>`
+      ).join('');
+      // Selection UI matches the canvas: solid outline + round terra-cotta handle
+      let selection = '';
+      const selected = markupSelectedStrokes();
+      if (selected.length) {
+        const bb = markupUnionBBox(selected);
+        selection = `
+          <rect data-mk-move="1" x="${bb.x}" y="${bb.y}" width="${bb.w}" height="${bb.h}" fill="rgba(0,0,0,0)" pointer-events="all" style="cursor:grab"/>
+          <rect x="${bb.x}" y="${bb.y}" width="${bb.w}" height="${bb.h}" rx="${9.6 * k}" fill="none" stroke-width="${2 * k}" pointer-events="none" style="stroke: var(--terra-cotta)"/>
+          <circle data-mk-handle="1" cx="${bb.x + bb.w}" cy="${bb.y + bb.h}" r="${7 * k}" stroke-width="${2 * k}" pointer-events="all" style="cursor:nwse-resize; fill: var(--terra-cotta); stroke: var(--vellum-white)"/>`;
+      }
+      let marquee = '';
+      if (noteMarkup.marquee) {
+        const m = noteMarkup.marquee;
+        marquee = `<rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}" rx="${4 * k}" fill="rgba(204,219,232,0.28)" stroke="rgba(31,30,29,0.55)" stroke-width="${1 * k}" pointer-events="none"/>`;
+      }
+      svg.innerHTML = paths + selection + marquee;
+    }
+
+    function attachNoteMarkupDrawing(svg) {
+      const toNatural = (e) => {
+        const r = svg.getBoundingClientRect();
+        return [
+          Math.round((e.clientX - r.left) / r.width * noteMarkup.natW * 10) / 10,
+          Math.round((e.clientY - r.top) / r.height * noteMarkup.natH * 10) / 10,
+        ];
+      };
+      svg.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || !noteMarkup) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (noteMarkup.tool === 'cursor') {
+          // Resize the selection from the corner handle
+          if (e.target.dataset?.mkHandle) {
+            const sel = markupSelectedStrokes();
+            if (!sel.length) return;
+            const bb = markupUnionBBox(sel);
+            const start = toNatural(e);
+            const snapshots = sel.map(s => ({ s, pts: s.points.map(p => [...p]) }));
+            const onMove = ev => {
+              const p = toNatural(ev);
+              const sx = Math.max(0.05, (bb.w + p[0] - start[0]) / bb.w);
+              const sy = Math.max(0.05, (bb.h + p[1] - start[1]) / bb.h);
+              snapshots.forEach(({ s, pts }) => {
+                s.points = pts.map(([x, y]) => [
+                  Math.round((bb.x + (x - bb.x) * sx) * 10) / 10,
+                  Math.round((bb.y + (y - bb.y) * sy) * 10) / 10,
+                ]);
+              });
+              renderNoteMarkupSvg();
+            };
+            const onUp = () => {
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+              markupChanged();
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            return;
+          }
+          // Drag inside the selection bounds, or on a line (selecting it first)
+          const hitId = e.target.closest('path[data-stroke-id]')?.dataset.strokeId;
+          if (e.target.dataset?.mkMove || hitId) {
+            if (hitId && !noteMarkup.selectedIds.includes(hitId)) noteMarkup.selectedIds = [hitId];
+            renderNoteMarkupSvg();
+            const sel = markupSelectedStrokes();
+            let last = toNatural(e);
+            const onMove = ev => {
+              const p = toNatural(ev);
+              const dx = p[0] - last[0];
+              const dy = p[1] - last[1];
+              last = p;
+              sel.forEach(s => {
+                s.points = s.points.map(([x, y]) => [Math.round((x + dx) * 10) / 10, Math.round((y + dy) * 10) / 10]);
+              });
+              renderNoteMarkupSvg();
+            };
+            const onUp = () => {
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+              markupChanged();
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            return;
+          }
+          // Empty area: marquee to select squiggles
+          noteMarkup.selectedIds = [];
+          const start = toNatural(e);
+          const onMove = ev => {
+            const p = toNatural(ev);
+            noteMarkup.marquee = {
+              x: Math.min(start[0], p[0]),
+              y: Math.min(start[1], p[1]),
+              w: Math.abs(p[0] - start[0]),
+              h: Math.abs(p[1] - start[1]),
+            };
+            renderNoteMarkupSvg();
+          };
+          const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            const m = noteMarkup?.marquee;
+            if (noteMarkup) {
+              if (m && m.w > 2 && m.h > 2) {
+                noteMarkup.selectedIds = noteMarkup.strokes.filter(s => {
+                  const b = markupStrokeBBox(s);
+                  return b.x < m.x + m.w && b.x + b.w > m.x && b.y < m.y + m.h && b.y + b.h > m.y;
+                }).map(s => s.id);
+              }
+              noteMarkup.marquee = null;
+              renderNoteMarkupSvg();
+            }
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+          renderNoteMarkupSvg();
+          return;
+        }
+        // Width slider is in screen px; store in image px so it bakes 1:1
+        const scale = noteMarkup.natW / svg.getBoundingClientRect().width;
+        const stroke = {
+          id: `mk-${Math.random().toString(36).slice(2, 9)}`,
+          color: markupStyle.color,
+          width: Math.max(1, Math.round(markupStyle.width * scale * 10) / 10),
+          dash: markupStyle.dash,
+          points: [toNatural(e)],
+        };
+        noteMarkup.strokes.push(stroke);
+        const onMove = ev => { stroke.points.push(toNatural(ev)); renderNoteMarkupSvg(); };
+        const onUp = () => {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          if (stroke.points.length < 2 && noteMarkup) {
+            noteMarkup.strokes = noteMarkup.strokes.filter(s => s !== stroke);
+          }
+          renderNoteMarkupSvg();
+          markupChanged();
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        renderNoteMarkupSvg();
+      });
+    }
+
+    // Display-only composite (data URL, never persisted or exported directly)
+    async function bakeMarkupDataUrl(originalSrc, strokes) {
+      const img = await loadMarkupImage(originalSrc);
+      const cnv = document.createElement('canvas');
+      cnv.width = img.naturalWidth;
+      cnv.height = img.naturalHeight;
+      const ctx = cnv.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      drawStrokesOnContext(ctx, strokes);
+      return cnv.toDataURL('image/jpeg', 0.9);
+    }
+
+    async function persistMarkup(state) {
+      if (!state) return;
+      state.dirty = false;
+      const strokes = JSON.parse(JSON.stringify(state.strokes));
+      try {
+        if (state.mode === 'composer') {
+          if (!pendingScreenshot) return;
+          const previewImg = document.getElementById('screenshotPreviewImg');
+          if (!strokes.length) {
+            delete pendingScreenshot.markupStrokes;
+            delete pendingScreenshot.markupNatW;
+            delete pendingScreenshot.markupNatH;
+            delete pendingScreenshot._mkPreview;
+            if (previewImg) previewImg.src = state.src;
+          } else {
+            pendingScreenshot.markupStrokes = strokes;
+            pendingScreenshot.markupNatW = state.natW;
+            pendingScreenshot.markupNatH = state.natH;
+            pendingScreenshot._mkPreview = await bakeMarkupDataUrl(state.src, strokes);
+            if (previewImg) previewImg.src = pendingScreenshot._mkPreview;
+          }
+        } else {
+          const note = currentNotes[state.noteIndex];
+          if (!note) return;
+          // Migrate legacy baked markup back to the original image
+          if (note.markupOriginalUrl) {
+            note.screenshotUrl = note.markupOriginalUrl;
+            delete note.markupOriginalUrl;
+          }
+          if (!strokes.length) {
+            delete note.markupStrokes;
+            delete note.markupNatW;
+            delete note.markupNatH;
+            delete note._mkPreview;
+          } else {
+            note.markupStrokes = strokes;
+            note.markupNatW = state.natW;
+            note.markupNatH = state.natH;
+            note._mkPreview = await bakeMarkupDataUrl(state.src, strokes);
+            console.log('[screen-notes] markup persist', {
+              natW: state.natW, natH: state.natH,
+              maxX: Math.max(...strokes.flatMap(s => s.points.map(p => p[0]))),
+              maxY: Math.max(...strokes.flatMap(s => s.points.map(p => p[1]))),
+            });
+          }
+          const session = allSessions.find(s => s.id === activeSessionId);
+          if (session) {
+            session.notes = [...currentNotes];
+            await saveSession(session);
+          }
+          renderNotesList();
+        }
+      } catch (err) {
+        console.error('[screen-notes] markup save failed', err);
+        showToast('Could not save markup');
+      }
+    }
+
+    // ── Canvas markup mode ──
+    function setCanvasMarkup(active) {
+      if (active && canvasReadOnly()) return;
+      if (canvasMarkup.active === active) return;
+      canvasMarkup.active = active;
+      document.getElementById('canvasToolbar')?.classList.toggle('markup-mode', active);
+      document.getElementById('markupToggleBtn')?.classList.toggle('active', active);
+      document.getElementById('markupCursorBtn')?.classList.toggle('active', !active);
+      document.getElementById('canvasViewport')?.classList.toggle('markup-mode', active);
+      if (active) setSelectedItems([]);
+    }
+
+    function handleMarkupCanvasMouseDown(e) {
+      if (e.button !== 0 || spaceDown) return false;
+      if (e.target.closest('.canvas-toolbar, .canvas-help, .help-fab, .zoom-indicator')) return false;
+      const viewport = document.getElementById('canvasViewport');
+      if (!viewport) return false;
+      const rect = viewport.getBoundingClientRect();
+      const toWorld = (ev) => [
+        Math.round((ev.clientX - rect.left - canvas.x) / canvas.scale * 10) / 10,
+        Math.round((ev.clientY - rect.top - canvas.y) / canvas.scale * 10) / 10,
+      ];
+      const stroke = {
+        id: newCanvasItemId('stroke'),
+        type: 'stroke',
+        color: markupStyle.color,
+        width: markupStyle.width,
+        dash: markupStyle.dash,
+        points: [toWorld(e)],
+      };
+      const live = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      live.setAttribute('class', 'markup-live');
+      viewport.appendChild(live);
+      const draw = () => {
+        const pts = stroke.points.map(([x, y]) => [x * canvas.scale + canvas.x, y * canvas.scale + canvas.y]);
+        live.innerHTML = `<path d="${strokePathD(pts)}" fill="none" stroke="${stroke.color}" stroke-width="${stroke.width * canvas.scale}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(stroke, canvas.scale)}/>`;
+      };
+      const onMove = ev => { stroke.points.push(toWorld(ev)); draw(); };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        live.remove();
+        if (stroke.points.length >= 2) {
+          const xs = stroke.points.map(p => p[0]);
+          const ys = stroke.points.map(p => p[1]);
+          stroke.x = Math.min(...xs) - stroke.width;
+          stroke.y = Math.min(...ys) - stroke.width;
+          stroke.w = Math.max(...xs) - Math.min(...xs) + stroke.width * 2;
+          stroke.h = Math.max(...ys) - Math.min(...ys) + stroke.width * 2;
+          // Points stored relative to the item origin so dragging the item moves the stroke
+          stroke.points = stroke.points.map(([px, py]) => [px - stroke.x, py - stroke.y]);
+          // Original bounds = SVG viewBox; resizing stretches the path against these
+          stroke.vw = stroke.w;
+          stroke.vh = stroke.h;
+          pushUndoState();
+          canvas.items.push(stroke);
+          renderCanvas();
+          saveCanvasDebounced();
+        }
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      draw();
+      e.preventDefault();
+      return true;
+    }
+
+    // Unconverted lightbox squiggles (session never opened on canvas) bake at export
+    async function bakeNoteMarkupIntoBlob(note, blob) {
+      try {
+        if (!note?.markupStrokes?.length) return blob;
+        const objUrl = URL.createObjectURL(blob);
+        let img;
+        try { img = await loadMarkupImage(objUrl); } finally { URL.revokeObjectURL(objUrl); }
+        const cnv = document.createElement('canvas');
+        cnv.width = img.naturalWidth;
+        cnv.height = img.naturalHeight;
+        const ctx = cnv.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        drawStrokesOnContext(ctx, note.markupStrokes);
+        return await new Promise(res => cnv.toBlob(res, 'image/jpeg', 0.92)) || blob;
+      } catch (err) {
+        console.warn('[screen-notes] note markup baking failed, exporting original', err);
+        return blob;
+      }
+    }
+
+    // ── Export baking: strokes drawn over a screenshot get burned into it ──
+    async function bakeStrokesForRect(session, blob, getRect) {
+      try {
+        const items = session.canvas?.items || [];
+        const strokes = items.filter(i => i.type === 'stroke' && Array.isArray(i.points) && i.points.length > 1);
+        if (!strokes.length) return blob;
+        const objUrl = URL.createObjectURL(blob);
+        let img;
+        try { img = await loadMarkupImage(objUrl); } finally { URL.revokeObjectURL(objUrl); }
+        const rect = getRect(img);
+        if (!rect || rect.w <= 0 || rect.h <= 0) return blob;
+        const hits = strokes.filter(s =>
+          s.x < rect.x + rect.w && s.x + s.w > rect.x &&
+          s.y < rect.y + rect.h && s.y + s.h > rect.y);
+        if (!hits.length) return blob;
+        const f = img.naturalWidth / rect.w; // world px → image px
+        const cnv = document.createElement('canvas');
+        cnv.width = img.naturalWidth;
+        cnv.height = img.naturalHeight;
+        const ctx = cnv.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        drawStrokesOnContext(ctx, hits.map(s => {
+          // Account for strokes that were resized after drawing (viewBox stretch)
+          const sx = s.vw ? s.w / s.vw : 1;
+          const sy = s.vh ? s.h / s.vh : 1;
+          return {
+            ...s,
+            width: s.width * f * (sx + sy) / 2,
+            points: s.points.map(([x, y]) => [(s.x + x * sx - rect.x) * f, (s.y + y * sy - rect.y) * f]),
+          };
+        }));
+        return await new Promise(res => cnv.toBlob(res, 'image/jpeg', 0.92)) || blob;
+      } catch (err) {
+        console.warn('[screen-notes] stroke baking failed, exporting original', err);
+        return blob;
+      }
+    }
+
+    function bakeCanvasStrokesIntoNoteBlob(session, noteIndex, blob) {
+      const shot = (session.canvas?.items || []).find(i => i.type === 'screenshot' && i.noteIndex === noteIndex);
+      if (!shot) return Promise.resolve(blob);
+      return bakeStrokesForRect(session, blob, img => {
+        // The screenshot card contain-fits the image without upscaling
+        const fit = Math.min(shot.w / img.naturalWidth, shot.h / img.naturalHeight, 1);
+        return { x: shot.x, y: shot.y, w: img.naturalWidth * fit, h: img.naturalHeight * fit };
+      });
+    }
+
+    function bakeCanvasStrokesIntoImageItemBlob(session, item, blob) {
+      return bakeStrokesForRect(session, blob, img => {
+        // Dropped images contain-fit (centered) inside the item box
+        const fit = Math.min(item.w / img.naturalWidth, item.h / img.naturalHeight);
+        const w = img.naturalWidth * fit;
+        const h = img.naturalHeight * fit;
+        return { x: item.x + (item.w - w) / 2, y: item.y + (item.h - h) / 2, w, h };
+      });
+    }
+
+    // Canvas-only content (dropped images + standalone text) included in exports
+    function sessionCanvasExtras(session, filter = null) {
+      const items = session.canvas?.items || [];
+      return {
+        images: items.filter(i => i.type === 'image' && i.url && (!filter || filter.imageIds.has(i.id))),
+        texts: items.filter(i => i.type === 'text' && !Number.isInteger(i.noteIndex) && (i.text || '').trim()
+          && (!filter || filter.textIds.has(i.id))),
+      };
+    }
+
+    function sessionExportTotal(session, filter = null) {
+      const extras = sessionCanvasExtras(session, filter);
+      const noteCount = filter ? filter.noteIndexes.size : (session?.notes?.length || 0);
+      return noteCount + extras.images.length + extras.texts.length;
+    }
+
+    // Build a filter from the current canvas selection (null = nothing exportable selected)
+    function selectedExportFilter(session) {
+      if (!session || canvas.session?.id !== session.id || !canvas.selectedIds.length) return null;
+      const noteIndexes = new Set();
+      const imageIds = new Set();
+      const textIds = new Set();
+      canvas.items.filter(i => canvas.selectedIds.includes(i.id)).forEach(i => {
+        if ((i.type === 'screenshot' || i.type === 'text') && Number.isInteger(i.noteIndex)) noteIndexes.add(i.noteIndex);
+        else if (i.type === 'image' && i.url) imageIds.add(i.id);
+        else if (i.type === 'text' && (i.text || '').trim()) textIds.add(i.id);
+      });
+      const count = noteIndexes.size + imageIds.size + textIds.size;
+      return count ? { noteIndexes, imageIds, textIds, count } : null;
+    }
+
+    // GitHub / download buttons: with a canvas selection, offer "all" vs "selected"
+    let exportMenuEl = null;
+    function closeExportMenu() {
+      if (exportMenuEl) { exportMenuEl.remove(); exportMenuEl = null; }
+      document.removeEventListener('mousedown', onExportMenuOutside, true);
+    }
+    function onExportMenuOutside(e) {
+      if (exportMenuEl && !exportMenuEl.contains(e.target)) closeExportMenu();
+    }
+
+    function onExportButtonClick(event, sessionId, kind) {
+      if (exportMenuEl) { closeExportMenu(); return; }
+      const session = allSessions.find(s => s.id === sessionId);
+      if (!session) return;
+      const run = (filter) => kind === 'zip'
+        ? exportSessionPackage(sessionId, filter)
+        : openGithubExportDialog(sessionId, filter);
+      const filter = selectedExportFilter(session);
+      const total = sessionExportTotal(session);
+      if (!filter || filter.count >= total) return run(null);
+
+      const btn = event.currentTarget;
+      const menu = document.createElement('div');
+      menu.className = 'session-menu-popover';
+      const verb = kind === 'zip' ? 'Download' : 'Export';
+      menu.innerHTML = `
+        <button class="session-menu-item" id="exportAllChoice">${verb} all ${total} note${total === 1 ? '' : 's'}</button>
+        <button class="session-menu-item" id="exportSelectedChoice">${verb} ${filter.count} selected note${filter.count === 1 ? '' : 's'}</button>
+      `;
+      document.body.appendChild(menu);
+      menu.querySelector('#exportAllChoice').onclick = () => { closeExportMenu(); run(null); };
+      menu.querySelector('#exportSelectedChoice').onclick = () => { closeExportMenu(); run(filter); };
+      const r = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let left = r.right - mw;
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = r.top - mh - 6;
+      if (left < 8) left = 8;
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      exportMenuEl = menu;
+      document.addEventListener('mousedown', onExportMenuOutside, true);
+    }
+
     // ── GitHub export (one issue per note, screenshots committed to the repo) ──
-    const GH_TOKEN_KEY = 'screenNotesGithubToken';
+    const GH_TOKEN_KEY = 'screenNotesGithubToken'; // legacy single-token storage
+    const GH_TOKENS_KEY = 'screenNotesGithubTokensV2'; // { [ownerKey]: { token, login } }
     const GH_REPO_KEY = 'screenNotesGithubRepo';
+    const GH_LAST_OWNER_KEY = 'screenNotesGithubLastOwner';
     const GH_TOKEN_MASK = '••••••••••••••••••••••••';
+    // 1 personal + 3 Shopify resource owners
+    const GH_OWNERS = [
+      { key: 'personal', label: 'Personal' },
+      { key: 'Shopify', label: 'Shopify' },
+      { key: 'shop', label: 'shop' },
+      { key: 'shopify-playground', label: 'shopify-playground' },
+    ];
     window.GH_TOKEN_MASK = GH_TOKEN_MASK;
 
-    function openGithubExportDialog(sessionId) {
+    function ghLoadTokens() {
+      let tokens = {};
+      try { tokens = JSON.parse(localStorage.getItem(GH_TOKENS_KEY)) || {}; } catch (_) {}
+      // Migrate the legacy single token into the personal slot
+      const legacy = localStorage.getItem(GH_TOKEN_KEY);
+      if (legacy && !tokens.personal) {
+        tokens.personal = { token: legacy };
+        localStorage.setItem(GH_TOKENS_KEY, JSON.stringify(tokens));
+        localStorage.removeItem(GH_TOKEN_KEY);
+      }
+      return tokens;
+    }
+
+    function ghSaveTokens(tokens) {
+      localStorage.setItem(GH_TOKENS_KEY, JSON.stringify(tokens));
+    }
+
+    function ghOwnerChanged() {
+      const ownerKey = document.getElementById('ghOwnerSelect')?.value;
+      const input = document.getElementById('ghTokenInput');
+      if (!input) return;
+      const saved = ghLoadTokens()[ownerKey];
+      // Empty until a token is added for this specific owner
+      input.value = saved?.token ? GH_TOKEN_MASK : '';
+      const label = document.getElementById('ghTokenLabel');
+      if (label) {
+        const owner = GH_OWNERS.find(o => o.key === ownerKey);
+        label.textContent = `Access token — ${owner?.label || ownerKey}${saved?.token ? ' (saved)' : ''}`;
+      }
+    }
+
+    let ghActiveFilter = null;
+    function openGithubExportDialog(sessionId, filter = null) {
       document.getElementById('ghDialogOverlay')?.remove();
+      ghActiveFilter = filter;
+      const session = allSessions.find(s => s.id === sessionId);
+      const totalCount = session ? sessionExportTotal(session, filter) : 0;
       const savedRepo = localStorage.getItem(GH_REPO_KEY) || '';
-      const hasToken = !!localStorage.getItem(GH_TOKEN_KEY);
+      const savedTokens = ghLoadTokens();
+      const lastOwner = localStorage.getItem(GH_LAST_OWNER_KEY) || 'personal';
+      const hasToken = !!savedTokens[lastOwner]?.token;
       const overlay = document.createElement('div');
       overlay.className = 'gh-dialog-overlay';
       overlay.id = 'ghDialogOverlay';
       overlay.innerHTML = `
         <div class="gh-dialog">
-          <h3>Export notes as GitHub issues</h3>
+          <h3>Export ${totalCount} note${totalCount === 1 ? '' : 's'} to GitHub</h3>
           <div>
-            <label for="ghRepoInput">Repository (owner/repo)</label>
-            <input type="text" id="ghRepoInput" placeholder="shop/issues-retail" value="${escapeHtml(savedRepo)}" spellcheck="false">
+            <label for="ghOwnerSelect">Resource owner</label>
+            <select id="ghOwnerSelect" class="gh-owner-select" onchange="ghOwnerChanged()">
+              ${GH_OWNERS.map(o => {
+                const personalLogin = currentUser?.github || savedTokens.personal?.login;
+                const label = o.key === 'personal' && personalLogin ? personalLogin : o.label;
+                return `<option value="${o.key}"${o.key === lastOwner ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+              }).join('')}
+            </select>
           </div>
           <div>
-            <label for="ghTokenInput">Personal access token${hasToken ? ' (saved)' : ''}</label>
+            <label for="ghRepoInput">Repository name</label>
+            <input type="text" id="ghRepoInput" placeholder="issues-retail" value="${escapeHtml(savedRepo.includes('/') ? savedRepo.split('/')[1] : savedRepo)}" spellcheck="false">
+          </div>
+          <div>
+            <label id="ghTokenLabel" for="ghTokenInput">Access token${hasToken ? ' (saved)' : ''}</label>
             <input type="password" id="ghTokenInput" value="${hasToken ? GH_TOKEN_MASK : ''}" placeholder="github_pat_…" autocomplete="off" onfocus="if(this.value===window.GH_TOKEN_MASK)this.select()">
-            <div class="gh-dialog-hint"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a> with <b>Issues: write</b> and <b>Contents: write</b> on the repo. Stored locally in this browser.</div>
+            <div class="gh-dialog-hint"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a> for this resource owner with <b>Issues: write</b> and <b>Contents: write</b>. Saved per owner, locally in this browser.</div>
           </div>
           <div class="gh-dialog-status" id="ghStatus"></div>
           <div class="gh-dialog-actions">
@@ -3837,7 +5376,7 @@
       overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeGithubExportDialog(); });
       document.body.appendChild(overlay);
       requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('in')));
-      document.getElementById(savedRepo ? (hasToken ? 'ghExportGo' : 'ghTokenInput') : 'ghRepoInput')?.focus();
+      document.getElementById(savedRepo && hasToken ? 'ghExportGo' : 'ghRepoInput')?.focus();
     }
 
     function closeGithubExportDialog() {
@@ -3883,37 +5422,62 @@
     async function runGithubExport(sessionId) {
       const session = allSessions.find(s => s.id === sessionId);
       if (!session) return;
-      const repo = document.getElementById('ghRepoInput')?.value.trim();
-      let tokenInput = document.getElementById('ghTokenInput')?.value.trim();
+      const repoName = document.getElementById('ghRepoInput')?.value.trim();
+      if (!/^[\w.-]+$/.test(repoName || '')) return ghSetStatus('Enter a repository name', true);
+      const ownerKey = document.getElementById('ghOwnerSelect')?.value || 'personal';
+      const tokens = ghLoadTokens();
+      let tokenInput = document.getElementById('ghTokenInput')?.value.trim() || '';
       if (tokenInput === GH_TOKEN_MASK) tokenInput = '';
-      const token = tokenInput || localStorage.getItem(GH_TOKEN_KEY);
-      if (!/^[\w.-]+\/[\w.-]+$/.test(repo || '')) return ghSetStatus('Enter a repo as owner/repo', true);
-      if (!token) return ghSetStatus('Enter a personal access token', true);
+      const token = tokenInput || tokens[ownerKey]?.token;
+      if (!token) return ghSetStatus('Add an access token for this resource owner', true);
+      if (tokenInput) {
+        tokens[ownerKey] = { ...(tokens[ownerKey] || {}), token: tokenInput };
+        ghSaveTokens(tokens);
+      }
+      localStorage.setItem(GH_LAST_OWNER_KEY, ownerKey);
 
       const goBtn = document.getElementById('ghExportGo');
       if (goBtn) goBtn.disabled = true;
+      let repo;
       try {
+        // Personal repos live under the user's GitHub login — quick.id knows it,
+        // with the token's own account as fallback
+        let ownerLogin = ownerKey;
+        if (ownerKey === 'personal') {
+          ownerLogin = currentUser?.github || tokens.personal?.login;
+          if (!ownerLogin) {
+            ghSetStatus('Checking account…');
+            ownerLogin = (await ghApi('/user', token)).login;
+          }
+          tokens.personal = { ...(tokens.personal || {}), token, login: ownerLogin };
+          ghSaveTokens(tokens);
+        }
+        repo = `${ownerLogin}/${repoName}`;
         ghSetStatus('Checking repo…');
         const repoInfo = await ghApi(`/repos/${repo}`, token);
         const branch = repoInfo.default_branch || 'main';
-        localStorage.setItem(GH_REPO_KEY, repo);
-        if (tokenInput) localStorage.setItem(GH_TOKEN_KEY, tokenInput);
+        localStorage.setItem(GH_REPO_KEY, repoName);
 
         const notes = session.notes || [];
         const sessionSlug = slugifyForFile(session.title || 'untitled');
         const sessionUrl = `${window.location.origin}${window.location.pathname}#session=${encodeURIComponent(sessionId)}`;
         const stamp = Date.now();
         let created = 0, failed = 0;
+        const filter = ghActiveFilter;
+        const extras = sessionCanvasExtras(session, filter);
+        const total = sessionExportTotal(session, filter);
+        let issueNum = 0;
 
         for (let i = 0; i < notes.length; i++) {
+          if (filter && !filter.noteIndexes.has(i)) continue;
           const note = notes[i];
-          ghSetStatus(`Creating issue ${i + 1} of ${notes.length}…`);
+          ghSetStatus(`Creating issue ${++issueNum} of ${total}…`);
           try {
             let imageMarkdown = '';
             const src = note.screenshotUrl || note.screenshot;
             if (src) {
               try {
-                const blob = await (await fetch(src)).blob();
+                const blob = await bakeCanvasStrokesIntoNoteBlob(session, i, await bakeNoteMarkupIntoBlob(note, await (await fetch(src)).blob()));
                 const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type] || 'png';
                 const path = `.screen-notes/${sessionSlug}-${stamp}/${String(i + 1).padStart(2, '0')}-${slugifyForFile(note.text)}.${typeExt}`;
                 await ghApi(`/repos/${repo}/contents/${path}`, token, {
@@ -3949,6 +5513,60 @@
           }
         }
 
+        // Canvas-only images become issues too
+        for (let i = 0; i < extras.images.length; i++) {
+          const item = extras.images[i];
+          ghSetStatus(`Creating issue ${++issueNum} of ${total}…`);
+          try {
+            let imageMarkdown = '';
+            try {
+              const blob = await bakeCanvasStrokesIntoImageItemBlob(session, item, await (await fetch(item.url)).blob());
+              const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type] || 'png';
+              const path = `.screen-notes/${sessionSlug}-${stamp}/canvas-${String(i + 1).padStart(2, '0')}-${slugifyForFile(item.note || 'canvas-image')}.${typeExt}`;
+              await ghApi(`/repos/${repo}/contents/${path}`, token, {
+                method: 'PUT',
+                body: JSON.stringify({
+                  message: `Screen Notes: canvas image "${(item.note || 'canvas image').slice(0, 60)}"`,
+                  content: await blobToBase64(blob),
+                  branch,
+                }),
+              });
+              imageMarkdown = `\n\n<img src="https://github.com/${repo}/blob/${branch}/${path}?raw=true" width="600">`;
+            } catch (imgErr) {
+              imageMarkdown = `\n\n_(image upload failed: ${imgErr.message})_`;
+            }
+            const firstLine = (item.note || '').split('\n')[0].trim();
+            const title = firstLine
+              ? (firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine)
+              : `Canvas image ${i + 1} — ${session.title || 'Untitled Session'}`;
+            const body = [
+              item.note || '',
+              imageMarkdown,
+              `\n\n---\nFrom the canvas of [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled Session'}”.`,
+            ].join('');
+            await ghApi(`/repos/${repo}/issues`, token, { method: 'POST', body: JSON.stringify({ title, body }) });
+            created++;
+          } catch (err) {
+            console.error('Canvas image issue failed', err);
+            failed++;
+          }
+        }
+
+        // Standalone canvas text notes
+        for (const t of extras.texts) {
+          ghSetStatus(`Creating issue ${++issueNum} of ${total}…`);
+          try {
+            const firstLine = t.text.trim().split('\n')[0];
+            const title = firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine;
+            const body = `${t.text.trim()}\n\n---\nFrom the canvas of [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled Session'}”.`;
+            await ghApi(`/repos/${repo}/issues`, token, { method: 'POST', body: JSON.stringify({ title, body }) });
+            created++;
+          } catch (err) {
+            console.error('Canvas text issue failed', err);
+            failed++;
+          }
+        }
+
         if (failed) {
           ghSetStatus(`Created ${created} issue${created === 1 ? '' : 's'}, ${failed} failed`, true);
           if (goBtn) goBtn.disabled = false;
@@ -3957,8 +5575,12 @@
           showToast(`Created ${created} issue${created === 1 ? '' : 's'} in ${repo}`);
         }
       } catch (e) {
-        ghSetStatus(e.message === 'Bad credentials' ? 'Bad credentials — check your token' : e.message, true);
-        if (e.message === 'Bad credentials') localStorage.removeItem(GH_TOKEN_KEY);
+        ghSetStatus(e.message === 'Bad credentials' ? `Bad credentials — check the ${ownerKey} token` : e.message, true);
+        if (e.message === 'Bad credentials') {
+          delete tokens[ownerKey];
+          ghSaveTokens(tokens);
+          ghOwnerChanged();
+        }
         if (goBtn) goBtn.disabled = false;
       }
     }
@@ -3981,7 +5603,7 @@
       return jszipPromise;
     }
 
-    async function exportSessionPackage(sessionId) {
+    async function exportSessionPackage(sessionId, filter = null) {
       const session = allSessions.find(s => s.id === sessionId);
       if (!session) return;
       const btn = document.getElementById('exportSessionBtn');
@@ -3998,7 +5620,7 @@
           `# ${session.title || 'Untitled Session'}`,
           '',
           `Recorded: ${new Date(session.created_at).toLocaleString()}`,
-          `Notes: ${notes.length}`,
+          `Notes: ${sessionExportTotal(session, filter)}`,
           '',
           'Notes captured during a live screen-share session in Screen Notes.',
           'Timestamps are elapsed recording time. Each screenshot shows what was',
@@ -4007,16 +5629,18 @@
         ];
 
         let shotNum = 0;
+        let noteNum = 0;
         for (let i = 0; i < notes.length; i++) {
+          if (filter && !filter.noteIndexes.has(i)) continue;
           const note = notes[i];
-          lines.push(`## Note ${i + 1} — ${formatDuration(note.timestamp || 0)}`, '');
+          lines.push(`## Note ${++noteNum} — ${formatDuration(note.timestamp || 0)}`, '');
           if (note.text) lines.push(note.text, '');
           const src = note.screenshotUrl || note.screenshot;
           if (src) {
             try {
               const resp = await fetch(src);
               if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-              const blob = await resp.blob();
+              const blob = await bakeCanvasStrokesIntoNoteBlob(session, i, await bakeNoteMarkupIntoBlob(note, await resp.blob()));
               shotNum++;
               const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type];
               const ext = typeExt || (src.match(/\.(png|jpe?g|webp|gif)(\?|$)/i)?.[1] || 'png').replace(/jpeg/i, 'jpg');
@@ -4028,6 +5652,30 @@
             }
           }
         }
+
+        // Canvas-only content: dropped images and standalone text notes
+        const extras = sessionCanvasExtras(session, filter);
+        let imgNum = 0;
+        for (const item of extras.images) {
+          lines.push(`## Canvas image ${++imgNum}`, '');
+          if (item.note?.trim()) lines.push(item.note.trim(), '');
+          try {
+            const resp = await fetch(item.url);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const blob = await bakeCanvasStrokesIntoImageItemBlob(session, item, await resp.blob());
+            shotNum++;
+            const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type];
+            const ext = typeExt || (item.url.match(/\.(png|jpe?g|webp|gif)(\?|$)/i)?.[1] || 'png').replace(/jpeg/i, 'jpg');
+            const name = `${String(shotNum).padStart(2, '0')}-${slugifyForFile(item.note || 'canvas-image')}.${ext}`;
+            shots.file(name, blob);
+            lines.push(`![image](screenshots/${name})`, '');
+          } catch (_) {
+            lines.push('_(image unavailable)_', '');
+          }
+        }
+        extras.texts.forEach(t => {
+          lines.push('## Canvas note', '', t.text.trim(), '');
+        });
 
         root.file('SESSION.md', lines.join('\n'));
         const blob = await zip.generateAsync({ type: 'blob' });
@@ -4047,13 +5695,13 @@
 
     function topBarActionsHTML(session) {
       return `
-        <button class="btn btn-ghost review-theme-btn review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Share — copy session link" aria-label="Share">
-          ${icon('link')}
+        <button class="btn btn-ghost review-theme-btn review-share-btn bar-action" id="shareSessionBtn" onclick="shareSessionFromHeader('${session.id}')" title="Share" aria-label="Share">
+          ${icon('share')}
         </button>
-        <button class="btn btn-ghost review-theme-btn bar-action" id="exportSessionBtn" onclick="exportSessionPackage('${session.id}')" title="Export notes + screenshots for AI agents" aria-label="Export session">
+        <button class="btn btn-ghost review-theme-btn bar-action" id="exportSessionBtn" onclick="onExportButtonClick(event, '${session.id}', 'zip')" title="Export notes + screenshots for AI agents" aria-label="Export session">
           ${icon('download')}
         </button>
-        <button class="btn btn-ghost review-theme-btn bar-action" id="githubExportBtn" onclick="openGithubExportDialog('${session.id}')" title="Export notes as GitHub issues" aria-label="Export to GitHub">
+        <button class="btn btn-ghost review-theme-btn bar-action" id="githubExportBtn" onclick="onExportButtonClick(event, '${session.id}', 'github')" title="Export notes as GitHub issues" aria-label="Export to GitHub">
           ${icon('github')}
         </button>
         ${isMySession(session) ? `
@@ -4237,6 +5885,7 @@
       // Empty state
       main.innerHTML = `
         <div class="grid-bg" id="gridBg">${renderHomeHiddenNotes()}</div>
+        <svg class="home-draw-svg" id="homeDrawSvg"></svg>
         <div class="empty-state" id="emptyState">
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>
@@ -4246,7 +5895,220 @@
           </button>
         </div>
       `;
+      renderHomeDrawSvg();
       updateTopBar(null);
+    }
+
+    // ── Home screen drawing + undo ──
+    const homeDraw = { strokes: [], undo: [] };
+
+    function renderHomeDrawSvg() {
+      const svg = document.getElementById('homeDrawSvg');
+      if (!svg) return;
+      svg.innerHTML = homeDraw.strokes.map(s =>
+        `<path d="${strokePathD(s.points)}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(s)}/>`
+      ).join('');
+    }
+
+    // Easter egg: while a note card drags under the hero content, an inverted
+    // clone of each element — clipped to the note's exact rotated shape —
+    // sweeps smoothly through the glyphs.
+    let homeSilHosts = null;
+    let homeInvertItems = null;
+    let homeDragAngle = 0;
+    let homeOtherGeoms = null;
+
+    function homeCardAngle(card) {
+      try {
+        const m = new DOMMatrix(getComputedStyle(card).transform);
+        return Math.atan2(m.b, m.a);
+      } catch (_) { return 0; }
+    }
+
+    // Cards are rotated, so their bounding boxes overshoot the visual edges.
+    // All hit-testing happens in each card's rotated space instead.
+    function homeCardGeom(card, angle) {
+      const r = card.getBoundingClientRect();
+      return {
+        cx: (r.left + r.right) / 2,
+        cy: (r.top + r.bottom) / 2,
+        hw: card.offsetWidth / 2,
+        hh: card.offsetHeight / 2,
+        angle,
+        cos: Math.cos(angle),
+        sin: Math.sin(angle),
+      };
+    }
+
+    function homeRectTouchesCard(b, g) {
+      const pts = [[b.left, b.top], [b.right, b.top], [b.left, b.bottom], [b.right, b.bottom]];
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      pts.forEach(([x, y]) => {
+        const dx = x - g.cx, dy = y - g.cy;
+        const rx = dx * g.cos + dy * g.sin;   // rotate by -θ into card space
+        const ry = -dx * g.sin + dy * g.cos;
+        minX = Math.min(minX, rx); maxX = Math.max(maxX, rx);
+        minY = Math.min(minY, ry); maxY = Math.max(maxY, ry);
+      });
+      return minX < g.hw && maxX > -g.hw && minY < g.hh && maxY > -g.hh;
+    }
+
+    // Rounded-rect path matching the note's shape (24px corners), rotated into
+    // screen space, relative to (ox, oy). Circular arcs are rotation-invariant.
+    function homeCardRoundedPath(g, ox, oy) {
+      const R = Math.min(24, g.hw, g.hh);
+      const pt = (x, y) => {
+        const px = g.cx + x * g.cos - y * g.sin - ox;
+        const py = g.cy + x * g.sin + y * g.cos - oy;
+        return `${px.toFixed(1)} ${py.toFixed(1)}`;
+      };
+      const { hw, hh } = g;
+      return `M ${pt(-hw + R, -hh)} `
+        + `L ${pt(hw - R, -hh)} A ${R} ${R} 0 0 1 ${pt(hw, -hh + R)} `
+        + `L ${pt(hw, hh - R)} A ${R} ${R} 0 0 1 ${pt(hw - R, hh)} `
+        + `L ${pt(-hw + R, hh)} A ${R} ${R} 0 0 1 ${pt(-hw, hh - R)} `
+        + `L ${pt(-hw, -hh + R)} A ${R} ${R} 0 0 1 ${pt(-hw + R, -hh)} Z`;
+    }
+
+    // One inverted clone per (element, card) pair so several overlapping
+    // notes can each carve their own region out of the same element.
+    function homeOverlayFor(item, idx) {
+      const existing = item.el._invOverlays?.[idx];
+      if (existing?.isConnected) return existing;
+      const ov = item.el.cloneNode(true);
+      ov.classList.add('home-invert-overlay');
+      ov.removeAttribute('id');
+      ov.removeAttribute('onclick');
+      const hostRect = item.host.getBoundingClientRect();
+      const r = item.el.getBoundingClientRect();
+      ov.style.position = 'absolute';
+      ov.style.left = `${r.left - hostRect.left}px`;
+      ov.style.top = `${r.top - hostRect.top}px`;
+      ov.style.width = `${r.width}px`;
+      ov.style.margin = '0';
+      ov.style.display = 'none';
+      item.host.appendChild(ov);
+      item.el._invOverlays = item.el._invOverlays || [];
+      item.el._invOverlays[idx] = ov;
+      return ov;
+    }
+
+    function homeSilFor(h, idx) {
+      const existing = h.el._sils?.[idx];
+      if (existing?.isConnected) return existing;
+      const sil = document.createElement('span');
+      sil.className = 'home-silhouette';
+      h.el.prepend(sil);
+      h.el._sils = h.el._sils || [];
+      h.el._sils[idx] = sil;
+      return sil;
+    }
+
+    function homeCharsStart(card) {
+      homeDragAngle = homeCardAngle(card);
+      // Resting cards keep their masks applied — include them in hit-testing
+      homeOtherGeoms = [...document.querySelectorAll('.home-hidden-note')]
+        .filter(el => el !== card)
+        .map(el => homeCardGeom(el, homeCardAngle(el)));
+      const root = document.getElementById('emptyState');
+      if (!root) { homeInvertItems = []; homeSilHosts = []; return; }
+
+      // Button: wrap its label once so it can host a positioned clone
+      const btn = root.querySelector('.btn');
+      if (btn && !btn.querySelector('.btn-label-wrap')) {
+        const label = document.createElement('span');
+        label.className = 'btn-label-wrap';
+        [...btn.childNodes].forEach(n => {
+          if (n.nodeType === Node.ELEMENT_NODE && n.classList.contains('home-silhouette')) return;
+          label.appendChild(n);
+        });
+        label.textContent = label.textContent.trim();
+        btn.appendChild(label);
+      }
+
+      // Silhouette host: the primary button
+      homeSilHosts = btn ? [btn].map(el => {
+        el.classList.add('home-sil-host');
+        return { el, rect: el.getBoundingClientRect() };
+      }) : [];
+
+      // Inverted clones: heading, subheader, button label, and logo strokes
+      homeInvertItems = [];
+      root.querySelectorAll('h2, p').forEach(el => {
+        if (el.classList.contains('home-invert-overlay')) return;
+        homeInvertItems.push({ el, host: root, rect: el.getBoundingClientRect() });
+      });
+      const label = btn?.querySelector('.btn-label-wrap:not(.home-invert-overlay)');
+      if (label) homeInvertItems.push({ el: label, host: btn, rect: label.getBoundingClientRect() });
+      const iconHost = root.querySelector('.empty-state-icon');
+      const iconSvg = iconHost?.querySelector('.logo-icon:not(.home-invert-overlay)');
+      if (iconHost && iconSvg) {
+        homeInvertItems.push({ el: iconSvg, host: iconHost, rect: iconSvg.getBoundingClientRect() });
+      }
+    }
+
+    function homeCharsUpdate(card) {
+      if (!homeInvertItems) return;
+      // Dragged card first so it wins where cards overlap
+      const geoms = [homeCardGeom(card, homeDragAngle), ...(homeOtherGeoms || [])];
+      // Silhouette blocks sweeping through the button — one per touching note
+      (homeSilHosts || []).forEach(h => {
+        const hb = h.rect;
+        geoms.forEach((g, idx) => {
+          const touching = homeRectTouchesCard(hb, g);
+          const existing = h.el._sils?.[idx];
+          if (!touching) {
+            if (existing) existing.style.display = 'none';
+            return;
+          }
+          const sil = homeSilFor(h, idx);
+          sil.style.display = 'block';
+          sil.style.left = `${g.cx - g.hw - hb.left}px`;
+          sil.style.top = `${g.cy - g.hh - hb.top}px`;
+          sil.style.width = `${g.hw * 2}px`;
+          sil.style.height = `${g.hh * 2}px`;
+          sil.style.transform = `rotate(${g.angle}rad)`;
+        });
+        (h.el._sils || []).forEach((s, idx) => { if (s && idx >= geoms.length) s.style.display = 'none'; });
+      });
+      // Inverted clones clipped to each note's exact rotated shape — the color
+      // change flows through glyphs as the edges cross them
+      homeInvertItems.forEach(item => {
+        const ib = item.rect;
+        geoms.forEach((g, idx) => {
+          const touching = homeRectTouchesCard(ib, g);
+          const existing = item.el._invOverlays?.[idx];
+          if (!touching) {
+            if (existing) existing.style.display = 'none';
+            return;
+          }
+          const ov = homeOverlayFor(item, idx);
+          ov.style.display = 'block';
+          ov.style.clipPath = `path('${homeCardRoundedPath(g, ib.left, ib.top)}')`;
+        });
+        (item.el._invOverlays || []).forEach((o, idx) => { if (o && idx >= geoms.length) o.style.display = 'none'; });
+      });
+    }
+
+    // Masks stay applied where the note rests — only the caches reset
+    function homeCharsEnd() {
+      homeInvertItems = null;
+      homeSilHosts = null;
+      homeOtherGeoms = null;
+    }
+
+    function undoHomeAction() {
+      const a = homeDraw.undo.pop();
+      if (!a) return false;
+      if (a.type === 'stroke') {
+        homeDraw.strokes = homeDraw.strokes.filter(s => s !== a.stroke);
+        renderHomeDrawSvg();
+      } else if (a.el?.isConnected) {
+        if (a.type === 'move') { a.el.style.left = a.left; a.el.style.top = a.top; }
+        else if (a.type === 'resize') { a.el.style.width = a.w; }
+        else if (a.type === 'text') { a.el.textContent = a.text; }
+      }
+      return true;
     }
 
     function renderRecordingView() {
@@ -4351,7 +6213,7 @@
 
       list.innerHTML = [...currentNotes].reverse().map((note, i) => {
         const realIndex = currentNotes.length - 1 - i;
-        const imgSrc = note.screenshotUrl || note.screenshot;
+        const imgSrc = note._mkPreview || note.screenshotUrl || note.screenshot;
         const enterClass = note.createdAt && note.createdAt === enteringNoteCreatedAt ? ' note-card-entering' : '';
         const noteKey = note.createdAt || `note-${realIndex}`;
         return `
@@ -4360,7 +6222,7 @@
               <img class="note-card-screenshot"
                    src="${imgSrc}"
                    alt="Screenshot"
-                   onclick="openLightbox('${imgSrc}')"
+                   onclick="openMarkupLightbox(${realIndex})"
                    loading="lazy">
               <div class="note-card-screenshot-actions">
                 <button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); retakeRecordingNoteScreenshot(${realIndex})" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
@@ -4428,20 +6290,24 @@
 
     function renderReviewView(session) {
       const notes = session.notes || [];
+      const readOnly = !canEditSession(session);
       return `
         <div class="review-view">
           <div class="canvas-viewport" id="canvasViewport">
             <div class="canvas-world" id="canvasWorld"></div>
 
             <div class="canvas-help" id="canvasHelp">
-              <div><kbd>space</kbd> <kbd>drag</kbd> to pan</div>
-              <div><kbd>⌘</kbd> <kbd>scroll</kbd> to zoom</div>
-              <div><kbd>drag empty</kbd> to select</div>
-              <div><kbd>shift</kbd> <kbd>click</kbd> multi-select</div>
-              <div><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> nudge layers</div>
-              <div><kbd>⌘</kbd> <kbd>C</kbd> copy layers</div>
-              <div><kbd>⌘</kbd> <kbd>V</kbd> paste layers</div>
-              <div><kbd>⌘</kbd> <kbd>Z</kbd> undo</div>
+              <div class="ch-row"><span>Pan</span><span class="ch-keys"><kbd>space</kbd> <kbd>drag</kbd></span></div>
+              <div class="ch-row"><span>Zoom</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>scroll</kbd></span></div>
+              <div class="ch-row"><span>Select</span><span class="ch-keys"><kbd>drag empty</kbd></span></div>
+              <div class="ch-row"><span>Multi-select</span><span class="ch-keys"><kbd>shift</kbd> <kbd>click</kbd></span></div>
+              <div class="ch-row"><span>Nudge layers</span><span class="ch-keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div>
+              <div class="ch-row"><span>Copy layers</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>C</kbd></span></div>
+              <div class="ch-row"><span>Paste layers</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>V</kbd></span></div>
+              <div class="ch-row"><span>Undo</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>Z</kbd></span></div>
+              <div class="ch-row"><span>Cursor</span><span class="ch-keys"><kbd>⇧</kbd> <kbd>C</kbd></span></div>
+              <div class="ch-row"><span>Draw</span><span class="ch-keys"><kbd>⇧</kbd> <kbd>D</kbd></span></div>
+              <div class="ch-row"><span>Text layer</span><span class="ch-keys"><kbd>T</kbd></span></div>
               <div>Drop images anywhere</div>
             </div>
             <button class="help-fab" onclick="toggleCanvasHelp(event)" title="Canvas help">?</button>
@@ -4451,13 +6317,23 @@
             <div class="selection-rect" id="selectionRect"></div>
             <div class="canvas-drop-overlay" id="dropOverlay">Drop image to add to canvas</div>
 
-            <div class="canvas-toolbar">
-              <button class="tb-btn" onclick="addTextItem()" title="Add text">${icon('text')} Text</button>
-              <button class="tb-btn" onclick="document.getElementById('imageUploadInput').click()" title="Add image">${icon('image')} Image</button>
-              <input type="file" id="imageUploadInput" accept="image/*" multiple style="display:none;" onchange="onImageUpload(event)">
-              <button class="tb-btn" onclick="autoArrangeCanvas()" title="Auto-arrange screenshots">${icon('arrange')} Arrange</button>
+            <div class="canvas-toolbar" id="canvasToolbar">
+              ${readOnly ? `<span class="tb-readonly">Read-only</span>` : `
+              <div class="tb-swap">
+                <div class="tb-group tb-default">
+                  <button class="tb-btn" onclick="addTextItem()" title="Add text">${icon('text')} Text</button>
+                  <button class="tb-btn" onclick="document.getElementById('imageUploadInput').click()" title="Add image">${icon('image')} Image</button>
+                  <input type="file" id="imageUploadInput" accept="image/*" multiple style="display:none;" onchange="onImageUpload(event)">
+                  <button class="tb-btn" onclick="autoArrangeCanvas()" title="Auto-arrange screenshots">${icon('arrange')} Arrange</button>
+                </div>
+                <div class="tb-group tb-markup-controls">${markupControlsHTML()}</div>
+              </div>
+              <div class="tb-divider"></div>
               <button class="tb-btn" onclick="fitToScreen()" title="Fit all to screen">${icon('fit')} Fit</button>
               <button class="tb-btn" onclick="resetView()" title="Reset zoom to 100%">100%</button>
+              <div class="tb-divider"></div>
+              <button class="tb-btn tb-markup-toggle active" id="markupCursorBtn" onclick="setCanvasMarkup(false)" title="Cursor (⇧C)">${icon('cursor')}</button>
+              <button class="tb-btn tb-markup-toggle" id="markupToggleBtn" onclick="setCanvasMarkup(true)" title="Draw (⇧D)">${icon('scribble')}</button>`}
             </div>
           </div>
         </div>
@@ -4466,6 +6342,7 @@
 
     async function renameSession(id, newTitle) {
       const session = allSessions.find(s => s.id === id);
+      if (session && !canEditSession(session)) return;
       if (session) {
         session.title = newTitle.trim() || 'Untitled Session';
         await saveSession(session);
@@ -4474,6 +6351,11 @@
 
     async function viewSession(id, options = {}) {
       closeNavDrawer();
+      const target = allSessions.find(s => s.id === id);
+      if (target && !canViewSession(target)) {
+        showToast('This session is private');
+        return;
+      }
       if (isRecording && id !== activeSessionId) {
         if (!confirm('Stop current recording to view this session?')) return;
         await stopRecording();
@@ -4757,7 +6639,9 @@
     }
 
     function initCanvas(session) {
+      canvasMarkup.active = false;
       const viewport = document.getElementById('canvasViewport');
+      viewport?.classList.toggle('read-only', !canEditSession(session));
       if (!viewport) return;
       canvas.session = session;
 
@@ -4798,6 +6682,112 @@
 
       renderCanvas();
       attachCanvasListeners(viewport);
+    }
+
+    // Bake each note's lightbox squiggles into its screenshot (called at session end)
+    async function bakeNoteMarkupsIntoImages(session) {
+      const notes = session?.notes || [];
+      for (const note of notes) {
+        if (!note.markupStrokes?.length || note.markupOriginalUrl) continue;
+        const src = note.screenshotUrl || note.screenshot;
+        if (!src) continue;
+        try {
+          const img = await loadMarkupImage(src);
+          const cnv = document.createElement('canvas');
+          cnv.width = img.naturalWidth;
+          cnv.height = img.naturalHeight;
+          const ctx = cnv.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          drawStrokesOnContext(ctx, note.markupStrokes);
+          const blob = await new Promise(res => cnv.toBlob(res, 'image/jpeg', 0.92));
+          if (!blob) continue;
+          const file = new File([blob], `markup-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const r = await quick.fs.uploadFile(file);
+          const f = r?.files?.[0] || r?.[0] || r?.file || null;
+          const url = f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+          if (!url) continue;
+          note.screenshotUrl = url;
+          delete note.markupStrokes;
+          delete note.markupNatW;
+          delete note.markupNatH;
+          delete note._mkPreview;
+        } catch (err) {
+          console.warn('[screen-notes] markup bake failed for a note, keeping original', err);
+        }
+      }
+    }
+
+    // Lightbox squiggles become editable canvas strokes the first time the
+    // session opens on canvas (instead of being baked into the image).
+    // Placement is measured from the actual rendered image, so it is exact.
+    let markupConversionRun = 0;
+    async function convertNoteMarkupToCanvasStrokes(session) {
+      if (!session || !isMySession(session)) return;
+      const runId = ++markupConversionRun; // initCanvas can run twice (hashchange) — only newest run proceeds
+      const pending = (session.notes || [])
+        .map((note, i) => ({ note, i }))
+        .filter(({ note }) => note.markupStrokes?.length && !note.markupOriginalUrl);
+      if (!pending.length) return;
+      let converted = false;
+      for (const { note, i } of pending) {
+        if (canvas.session !== session || runId !== markupConversionRun) return; // superseded
+        const shot = canvas.items.find(it => it.type === 'screenshot' && it.noteIndex === i);
+        if (!shot) continue;
+        const img = document.querySelector(`.canvas-item[data-id="${shot.id}"] .ci-screenshot-img-wrap img`);
+        const viewport = document.getElementById('canvasViewport');
+        if (!img || !viewport) continue;
+        try { if (!img.complete || !img.naturalWidth) await img.decode(); } catch (_) { continue; }
+        if (canvas.session !== session || runId !== markupConversionRun) return; // superseded while loading
+        const natW = img.naturalWidth, natH = img.naturalHeight;
+        if (!natW || !natH) continue;
+        const vr = viewport.getBoundingClientRect();
+        const ir = img.getBoundingClientRect();
+        // Rendered image rect in world coordinates
+        const world = {
+          x: (ir.left - vr.left - canvas.x) / canvas.scale,
+          y: (ir.top - vr.top - canvas.y) / canvas.scale,
+          w: ir.width / canvas.scale,
+          h: ir.height / canvas.scale,
+        };
+        const sx = world.w / natW;
+        const sy = world.h / natH;
+        const sample = note.markupStrokes[0]?.points?.[0];
+        console.log('[screen-notes] markup convert', {
+          noteIndex: i, natW, natH, storedNatW: note.markupNatW, storedNatH: note.markupNatH,
+          world, sx: +sx.toFixed(4), sy: +sy.toFixed(4),
+          shot: { x: shot.x, y: shot.y, w: shot.w, h: shot.h },
+          view: { x: canvas.x, y: canvas.y, scale: canvas.scale },
+          samplePoint: sample,
+        });
+        note.markupStrokes.forEach(s => {
+          const pts = s.points.map(([x, y]) => [world.x + x * sx, world.y + y * sy]);
+          const xs = pts.map(p => p[0]);
+          const ys = pts.map(p => p[1]);
+          const width = Math.max(1, Math.round(s.width * (sx + sy) / 2 * 10) / 10);
+          const x = Math.min(...xs) - width;
+          const y = Math.min(...ys) - width;
+          const w = Math.max(...xs) - Math.min(...xs) + width * 2;
+          const h = Math.max(...ys) - Math.min(...ys) + width * 2;
+          canvas.items.push({
+            id: newCanvasItemId('stroke'),
+            type: 'stroke',
+            color: s.color,
+            width,
+            dash: s.dash,
+            x, y, w, h, vw: w, vh: h,
+            points: pts.map(([px, py]) => [Math.round((px - x) * 10) / 10, Math.round((py - y) * 10) / 10]),
+          });
+        });
+        delete note.markupStrokes;
+        delete note.markupNatW;
+        delete note.markupNatH;
+        delete note._mkPreview;
+        converted = true;
+      }
+      if (converted) {
+        renderCanvas();
+        saveCanvasDebounced();
+      }
     }
 
     function estimateScreenshotCardHeight(note, cardW, imageH) {
@@ -4883,7 +6873,7 @@
       const selected = isItemSelected(item.id);
       const sel = selected ? 'selected' : '';
       const baseStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;height:${item.h}px;`;
-      const handle = selected && canvas.selectedIds.length <= 1 ? `<div class="resize-handle" data-handle="${item.id}"></div>` : '';
+      const handle = !canvasReadOnly() && selected && canvas.selectedIds.length <= 1 ? `<div class="resize-handle" data-handle="${item.id}"></div>` : '';
 
       if (item.type === 'screenshot') {
         const note = (canvas.session?.notes || [])[item.noteIndex];
@@ -4918,6 +6908,15 @@
               <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
               <div class="ci-note-time">${formatDuration(note.timestamp)}</div>
             </div>
+            ${handle}
+          </div>
+        `;
+      }
+      if (item.type === 'stroke') {
+        const pts = item.points || [];
+        return `
+          <div class="canvas-item ci-stroke ${sel}" data-id="${item.id}" style="${baseStyle}">
+            <svg viewBox="0 0 ${item.vw || item.w} ${item.vh || item.h}" preserveAspectRatio="none"><path d="${strokePathD(pts)}" fill="none" stroke="${item.color}" stroke-width="${item.width}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(item)}/></svg>
             ${handle}
           </div>
         `;
@@ -5021,14 +7020,22 @@
     function onCanvasMouseDown(e) {
       const viewport = document.getElementById('canvasViewport');
 
+      // Toolbar and overlays handle their own clicks — never start marquee/pan from them
+      if (e.target.closest('.canvas-toolbar, .canvas-help, .help-fab, .zoom-indicator')) return;
+
+      // Markup mode: draw strokes / delete strokes instead of select or drag
+      if (canvasMarkup.active && handleMarkupCanvasMouseDown(e)) return;
+
+      const readOnly = canvasReadOnly();
+
       // Never start a drag or re-render if the user clicked into an editable
       // text area — but do select/focus the parent layer first.
       const noteText = e.target.closest('.ci-note-text');
       if (noteText) {
         const parentItem = noteText.closest('.canvas-item');
         if (parentItem) setSelectedItem(parentItem.dataset.id);
-        // Single click starts editing right away
-        if (noteText.contentEditable !== 'true') {
+        // Single click starts editing right away (viewers only select)
+        if (!readOnly && noteText.contentEditable !== 'true') {
           if (noteText.dataset.imageNoteId) startEditingImageNoteText(noteText);
           else startEditingNoteText(noteText);
           e.preventDefault();
@@ -5051,7 +7058,7 @@
       }
 
       // Resize handle?
-      if (e.target.classList.contains('resize-handle')) {
+      if (!readOnly && e.target.classList.contains('resize-handle')) {
         if (e.target.dataset.groupHandle === 'true') {
           const bounds = getSelectionBounds();
           if (bounds) {
@@ -5102,6 +7109,9 @@
         }
 
         if (!isItemSelected(id)) setSelectedItem(id);
+
+        // Viewers can select frames but never move them
+        if (readOnly) { e.preventDefault(); return; }
 
         pushUndoState();
         isDraggingItem = true;
@@ -5335,6 +7345,7 @@
     }
 
     function onCanvasDblClick(e) {
+      if (canvasReadOnly()) return;
       // 1) Editable note attached to a screenshot or dropped image
       const noteEl = e.target.closest('.ci-note-text');
       if (noteEl) {
@@ -5379,6 +7390,7 @@
     }
 
     function startEditingText(textEl) {
+      if (canvasReadOnly()) return;
       const id = textEl.dataset.textId;
       const item = canvas.items.find(i => i.id === id);
       if (!item) return;
@@ -5393,6 +7405,7 @@
     }
 
     function startEditingNoteText(noteEl) {
+      if (canvasReadOnly()) return;
       const idx = parseInt(noteEl.dataset.noteIndex, 10);
       if (isNaN(idx) || !canvas.session?.notes?.[idx]) return;
       makeEditable(noteEl, (newText) => {
@@ -5407,6 +7420,7 @@
     }
 
     function startEditingImageNoteText(noteEl) {
+      if (canvasReadOnly()) return;
       const id = noteEl.dataset.imageNoteId;
       const item = canvas.items.find(i => i.id === id);
       if (!item) return;
@@ -5430,7 +7444,7 @@
       }
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v' && !e.shiftKey) {
-        if (pasteCanvasItems()) {
+        if (!canvasReadOnly() && pasteCanvasItems()) {
           e.preventDefault();
           return;
         }
@@ -5442,7 +7456,7 @@
         return;
       }
 
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && canvas.selectedIds.length) {
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && canvas.selectedIds.length && !canvasReadOnly()) {
         pushUndoState();
         const step = e.shiftKey ? 10 : 1;
         const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
@@ -5466,13 +7480,20 @@
         e.preventDefault();
       }
 
-      if (e.key.toLowerCase() === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.key.toLowerCase() === 't' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !canvasReadOnly()) {
         addTextItem();
         e.preventDefault();
         return;
       }
 
-      if ((e.key === 'Delete' || e.key === 'Backspace') && canvas.selectedIds.length) {
+      // Shift+C / Shift+D — switch between cursor and draw mode
+      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && ['c', 'd'].includes(e.key.toLowerCase())) {
+        setCanvasMarkup(e.key.toLowerCase() === 'd');
+        e.preventDefault();
+        return;
+      }
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && canvas.selectedIds.length && !canvasReadOnly()) {
         pushUndoState();
         const toDelete = new Set(canvas.selectedIds);
         canvas.items = canvas.items.filter(i => !toDelete.has(i.id));
@@ -5504,6 +7525,7 @@
     }, true);
 
     async function onCanvasDrop(e) {
+      if (canvasReadOnly()) return;
       e.preventDefault();
       e.stopPropagation();
       document.getElementById('dropOverlay')?.classList.remove('visible');
@@ -5842,7 +7864,7 @@
     function saveCanvasDebounced() {
       clearTimeout(canvas.saveTimer);
       canvas.saveTimer = setTimeout(async () => {
-        if (!canvas.session) return;
+        if (!canvas.session || !canEditSession(canvas.session)) return;
         canvas.session.canvas = {
           viewport: { x: canvas.x, y: canvas.y, scale: canvas.scale },
           items: canvas.items,
