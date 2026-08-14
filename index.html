@@ -1340,6 +1340,7 @@
       pointer-events: none;
     }
     .screenshot-preview.has-image .screenshot-preview-timestamp { display: inline-flex; }
+    html.dark .screenshot-preview-timestamp { color: #1f1e1d; }
     .screenshot-preview.has-image.saving-out .screenshot-preview-actions,
     .screenshot-preview.has-image.saving-out .screenshot-preview-timestamp { display: none; }
 
@@ -2623,7 +2624,16 @@
 
       render();
       startTimer();
-      if (voiceCommandsEnabledPreference) enableVoiceCommands(false);
+      if (voiceCommandsEnabledPreference) {
+        // Start in dictation mode right away: marker visible, speech transcribed,
+        // and the first spoken words auto-capture a screenshot (same as tapping the mic).
+        voiceNoteDictationActive = true;
+        voiceCaptureOnFirstDictationText = true;
+        voiceInterimStart = null;
+        voiceInterimText = '';
+        enableVoiceCommands(false);
+        updateVoiceCommandControl();
+      }
     }
 
     async function stopRecording() {
