@@ -3197,7 +3197,9 @@
 
     async function loadSessions() {
       try {
+        const t0 = performance.now();
         const result = await sessionsDb.find();
+        console.log(`[screen-notes] loaded ${result?.length ?? 0} sessions — ${((JSON.stringify(result || []).length) / 1024).toFixed(0)} KB in ${Math.round(performance.now() - t0)}ms`);
         allSessions = (result || []).sort((a, b) =>
           new Date(b.created_at) - new Date(a.created_at)
         );
@@ -3248,6 +3250,8 @@
       if (session.id && !canEditSession(session)) return;
       try {
         const payload = sanitizeForPersist(session);
+        const t0 = performance.now();
+        const payloadKb = (JSON.stringify(payload).length / 1024).toFixed(1);
         if (session.id) {
           remoteEchoSuppress.set(session.id, Date.now());
           await sessionsDb.update(session.id, payload);
@@ -3258,6 +3262,7 @@
           if (saved.updated_at) session.updated_at = saved.updated_at;
           remoteEchoSuppress.set(session.id, Date.now());
         }
+        console.log(`[screen-notes] saved session ${session.id} — ${payloadKb} KB in ${Math.round(performance.now() - t0)}ms`);
         // Update the local cache instead of re-fetching the whole collection —
         // find() downloads every session (all users, full notes + canvas) and
         // made every debounced canvas save cost seconds as the DB grew.
@@ -3339,7 +3344,7 @@
       canvas.selectedIds = canvas.selectedIds.filter(id => canvas.items.some(i => i.id === id));
       canvas.selectedId = canvas.selectedIds[0] || null;
       renderCanvas();
-      updateNavPillLabel();
+      updateNavPill();
     }
 
     async function shareSession(id) {
