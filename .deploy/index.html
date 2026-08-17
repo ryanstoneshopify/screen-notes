@@ -3790,6 +3790,10 @@
       recordingStartTime = Date.now();
       currentNotes = [];
       screenshotCaptured = null;
+      // Stale composer state from a previous recording blocks the first
+      // auto-capture (beginNoteScreenshotCapture guards on these)
+      pendingScreenshot = null;
+      screenshotRemoved = false;
 
       const targetSession = opts.intoCanvas
         ? allSessions.find(s => s.id === activeSessionId) : null;
