@@ -2208,6 +2208,8 @@
     }
     .share-switch.on { background: var(--ink-black); }
     .share-switch.on::after { transform: translateX(18px); }
+    .share-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+    .share-role-btn:disabled { cursor: default; }
     .share-access-label { font-size: 13px; color: var(--graphite); }
     .share-access-list { display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto; }
     .share-person { display: flex; align-items: center; gap: 12px; }
@@ -2842,6 +2844,7 @@
         g.style.setProperty('--my', `${e.clientY - r.top}px`);
       });
       await loadSessions();
+      initSessionRealtime();
 
       const sessionId = getSessionIdFromUrl();
       if (sessionId && allSessions.some(s => s.id === sessionId)) {
@@ -3115,16 +3118,90 @@
       try {
         const payload = sanitizeForPersist(session);
         if (session.id) {
+          remoteEchoSuppress.set(session.id, Date.now());
           await sessionsDb.update(session.id, payload);
         } else {
           const saved = await sessionsDb.create(payload);
           session.id = saved.id;
+          remoteEchoSuppress.set(session.id, Date.now());
         }
         await loadSessions();
         renderSidebar();
       } catch(e) {
         console.error('Failed to save session:', e);
       }
+    }
+
+    // ── Real-time session sync ──
+    // Everyone viewing a session sees canvas/notes changes instantly.
+    const remoteEchoSuppress = new Map(); // session id → last local save ts
+    let remoteApplyTimer = null;
+
+    function initSessionRealtime() {
+      try {
+        sessionsDb.subscribe({
+          onCreate: (doc) => upsertRemoteSession(doc),
+          onUpdate: (doc) => upsertRemoteSession(doc),
+          onDelete: (id) => {
+            allSessions = allSessions.filter(s => s.id !== id);
+            refreshSessionLists();
+            if (activeSessionId === id && !isRecording) {
+              activeSessionId = null;
+              currentNotes = [];
+              render();
+              showToast('This session was deleted');
+            }
+            renderSidebar();
+          },
+        });
+      } catch (e) {
+        console.warn('[screen-notes] realtime subscribe failed', e);
+      }
+    }
+
+    function refreshSessionLists() {
+      const sharedIds = new Set(sharedSessionIds());
+      sessions = allSessions.filter(isMySession);
+      sharedSessions = allSessions.filter(s => !isMySession(s) && canViewSession(s)
+        && (sharedIds.has(s.id) || !!sharingEntryFor(s)));
+    }
+
+    function upsertRemoteSession(doc) {
+      if (!doc?.id) return;
+      const idx = allSessions.findIndex(s => s.id === doc.id);
+      if (idx >= 0) allSessions[idx] = doc;
+      else {
+        allSessions.push(doc);
+        allSessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      }
+      refreshSessionLists();
+      renderSidebar();
+      // Our own writes echo back through the subscription — skip re-rendering
+      if (Date.now() - (remoteEchoSuppress.get(doc.id) || 0) < 2000) return;
+      if (doc.id === activeSessionId && !isRecording) applyRemoteActiveSession(doc);
+    }
+
+    function applyRemoteActiveSession(doc) {
+      // Never yank items out from under an in-flight interaction — retry shortly
+      if (isDraggingItem || isResizing || isResizingGroup || isSelecting || isPanning
+          || document.activeElement?.isContentEditable) {
+        clearTimeout(remoteApplyTimer);
+        remoteApplyTimer = setTimeout(() => {
+          const latest = allSessions.find(s => s.id === activeSessionId);
+          if (latest) applyRemoteActiveSession(latest);
+        }, 800);
+        return;
+      }
+      currentNotes = doc.notes || [];
+      canvas.session = doc;
+      if (doc.canvas?.items) {
+        canvas.items = JSON.parse(JSON.stringify(doc.canvas.items));
+      }
+      // Keep the local viewport and whatever selection still exists
+      canvas.selectedIds = canvas.selectedIds.filter(id => canvas.items.some(i => i.id === id));
+      canvas.selectedId = canvas.selectedIds[0] || null;
+      renderCanvas();
+      updateNavPillLabel();
     }
 
     async function shareSession(id) {
@@ -3145,12 +3222,19 @@
 
     async function shareSessionFromHeader(id) {
       const session = allSessions.find(s => s.id === id);
-      if (session && isMySession(session)) {
+      if (session && canViewSession(session)) {
         openShareModal(id);
       } else {
         await shareSession(id);
         showToast('Link copied');
       }
+    }
+
+    // Owners and editors manage sharing fully; viewers can only add other
+    // viewers and change/remove their own entry.
+    function shareCanManage() {
+      const session = shareModalSession();
+      return !!session && (isMySession(session) || canEditSession(session));
     }
 
     // ── Share modal (draft model: changes apply on Save) ──
@@ -3186,9 +3270,13 @@
                      onkeydown="if(event.key==='Enter')shareModalAddPerson();if(event.key==='Escape')hideShareSuggestions()">
               <div class="share-suggest" id="shareSuggest" style="display:none"></div>
             </div>
+            ${isMySession(session) || canEditSession(session) ? `
             <button class="share-role-btn" id="shareRoleBtn" data-value="editor" onclick="openShareRolePopover(event)">
               <span id="shareRoleBtnLabel">Editor</span>${icon('chevron', 'icon icon-sm')}
-            </button>
+            </button>` : `
+            <button class="share-role-btn" id="shareRoleBtn" data-value="viewer" disabled>
+              <span id="shareRoleBtnLabel">Viewer</span>
+            </button>`}
           </div>
           <div class="share-public-row">
             <div class="share-public-info">
@@ -3198,7 +3286,7 @@
                 <div class="share-public-sub">Anyone at Shopify can view with the link</div>
               </div>
             </div>
-            <button class="share-switch${shareDraft.publicView ? ' on' : ''}" id="sharePublicToggle" role="switch" aria-checked="${shareDraft.publicView}" onclick="shareModalTogglePublic()"></button>
+            <button class="share-switch${shareDraft.publicView ? ' on' : ''}" id="sharePublicToggle" role="switch" aria-checked="${shareDraft.publicView}" onclick="shareModalTogglePublic()"${isMySession(session) || canEditSession(session) ? '' : ' disabled'}></button>
           </div>
           <div class="share-access-label">Who has access</div>
           <div class="share-access-list" id="shareAccessList"></div>
@@ -3224,8 +3312,18 @@
       if (session && shareDraft) {
         session.sharing = shareDraft;
         shareDraft = null; // consumed — close won't report a discard
-        await saveSession(session);
-        showToast('Changes saved');
+        try {
+          // Partial update: viewers may manage sharing without canvas write access,
+          // and it can't clobber concurrent canvas edits
+          remoteEchoSuppress.set(session.id, Date.now());
+          await sessionsDb.update(session.id, { sharing: session.sharing });
+          await loadSessions();
+          renderSidebar();
+          showToast('Changes saved');
+        } catch (e) {
+          console.error('Failed to save sharing:', e);
+          showToast('Could not save changes');
+        }
       }
       closeShareModal();
     }
@@ -3402,11 +3500,12 @@
     function openPersonRolePopover(event, email) {
       const person = shareDraft?.people.find(p => p.email.toLowerCase() === email.toLowerCase());
       if (!person) return;
-      openRolePopover(event.currentTarget, [
-        { value: 'editor', label: 'Editor' },
-        { value: 'viewer', label: 'Viewer' },
-        { value: 'remove', label: 'Remove', danger: true },
-      ], person.role, (value) => shareModalSetRole(email, value));
+      const isSelf = email.toLowerCase() === currentUserEmail();
+      // A viewer editing their own row can't promote themselves
+      const options = shareCanManage() || (isSelf && person.role === 'editor')
+        ? [{ value: 'editor', label: 'Editor' }, { value: 'viewer', label: 'Viewer' }, { value: 'remove', label: 'Remove', danger: true }]
+        : [{ value: 'viewer', label: 'Viewer' }, { value: 'remove', label: 'Remove', danger: true }];
+      openRolePopover(event.currentTarget, options, person.role, (value) => shareModalSetRole(email, value));
     }
 
     function shareInitials(email) {
@@ -3434,13 +3533,17 @@
         const dir = (peopleDirectory || []).find(d => d.email === p.email.toLowerCase());
         const image = p.image || dir?.image || null;
         const name = p.name || dir?.name || p.email;
+        const isSelf = p.email.toLowerCase() === currentUserEmail();
+        const editable = shareCanManage() || isSelf;
         rows.push(`
           <div class="share-person">
             ${image ? `<img class="share-avatar" src="${escapeHtml(image)}" alt="">` : `<div class="share-avatar share-avatar-initials">${escapeHtml(shareInitials(p.email))}</div>`}
-            <div class="share-person-name">${escapeHtml(name)}</div>
+            <div class="share-person-name">${escapeHtml(name)}${isSelf ? ' <span class="share-you">(you)</span>' : ''}</div>
+            ${editable ? `
             <button class="share-role-btn" onclick="openPersonRolePopover(event, '${escapeHtml(p.email)}')">
               <span>${p.role === 'editor' ? 'Editor' : 'Viewer'}</span>${icon('chevron', 'icon icon-sm')}
-            </button>
+            </button>` : `
+            <div class="share-person-role">${p.role === 'editor' ? 'Editor' : 'Viewer'}</div>`}
           </div>`);
       });
       list.innerHTML = rows.join('');
@@ -4532,8 +4635,8 @@
 
       const list = document.getElementById('sessionList');
       const visibleSessions = sessionListTab === 'others' ? sharedSessions : sessions;
-      if (sessionListTab === 'others' && visibleSessions.length === 0) {
-        list.innerHTML = '<div class="session-empty-state">No sessions shared with you</div>';
+      if (visibleSessions.length === 0) {
+        list.innerHTML = `<div class="session-empty-state">${sessionListTab === 'others' ? 'No sessions shared with you' : 'No sessions'}</div>`;
         return;
       }
       list.innerHTML = visibleSessions.map(renderSessionItem).join('');
@@ -4585,7 +4688,7 @@
     async function menuShareSession(id) {
       closeSessionMenu();
       const session = allSessions.find(s => s.id === id);
-      if (session && isMySession(session)) openShareModal(id);
+      if (session && canViewSession(session)) openShareModal(id);
       else { await shareSession(id); showToast('Link copied'); }
     }
 
