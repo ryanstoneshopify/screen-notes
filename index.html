@@ -196,6 +196,14 @@
     }
     .btn-primary:hover { background: var(--onyx); }
 
+    /* Secondary: outline-only, inverses automatically in light/dark via vars */
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink-black);
+      border-color: var(--ink-black);
+    }
+    .btn-secondary:hover { background: var(--surface-hover); }
+
     .btn-danger {
       background: transparent;
       color: var(--ink-black);
@@ -712,6 +720,17 @@
     }
     .home-invert-overlay { z-index: 2; }
     #emptyState .btn .home-invert-overlay { color: var(--ink-black); }
+    /* Secondary button inverses the sweep: dark silhouette, light label clone */
+    .btn-secondary .home-silhouette { background: var(--ink-black); }
+    #emptyState .btn-secondary .home-invert-overlay,
+    #emptyState .btn-secondary .home-invert-overlay * { color: var(--snow-white); }
+    .empty-state-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .empty-state-actions .btn { pointer-events: auto; }
     .empty-state-icon { position: relative; }
     .empty-state { position: relative; z-index: 1; pointer-events: none; }
     .empty-state .btn { pointer-events: auto; }
@@ -2231,7 +2250,12 @@
 
     /* ── Markup (draw on images / canvas) ── */
     .canvas-toolbar { overflow: hidden; }
-    .tb-swap { position: relative; display: flex; align-items: center; }
+    .tb-swap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      transition: width 400ms var(--ease-out);
+    }
     .tb-group {
       display: flex;
       align-items: center;
@@ -2274,6 +2298,8 @@
       cursor: pointer;
       flex: 0 0 auto;
     }
+    /* Draw mode: 12px total left inset for the swatch (6px toolbar padding + 6px) */
+    .canvas-toolbar.markup-mode .mk-color { margin-left: 6px; }
     .mk-color::-webkit-color-swatch-wrapper { padding: 2px; }
     .mk-color::-webkit-color-swatch { border: none; border-radius: 5px; }
     .mk-width {
@@ -2342,6 +2368,10 @@
     .canvas-viewport.markup-mode .canvas-item.ci-stroke { pointer-events: none; }
     .canvas-viewport.markup-mode { cursor: crosshair; }
     .canvas-viewport.markup-mode .canvas-item.ci-stroke path { pointer-events: none; }
+    /* Draw mode: items are inert — crosshair everywhere, nothing clickable
+       until switching back to cursor mode */
+    .canvas-viewport.markup-mode .canvas-item,
+    .canvas-viewport.markup-mode .canvas-item * { pointer-events: none !important; cursor: crosshair !important; }
     .markup-live { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
 
     .markup-lightbox { cursor: default; }
@@ -2537,6 +2567,69 @@
       padding-left: calc(var(--sidebar-w) + 12px + 24px);
     }
 
+    /* ── Prototype panel (right drawer, mirrors the left sidebar) ── */
+    .sidebar.proto-panel {
+      left: auto;
+      right: 12px;
+      transform: translateX(calc(100% + 24px));
+    }
+    .sidebar.proto-panel.open { transform: translateX(0); }
+    .proto-panel-title {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-black);
+      padding-left: 6px;
+    }
+    .proto-panel-body {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      padding: 12px;
+    }
+    .proto-panel-body .btn { justify-content: flex-start; }
+
+    /* ── ⌘. toggle UI ──
+       Chrome slides out toward its nearest edge with the same timing as the
+       left nav drawer (var(--ease-out-duration) var(--ease-out)), and back in. */
+    .canvas-toolbar,
+    .review-header-right,
+    .help-fab {
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out),
+                  background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    body.ui-hidden .sidebar {
+      transform: translateX(calc(-100% - 24px));
+      opacity: 0;
+      visibility: hidden;
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out),
+                  visibility 0s linear var(--ease-out-duration);
+    }
+    body.ui-hidden .nav-pill {
+      transform: translateX(calc(-100% - 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.ui-hidden .sidebar.proto-panel { transform: translateX(calc(100% + 24px)); }
+    body.ui-hidden .canvas-toolbar {
+      transform: translate(-50%, calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.ui-hidden .review-header-right {
+      transform: translateX(calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.ui-hidden .help-fab {
+      transform: translateY(calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
     @media (max-width: 900px) {
       .notes-panel { width: 320px; min-width: 320px; }
       .empty-state h2 { font-size: 40px; }
@@ -2562,7 +2655,7 @@
         <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/>
       </svg>
     </button>
-    <button class="nav-pill-drawer" id="navNewSessionBtn" onclick="startRecording()" title="New session">
+    <button class="nav-pill-drawer" id="navNewSessionBtn" onclick="openNewMenu(event)" title="New">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 5v14"/><path d="M5 12h14"/>
       </svg>
@@ -2590,7 +2683,7 @@
               <rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14"/><path d="M16.2 9.5L13.7 12l2.5 2.5"/>
             </svg>
           </button>
-          <button class="sidebar-new-btn" id="newSessionBtn" title="New session">
+          <button class="sidebar-new-btn" id="newSessionBtn" title="New">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 5v14"/><path d="M5 12h14"/>
             </svg>
@@ -2621,10 +2714,31 @@
         </div>
         <h2>Screen Notes</h2>
         <p>Type or speak notes while you share screen.<br>Screenshots happen automatically.</p>
-        <button class="btn btn-primary" id="emptyStartBtn">
-          New session
+        <div class="empty-state-actions">
+          <button class="btn btn-primary" id="emptyStartBtn" onclick="startRecording()">
+            Start session
+          </button>
+          <button class="btn btn-secondary" id="emptyCanvasBtn" onclick="createNewCanvas()">
+            Add canvas
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prototype controls (right drawer, ryan-only) -->
+  <div class="sidebar proto-panel" id="protoPanel">
+    <div class="sidebar-header">
+      <span class="proto-panel-title">Prototype</span>
+      <div class="sidebar-header-actions">
+        <button class="sidebar-new-btn" title="Close" onclick="toggleProtoPanel(false)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
         </button>
       </div>
+    </div>
+    <div class="proto-panel-body">
+      <button class="btn btn-ghost" onclick="protoTriggerPrivateSession()">Trigger private session</button>
+      <button class="btn btn-ghost" id="protoReadOnlyBtn" onclick="protoToggleReadOnly()">Trigger read-only mode</button>
     </div>
   </div>
 
@@ -2661,6 +2775,8 @@
         pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
         scribble: '<path d="M4 16.5c3-7 5.5-10.1 7-9.2 1.7 1-4.2 8.6-2.3 9.8 1.9 1.2 6-7.8 8-6.7 1.9 1-2.3 6-.8 6.9 1 .6 2.4-.7 3.6-2.3"/>',
         cursor: '<path d="M5.5 3.5l14.2 6.6-6.3 1.7-2.7 6L5.5 3.5z"/>',
+        camcorder: '<rect x="3" y="7" width="12.5" height="10" rx="2.5"/><path d="M15.5 10.8l4.2-2.3a.6.6 0 0 1 .9.5v6a.6.6 0 0 1-.9.5l-4.2-2.3"/>',
+        gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
@@ -2828,6 +2944,23 @@
         }
       });
 
+      // ⌘⇧P — show/hide the prototype settings gear (proto user only)
+      document.addEventListener('keydown', (e) => {
+        if (!(e.metaKey || e.ctrlKey) || !e.shiftKey || e.key.toLowerCase() !== 'p') return;
+        if (currentUser?.email !== PROTO_PANEL_USER) return;
+        e.preventDefault();
+        protoGearHidden = !protoGearHidden;
+        if (protoGearHidden) toggleProtoPanel(false);
+        updateProtoSettingsVisibility();
+      });
+
+      // ⌘. — show/hide UI (left nav, nav pill, canvas toolbar)
+      document.addEventListener('keydown', (e) => {
+        if (!(e.metaKey || e.ctrlKey) || e.key !== '.') return;
+        e.preventDefault();
+        document.body.classList.toggle('ui-hidden');
+      });
+
       // ⌘Z on home — undo drawings, moves, resizes, and text edits
       document.addEventListener('keydown', (e) => {
         if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.shiftKey) return;
@@ -2870,6 +3003,7 @@
     });
 
     function renderUserInfo() {
+      updateProtoSettingsVisibility();
       const el = document.getElementById('userInfo');
       if (!currentUser) return;
       el.innerHTML = `
@@ -3039,6 +3173,7 @@
     }
 
     function canEditSession(session) {
+      if (typeof protoReadOnly !== 'undefined' && protoReadOnly) return false; // prototype simulation
       if (!session) return true;
       if (isMySession(session)) return true;
       return sharingEntryFor(session)?.role === 'editor';
@@ -3234,7 +3369,9 @@
     // viewers and change/remove their own entry.
     function shareCanManage() {
       const session = shareModalSession();
-      return !!session && (isMySession(session) || canEditSession(session));
+      if (!session) return false;
+      if (protoReadOnly) return false; // prototype read-only simulation
+      return isMySession(session) || canEditSession(session);
     }
 
     // ── Share modal (draft model: changes apply on Save) ──
@@ -3260,7 +3397,7 @@
       overlay.innerHTML = `
         <div class="gh-dialog share-dialog">
           <div class="share-head">
-            <h3>Share ${escapeHtml(session.title || 'Untitled Session')}</h3>
+            <h3>Share ${escapeHtml(session.title || 'Untitled session')}</h3>
             <button class="share-close-btn" onclick="closeShareModal()" title="Close">${icon('close')}</button>
           </div>
           <div class="share-add-row">
@@ -3270,7 +3407,7 @@
                      onkeydown="if(event.key==='Enter')shareModalAddPerson();if(event.key==='Escape')hideShareSuggestions()">
               <div class="share-suggest" id="shareSuggest" style="display:none"></div>
             </div>
-            ${isMySession(session) || canEditSession(session) ? `
+            ${shareCanManage() ? `
             <button class="share-role-btn" id="shareRoleBtn" data-value="editor" onclick="openShareRolePopover(event)">
               <span id="shareRoleBtnLabel">Editor</span>${icon('chevron', 'icon icon-sm')}
             </button>` : `
@@ -3286,7 +3423,7 @@
                 <div class="share-public-sub">Anyone at Shopify can view with the link</div>
               </div>
             </div>
-            <button class="share-switch${shareDraft.publicView ? ' on' : ''}" id="sharePublicToggle" role="switch" aria-checked="${shareDraft.publicView}" onclick="shareModalTogglePublic()"${isMySession(session) || canEditSession(session) ? '' : ' disabled'}></button>
+            <button class="share-switch${shareDraft.publicView ? ' on' : ''}" id="sharePublicToggle" role="switch" aria-checked="${shareDraft.publicView}" onclick="shareModalTogglePublic()"${shareCanManage() ? '' : ' disabled'}></button>
           </div>
           <div class="share-access-label">Who has access</div>
           <div class="share-access-list" id="shareAccessList"></div>
@@ -3602,7 +3739,22 @@
     }
 
     // ── Recording ──
-    async function startRecording() {
+    // "Session into canvas" mode — notes recorded get appended to the
+    // already-open session/canvas instead of creating a new one.
+    let recordingIntoCanvas = false;
+    let recordingBaseNotes = [];
+    let recordingBaseDuration = 0;
+    function composedSessionNotes() {
+      return recordingIntoCanvas ? [...recordingBaseNotes, ...currentNotes] : [...currentNotes];
+    }
+
+    async function startSessionIntoCanvas() {
+      const session = allSessions.find(s => s.id === activeSessionId);
+      if (!session || !canEditSession(session)) return;
+      await startRecording({ intoCanvas: true });
+    }
+
+    async function startRecording(opts = {}) {
       try {
         // Request highest possible resolution. Browsers will clamp to what the source supports.
         mediaStream = await navigator.mediaDevices.getDisplayMedia({
@@ -3636,18 +3788,26 @@
       currentNotes = [];
       screenshotCaptured = null;
 
-      // Create a new session immediately
-      const session = {
-        title: 'Untitled Session',
-        ownerEmail: currentUser?.email || null,
-        ownerName: currentUser?.fullName || currentUser?.email || null,
-        notes: [],
-        duration: 0,
-        // New sessions are hidden from the rest of Shopify by default
-        sharing: { publicView: false, people: [] },
-      };
-      await saveSession(session);
-      activeSessionId = session.id;
+      const targetSession = opts.intoCanvas
+        ? allSessions.find(s => s.id === activeSessionId) : null;
+      recordingIntoCanvas = !!targetSession;
+      recordingBaseNotes = targetSession ? [...(targetSession.notes || [])] : [];
+      recordingBaseDuration = targetSession ? (targetSession.duration || 0) : 0;
+
+      if (!targetSession) {
+        // Create a new session immediately
+        const session = {
+          title: 'Untitled session',
+          ownerEmail: currentUser?.email || null,
+          ownerName: currentUser?.fullName || currentUser?.email || null,
+          notes: [],
+          duration: 0,
+          // New sessions are hidden from the rest of Shopify by default
+          sharing: { publicView: false, people: [] },
+        };
+        await saveSession(session);
+        activeSessionId = session.id;
+      }
 
       // Handle stream ending (user clicks "Stop sharing")
       mediaStream.getVideoTracks()[0].onended = () => {
@@ -3668,6 +3828,23 @@
       }
     }
 
+    // ── Blank canvas (no recording required) ──
+    async function createNewCanvas() {
+      closeNavDrawer();
+      const session = {
+        title: 'Untitled canvas',
+        ownerEmail: currentUser?.email || null,
+        ownerName: currentUser?.fullName || currentUser?.email || null,
+        notes: [],
+        duration: 0,
+        // New canvases are hidden from the rest of Shopify by default
+        sharing: { publicView: false, people: [] },
+        canvas: { viewport: { x: 0, y: 0, scale: 1 }, items: [] },
+      };
+      await saveSession(session);
+      if (session.id) await viewSession(session.id);
+    }
+
     async function stopRecording() {
       const stoppedSessionId = activeSessionId;
       isRecording = false;
@@ -3686,8 +3863,13 @@
       if (stoppedSessionId) {
         let session = allSessions.find(s => s.id === stoppedSessionId);
         if (session) {
-          session.duration = Date.now() - recordingStartTime;
-          session.notes = [...currentNotes];
+          const intoCanvas = recordingIntoCanvas;
+          const baseIndex = recordingBaseNotes.length;
+          session.duration = recordingBaseDuration + (Date.now() - recordingStartTime);
+          session.notes = composedSessionNotes();
+          recordingIntoCanvas = false;
+          recordingBaseNotes = [];
+          recordingBaseDuration = 0;
           // Lightbox squiggles get baked into their screenshots at session end
           await bakeNoteMarkupsIntoImages(session);
           // If the canvas had not yet been created, create it now so stop lands
@@ -3697,6 +3879,19 @@
               viewport: { x: 0, y: 0, scale: 1 },
               items: generateInitialLayout(session.notes),
             };
+          } else if (intoCanvas && currentNotes.length) {
+            // Append the new notes to the right of the existing canvas content,
+            // leaving everything already on the canvas untouched.
+            const existing = session.canvas.items;
+            const offsetX = Math.max(...existing.map(it => it.x + (it.w || 0))) + 128;
+            const minY = Math.min(...existing.map(it => it.y));
+            const newItems = generateInitialLayout(currentNotes).map(it => ({
+              ...it,
+              noteIndex: it.noteIndex + baseIndex,
+              x: it.x + offsetX,
+              y: it.y + minY,
+            }));
+            session.canvas.items = [...existing, ...newItems];
           }
           await saveSession(session);
           await loadSessions();
@@ -3708,8 +3903,9 @@
           requestAnimationFrame(() => {
             initCanvas(session);
             // Let images/text render, then measure actual heights and arrange once.
+            // (Skip auto-arrange when appending to an existing canvas.)
             setTimeout(() => {
-              autoArrangeCanvas();
+              if (!intoCanvas) autoArrangeCanvas();
               fitToScreen();
             }, 100);
           });
@@ -4404,8 +4600,8 @@
       // Save to DB (no data URLs included)
       const session = allSessions.find(s => s.id === activeSessionId);
       if (session) {
-        session.notes = [...currentNotes];
-        session.duration = Date.now() - recordingStartTime;
+        session.notes = composedSessionNotes();
+        session.duration = recordingBaseDuration + (Date.now() - recordingStartTime);
         await saveSession(session);
       }
 
@@ -4416,13 +4612,14 @@
       currentNotes.splice(index, 1);
       const session = allSessions.find(s => s.id === activeSessionId);
       if (session) {
-        session.notes = [...currentNotes];
+        session.notes = composedSessionNotes();
         // Canvas is not created during recording, but if it exists later, keep
         // screenshot items aligned to the remaining note indexes.
+        const fullIndex = recordingIntoCanvas ? recordingBaseNotes.length + index : index;
         if (session.canvas?.items) {
           session.canvas.items = session.canvas.items
-            .filter(item => item.type !== 'screenshot' || item.noteIndex !== index)
-            .map(item => item.type === 'screenshot' && item.noteIndex > index
+            .filter(item => item.type !== 'screenshot' || item.noteIndex !== fullIndex)
+            .map(item => item.type === 'screenshot' && item.noteIndex > fullIndex
               ? { ...item, noteIndex: item.noteIndex - 1 }
               : item);
         }
@@ -4436,7 +4633,7 @@
       currentNotes[index].text = value;
       const session = allSessions.find(s => s.id === activeSessionId);
       if (session) {
-        session.notes = [...currentNotes];
+        session.notes = composedSessionNotes();
         await saveSession(session);
       }
     }
@@ -4458,7 +4655,7 @@
       delete currentNotes[index].screenshot;
       const session = allSessions.find(s => s.id === activeSessionId);
       if (session) {
-        session.notes = [...currentNotes];
+        session.notes = composedSessionNotes();
         await saveSession(session);
       }
       renderNotesList();
@@ -4473,7 +4670,7 @@
         delete currentNotes[index].screenshot;
         const session = allSessions.find(s => s.id === activeSessionId);
         if (session) {
-          session.notes = [...currentNotes];
+          session.notes = composedSessionNotes();
           await saveSession(session);
         }
         renderNotesList();
@@ -4559,14 +4756,20 @@
       if (!label) return;
       const session = activeSessionId && !isRecording
         ? allSessions.find(s => s.id === activeSessionId) : null;
-      label.textContent = session ? (session.title || 'Untitled Session') : 'Screen Notes';
+      label.textContent = session ? (session.title || 'Untitled session') : 'Screen Notes';
     }
+
+    // True when the user explicitly collapsed the drawer on a large screen —
+    // resizing bigger won't auto-reopen it in that case.
+    let drawerUserCollapsed = false;
 
     function toggleNavDrawer(e) {
       e?.stopPropagation();
       const drawer = document.getElementById('sidebarDrawer');
       if (!drawer) return;
       const opening = !drawer.classList.contains('open');
+      if (window.innerWidth >= 900) drawerUserCollapsed = !opening;
+      else if (opening) drawerUserCollapsed = false;
       drawer.classList.toggle('open', opening);
       document.getElementById('navPill')?.classList.toggle('drawer-open', opening);
       if (opening) {
@@ -4581,13 +4784,26 @@
       if (!force && window.innerWidth >= 900) return;
       const drawer = document.getElementById('sidebarDrawer');
       if (drawer?.classList.contains('open')) {
+        if (force && window.innerWidth >= 900) drawerUserCollapsed = true;
         drawer.classList.remove('open');
         document.getElementById('navPill')?.classList.remove('drawer-open');
         document.removeEventListener('mousedown', onNavDrawerOutside, true);
       }
     }
 
-    window.addEventListener('resize', () => closeNavDrawer());
+    // Auto-condense below 900px; auto-expand again when the window grows,
+    // unless the user deliberately collapsed it at a larger size.
+    let navDrawerWasWide = window.innerWidth >= 900;
+    window.addEventListener('resize', () => {
+      const wide = window.innerWidth >= 900;
+      if (!wide) {
+        closeNavDrawer();
+      } else if (!navDrawerWasWide && !drawerUserCollapsed) {
+        document.getElementById('sidebarDrawer')?.classList.add('open');
+        document.getElementById('navPill')?.classList.add('drawer-open');
+      }
+      navDrawerWasWide = wide;
+    });
 
     function onNavDrawerOutside(e) {
       const drawer = document.getElementById('sidebarDrawer');
@@ -4661,6 +4877,42 @@
       if (openMenuEl && !openMenuEl.contains(e.target)) closeSessionMenu();
     }
 
+    // ── "New" popover (sidebar plus) ──
+    let newMenuEl = null;
+    let newMenuBtn = null;
+    function closeNewMenu() {
+      if (newMenuEl) { newMenuEl.remove(); newMenuEl = null; }
+      newMenuBtn?.classList.remove('open');
+      newMenuBtn = null;
+      document.removeEventListener('mousedown', onNewMenuOutside, true);
+    }
+    function onNewMenuOutside(e) {
+      if (newMenuEl && !newMenuEl.contains(e.target)) closeNewMenu();
+    }
+    function openNewMenu(event) {
+      if (newMenuEl) { closeNewMenu(); return; }
+      const btn = event.currentTarget;
+      btn.classList.add('open');
+      newMenuBtn = btn;
+      const menu = document.createElement('div');
+      menu.className = 'session-menu-popover';
+      menu.innerHTML = `
+        <button class="session-menu-item" onclick="closeNewMenu(); startRecording()">${icon('camcorder')} Session</button>
+        <button class="session-menu-item" onclick="closeNewMenu(); createNewCanvas()">${icon('cursor')} Canvas</button>
+      `;
+      document.body.appendChild(menu);
+      const r = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let left = r.right - mw;
+      let top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = r.top - mh - 6;
+      if (left < 8) left = 8;
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      newMenuEl = menu;
+      document.addEventListener('mousedown', onNewMenuOutside, true);
+    }
+
     function openSessionMenu(event, id) {
       if (openMenuEl) { closeSessionMenu(); return; }
       const btn = event.currentTarget;
@@ -4708,7 +4960,7 @@
       if (renamingSessionId !== id) return;
       renamingSessionId = null;
       const session = allSessions.find(s => s.id === id);
-      const newTitle = value.trim() || 'Untitled Session';
+      const newTitle = value.trim() || 'Untitled session';
       const changed = session && session.title !== newTitle;
       await renameSession(id, newTitle);
       renderSidebar();
@@ -5202,7 +5454,7 @@
           }
           const session = allSessions.find(s => s.id === activeSessionId);
           if (session) {
-            session.notes = [...currentNotes];
+            session.notes = composedSessionNotes();
             await saveSession(session);
           }
           renderNotesList();
@@ -5214,6 +5466,29 @@
     }
 
     // ── Canvas markup mode ──
+    function tbGroupContentWidth(group, gap) {
+      const visible = [...group.children].filter(el => getComputedStyle(el).display !== 'none');
+      return visible.reduce((w, el) => {
+        const s = getComputedStyle(el);
+        return w + el.offsetWidth + (parseFloat(s.marginLeft) || 0) + (parseFloat(s.marginRight) || 0);
+      }, 0) + gap * Math.max(0, visible.length - 1);
+    }
+
+    // Draw mode has fewer controls — the toolbar hugs them instead of keeping
+    // the default group's width (animated with the same ease-out).
+    function syncToolbarWidth(active) {
+      const swap = document.querySelector('#canvasToolbar .tb-swap');
+      if (!swap) return;
+      const def = swap.querySelector('.tb-default');
+      const mk = swap.querySelector('.tb-markup-controls');
+      if (!def || !mk) return;
+      const from = swap.offsetWidth;
+      const to = active ? tbGroupContentWidth(mk, 10) : tbGroupContentWidth(def, 4);
+      swap.style.width = `${from}px`;
+      void swap.offsetWidth; // flush so the width change transitions
+      swap.style.width = `${to}px`;
+    }
+
     function setCanvasMarkup(active) {
       if (active && canvasReadOnly()) return;
       if (canvasMarkup.active === active) return;
@@ -5222,6 +5497,7 @@
       document.getElementById('markupToggleBtn')?.classList.toggle('active', active);
       document.getElementById('markupCursorBtn')?.classList.toggle('active', !active);
       document.getElementById('canvasViewport')?.classList.toggle('markup-mode', active);
+      syncToolbarWidth(active);
       if (active) setSelectedItems([]);
     }
 
@@ -5659,11 +5935,11 @@
             const firstLine = (note.text || '').split('\n')[0].trim();
             const title = firstLine
               ? (firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine)
-              : `Note ${i + 1} — ${session.title || 'Untitled Session'}`;
+              : `Note ${i + 1} — ${session.title || 'Untitled session'}`;
             const body = [
               note.text || '',
               imageMarkdown,
-              `\n\n---\nFrom [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled Session'}” at ${formatDuration(note.timestamp || 0)}.`,
+              `\n\n---\nFrom [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled session'}” at ${formatDuration(note.timestamp || 0)}.`,
             ].join('');
             await ghApi(`/repos/${repo}/issues`, token, {
               method: 'POST',
@@ -5701,11 +5977,11 @@
             const firstLine = (item.note || '').split('\n')[0].trim();
             const title = firstLine
               ? (firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine)
-              : `Canvas image ${i + 1} — ${session.title || 'Untitled Session'}`;
+              : `Canvas image ${i + 1} — ${session.title || 'Untitled session'}`;
             const body = [
               item.note || '',
               imageMarkdown,
-              `\n\n---\nFrom the canvas of [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled Session'}”.`,
+              `\n\n---\nFrom the canvas of [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled session'}”.`,
             ].join('');
             await ghApi(`/repos/${repo}/issues`, token, { method: 'POST', body: JSON.stringify({ title, body }) });
             created++;
@@ -5721,7 +5997,7 @@
           try {
             const firstLine = t.text.trim().split('\n')[0];
             const title = firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine;
-            const body = `${t.text.trim()}\n\n---\nFrom the canvas of [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled Session'}”.`;
+            const body = `${t.text.trim()}\n\n---\nFrom the canvas of [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled session'}”.`;
             await ghApi(`/repos/${repo}/issues`, token, { method: 'POST', body: JSON.stringify({ title, body }) });
             created++;
           } catch (err) {
@@ -5780,7 +6056,7 @@
         const notes = session.notes || [];
 
         const lines = [
-          `# ${session.title || 'Untitled Session'}`,
+          `# ${session.title || 'Untitled session'}`,
           '',
           `Recorded: ${new Date(session.created_at).toLocaleString()}`,
           `Notes: ${sessionExportTotal(session, filter)}`,
@@ -5887,11 +6163,50 @@
                   aria-label="${isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'}">
             ${icon(isDarkMode() ? 'sun' : 'moon')}
           </button>
+          <button class="btn btn-ghost review-theme-btn" id="protoSettingsBtn" style="display:none"
+                  onclick="toggleProtoPanel()" title="Prototype settings" aria-label="Prototype settings">
+            ${icon('gear')}
+          </button>
           <span class="top-bar-actions" id="topBarActions"></span>`;
         document.body.appendChild(bar);
         renderSelfAvatar();
+        updateProtoSettingsVisibility();
       }
       return bar;
+    }
+
+    // ── Prototype panel (ryan-only) ──
+    const PROTO_PANEL_USER = 'ryan.stone@shopify.com';
+    let protoGearHidden = false;   // ⌘⇧P hides/shows the gear
+    let protoReadOnly = false;     // simulated read-only mode, resets on refresh
+    function updateProtoSettingsVisibility() {
+      const btn = document.getElementById('protoSettingsBtn');
+      if (btn) btn.style.display = (currentUser?.email === PROTO_PANEL_USER && !protoGearHidden) ? '' : 'none';
+    }
+    // Simulate viewing the current canvas as a read-only viewer
+    function protoToggleReadOnly() {
+      protoReadOnly = !protoReadOnly;
+      const label = document.getElementById('protoReadOnlyBtn');
+      if (label) label.textContent = protoReadOnly ? 'Exit read-only mode' : 'Trigger read-only mode';
+      toggleProtoPanel(false);
+      showToast(protoReadOnly ? 'Read-only mode on (refresh to reset)' : 'Read-only mode off');
+      if (activeSessionId && !isRecording) {
+        renderMain();
+        const s = allSessions.find(x => x.id === activeSessionId);
+        if (s) requestAnimationFrame(() => initCanvas(s));
+      }
+    }
+    function toggleProtoPanel(force) {
+      const panel = document.getElementById('protoPanel');
+      if (!panel) return;
+      const open = typeof force === 'boolean' ? force : !panel.classList.contains('open');
+      panel.classList.toggle('open', open);
+    }
+    // Simulate opening a session whose "Visible to all of Shopify" toggle is off
+    async function protoTriggerPrivateSession() {
+      toggleProtoPanel(false);
+      if (activeSessionId || isRecording) await goHome();
+      showToast('This session is private');
     }
 
     // Persistent top bar: avatar + theme never re-created, so no flicker.
@@ -5918,7 +6233,7 @@
       bar.style.width = '';
       bar.style.transition = '';
       actions.innerHTML = isRecording
-        ? `<button class="tb-btn bar-action" onclick="stopRecording()" title="Stop recording">${icon('stop', 'icon icon-filled')} Stop recording</button>`
+        ? `<button class="tb-btn bar-action" onclick="stopRecording()" title="End session">End session</button>`
         : session ? topBarActionsHTML(session) : '';
       const target = bar.getBoundingClientRect().width;
       // Slide distance = width delta so icons travel at the exact pace the bar grows
@@ -6053,9 +6368,14 @@
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>
           <p>Type or speak notes while you share screen.<br>Screenshots happen automatically.</p>
-          <button class="btn btn-primary" onclick="startRecording()">
-            New session
-          </button>
+          <div class="empty-state-actions">
+            <button class="btn btn-primary" onclick="startRecording()">
+              Start session
+            </button>
+            <button class="btn btn-secondary" onclick="createNewCanvas()">
+              Add canvas
+            </button>
+          </div>
         </div>
       `;
       renderHomeDrawSvg();
@@ -6176,9 +6496,10 @@
       const root = document.getElementById('emptyState');
       if (!root) { homeInvertItems = []; homeSilHosts = []; return; }
 
-      // Button: wrap its label once so it can host a positioned clone
-      const btn = root.querySelector('.btn');
-      if (btn && !btn.querySelector('.btn-label-wrap')) {
+      // Buttons: wrap each label once so it can host a positioned clone
+      const btns = [...root.querySelectorAll('.btn')];
+      btns.forEach(btn => {
+        if (btn.querySelector('.btn-label-wrap')) return;
         const label = document.createElement('span');
         label.className = 'btn-label-wrap';
         [...btn.childNodes].forEach(n => {
@@ -6187,13 +6508,13 @@
         });
         label.textContent = label.textContent.trim();
         btn.appendChild(label);
-      }
+      });
 
-      // Silhouette host: the primary button
-      homeSilHosts = btn ? [btn].map(el => {
+      // Silhouette hosts: both hero buttons
+      homeSilHosts = btns.map(el => {
         el.classList.add('home-sil-host');
         return { el, rect: el.getBoundingClientRect() };
-      }) : [];
+      });
 
       // Inverted clones: heading, subheader, button label, and logo strokes
       homeInvertItems = [];
@@ -6201,8 +6522,10 @@
         if (el.classList.contains('home-invert-overlay')) return;
         homeInvertItems.push({ el, host: root, rect: el.getBoundingClientRect() });
       });
-      const label = btn?.querySelector('.btn-label-wrap:not(.home-invert-overlay)');
-      if (label) homeInvertItems.push({ el: label, host: btn, rect: label.getBoundingClientRect() });
+      btns.forEach(btn => {
+        const label = btn.querySelector('.btn-label-wrap:not(.home-invert-overlay)');
+        if (label) homeInvertItems.push({ el: label, host: btn, rect: label.getBoundingClientRect() });
+      });
       const iconHost = root.querySelector('.empty-state-icon');
       const iconSvg = iconHost?.querySelector('.logo-icon:not(.home-invert-overlay)');
       if (iconHost && iconSvg) {
@@ -6471,6 +6794,7 @@
               <div class="ch-row"><span>Cursor</span><span class="ch-keys"><kbd>⇧</kbd> <kbd>C</kbd></span></div>
               <div class="ch-row"><span>Draw</span><span class="ch-keys"><kbd>⇧</kbd> <kbd>D</kbd></span></div>
               <div class="ch-row"><span>Text layer</span><span class="ch-keys"><kbd>T</kbd></span></div>
+              <div class="ch-row"><span>Toggle UI</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>.</kbd></span></div>
               <div>Drop images anywhere</div>
             </div>
             <button class="help-fab" onclick="toggleCanvasHelp(event)" title="Canvas help">?</button>
@@ -6487,6 +6811,7 @@
                   <button class="tb-btn" onclick="addTextItem()" title="Add text">${icon('text')} Text</button>
                   <button class="tb-btn" onclick="document.getElementById('imageUploadInput').click()" title="Add image">${icon('image')} Image</button>
                   <input type="file" id="imageUploadInput" accept="image/*" multiple style="display:none;" onchange="onImageUpload(event)">
+                  <button class="tb-btn" onclick="startSessionIntoCanvas()" title="Add notes to this canvas from new session" aria-label="Add notes to this canvas from new session">${icon('camcorder')} Session</button>
                   <button class="tb-btn" onclick="autoArrangeCanvas()" title="Auto-arrange screenshots">${icon('arrange')} Arrange</button>
                 </div>
                 <div class="tb-group tb-markup-controls">${markupControlsHTML()}</div>
@@ -6507,7 +6832,7 @@
       const session = allSessions.find(s => s.id === id);
       if (session && !canEditSession(session)) return;
       if (session) {
-        session.title = newTitle.trim() || 'Untitled Session';
+        session.title = newTitle.trim() || 'Untitled session';
         await saveSession(session);
       }
     }
@@ -8069,7 +8394,7 @@
     }
 
     // ── Event listeners ──
-    document.getElementById('newSessionBtn').addEventListener('click', startRecording);
+    document.getElementById('newSessionBtn').addEventListener('click', openNewMenu);
 
     // ── Boot ──
     init();
