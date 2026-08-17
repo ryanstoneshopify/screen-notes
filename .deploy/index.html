@@ -6200,7 +6200,7 @@
 
     // ── Prototype panel (ryan-only) ──
     const PROTO_PANEL_USER = 'ryan.stone@shopify.com';
-    let protoGearHidden = false;   // ⌘⇧P hides/shows the gear
+    let protoGearHidden = true;    // hidden by default — ⌘⇧P shows/hides the gear
     let protoReadOnly = false;     // simulated read-only mode, resets on refresh
     function updateProtoSettingsVisibility() {
       const btn = document.getElementById('protoSettingsBtn');
