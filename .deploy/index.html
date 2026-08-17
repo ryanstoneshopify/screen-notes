@@ -581,7 +581,7 @@
     .session-menu-popover {
       position: fixed;
       z-index: 300;
-      min-width: 160px;
+      width: max-content;
       padding: 6px;
       background: var(--floating-bg);
       -webkit-backdrop-filter: blur(12px);
@@ -6943,24 +6943,29 @@
       });
       if (line) lines.push(line);
 
-      // Figma ignores SVG/CSS text wrapping on import. Using tspan x=... wraps
-      // visually, but Figma turns every line into a separate text layer. Instead,
-      // keep one <text> with relative tspans. The negative dx returns each line
-      // to the original x without per-line absolute positioning, which Figma is
-      // much more likely to preserve as one editable text object.
-      const measure = (() => {
-        const c = document.createElement('canvas');
-        const ctx = c.getContext('2d');
-        ctx.font = `${weight} ${fontSize}px ${family}`;
-        return value => Math.max(1, ctx.measureText(value).width);
-      })();
-      let previousLineWidth = measure(lines[0]);
-      const tspans = lines.slice(1).map(line => {
-        const dx = -previousLineWidth;
-        previousLineWidth = measure(line);
-        return `<tspan dx="${dx.toFixed(2)}" dy="${lineHeight}">${escapeXml(line)}</tspan>`;
-      }).join('');
+      // Figma has no reliable way to import wrapped SVG text as one block, but
+      // its importer keeps a single <text> together most often when the tspans
+      // are the simplest possible "paragraph" shape: uniform styling, same x,
+      // incremental dy, and no dx/transform tricks (those also caused the
+      // staircase misalignment — dx was measured with canvas metrics that don't
+      // match Figma's).
+      const tspans = lines.slice(1).map(line =>
+        `<tspan x="${x}" dy="${lineHeight}">${escapeXml(line)}</tspan>`
+      ).join('');
       return `<text x="${x}" y="${y}" fill="${color}" font-family="${family}" font-size="${fontSize}" font-weight="${weight}">${escapeXml(lines[0])}${tspans}</text>`;
+    }
+
+    // Colors resolved from the live theme so copies match light/dark mode
+    function svgThemeColors() {
+      const cs = getComputedStyle(document.documentElement);
+      const v = (name, fb) => (cs.getPropertyValue(name) || '').trim() || fb;
+      return {
+        cardBg: v('--vellum-white', '#faf9f5'),
+        cardBorder: v('--parchment', '#dedcd1'),
+        text: v('--ink-black', '#141413'),
+        badgeBg: v('--surface-hover', '#f2f0ea'),
+        badgeText: v('--dusty-gray', '#73726c'),
+      };
     }
 
     async function imageUrlToClipboardHref(url) {
@@ -6991,6 +6996,7 @@
     }
 
     function svgLayerName(item) {
+      if (item.type === 'stroke') return `Drawing ${item.id}`;
       if (item.type === 'text') return `Text layer ${item.id}`;
       if (item.type === 'image') return `Image layer ${item.id}`;
       if (item.type === 'screenshot') {
@@ -7026,6 +7032,7 @@
     }
 
     async function canvasItemsToSvg(items) {
+      const C = svgThemeColors();
       const entries = items.map(item => ({ item, bounds: getRenderedItemBounds(item) }));
       const minX = Math.min(...entries.map(e => e.bounds.x1));
       const minY = Math.min(...entries.map(e => e.bounds.y1));
@@ -7044,9 +7051,23 @@
         if (item.type === 'text') {
           const fontSize = item.fontSize || 16;
           const content = `
-            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#faf9f5" stroke="#ded9cc"/>
-            ${wrapSvgText(item.text || 'Text', x + 12, y + 10 + fontSize, Math.max(1, w - 24), fontSize, Math.round(fontSize * 1.45), '#1f1e1d', 400, 'Inter, Arial, sans-serif')}
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${C.cardBg}" stroke="${C.cardBorder}"/>
+            ${wrapSvgText(item.text || 'Text', x + 12, y + 10 + fontSize, Math.max(1, w - 24), fontSize, Math.round(fontSize * 1.45), C.text, 400, 'Inter, Arial, sans-serif')}
           `;
+          parts.push(namedSvgGroup(item, content));
+          continue;
+        }
+
+        if (item.type === 'stroke') {
+          // Drawings export as real vector paths (scaled to the item's on-canvas
+          // size) so Figma imports them as editable vectors.
+          const pts = item.points || [];
+          if (pts.length < 2) continue;
+          const sx = (item.w || 1) / (item.vw || item.w || 1);
+          const sy = (item.h || 1) / (item.vh || item.h || 1);
+          const scaled = pts.map(([px, py]) => [x + px * sx, y + py * sy]);
+          const avgScale = (sx + sy) / 2;
+          const content = `<path d="${strokePathD(scaled)}" fill="none" stroke="${item.color}" stroke-width="${(item.width || 2) * avgScale}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(item, avgScale)}/>`;
           parts.push(namedSvgGroup(item, content));
           continue;
         }
@@ -7061,7 +7082,7 @@
             clipH: h,
             clipRx: 12,
           });
-          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#faf9f5" stroke="#ded9cc"/>${imageSvg}${item.note ? wrapSvgText(item.note, x + 14, y + item.h + 28, w - 28, 14, 20) : ''}`;
+          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imageSvg}${item.note ? wrapSvgText(item.note, x + 14, y + item.h + 28, w - 28, 14, 20, C.text) : ''}`;
           parts.push(namedSvgGroup(item, content));
           continue;
         }
@@ -7079,9 +7100,9 @@
             clipRx: 12,
           });
           const timestamp = formatDuration(note.timestamp);
-          const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20) : '';
+          const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20, C.text) : '';
           const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
-          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#faf9f5" stroke="#ded9cc"/>${imageSvg}${noteText}<rect x="${x + 14}" y="${timeY}" width="${Math.max(64, timestamp.length * 8 + 22)}" height="24" rx="12" fill="var(--surface-hover)"/><text x="${x + 25}" y="${timeY + 16}" fill="#6f6a61" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
+          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imageSvg}${noteText}<text x="${x + 14}" y="${timeY + 16}" fill="${C.badgeText}" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
           parts.push(namedSvgGroup(item, content));
         }
       }
