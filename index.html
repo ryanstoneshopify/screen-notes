@@ -3725,12 +3725,19 @@
       if (!confirm('Delete this session and all its notes?')) return false;
       try {
         await sessionsDb.delete(id);
-        if (activeSessionId === id) {
+        const wasActive = activeSessionId === id;
+        if (wasActive) {
           activeSessionId = null;
           isRecording = false;
         }
         await loadSessions();
-        render();
+        if (wasActive || !activeSessionId) {
+          render();
+        } else {
+          // Deleting a different session must not blow away the open canvas —
+          // a full render() rebuilds the review view without re-initializing it.
+          renderSidebar();
+        }
         return true;
       } catch(e) {
         console.error('Failed to delete:', e);
