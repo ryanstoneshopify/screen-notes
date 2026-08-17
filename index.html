@@ -3254,9 +3254,16 @@
         } else {
           const saved = await sessionsDb.create(payload);
           session.id = saved.id;
+          if (saved.created_at) session.created_at = saved.created_at;
+          if (saved.updated_at) session.updated_at = saved.updated_at;
           remoteEchoSuppress.set(session.id, Date.now());
         }
-        await loadSessions();
+        // Update the local cache instead of re-fetching the whole collection —
+        // find() downloads every session (all users, full notes + canvas) and
+        // made every debounced canvas save cost seconds as the DB grew.
+        const idx = allSessions.findIndex(s => s.id === session.id);
+        if (idx >= 0) allSessions[idx] = session; else allSessions.unshift(session);
+        refreshSessionLists();
         renderSidebar();
       } catch(e) {
         console.error('Failed to save session:', e);
@@ -3450,7 +3457,7 @@
           // and it can't clobber concurrent canvas edits
           remoteEchoSuppress.set(session.id, Date.now());
           await sessionsDb.update(session.id, { sharing: session.sharing });
-          await loadSessions();
+          refreshSessionLists();
           renderSidebar();
           showToast('Changes saved');
         } catch (e) {
@@ -3901,8 +3908,6 @@
             session.canvas.items = [...existing, ...newItems];
           }
           await saveSession(session);
-          await loadSessions();
-          session = allSessions.find(s => s.id === stoppedSessionId) || session;
           activeSessionId = stoppedSessionId;
           currentNotes = session.notes || [];
           setSessionUrl(stoppedSessionId);
