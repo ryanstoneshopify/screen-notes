@@ -5833,6 +5833,17 @@
       el.classList.toggle('error', isError);
     }
 
+    // Translate GitHub API errors into actionable hints
+    function ghFriendlyError(msg) {
+      if (!msg) return '';
+      if (/bad credentials/i.test(msg)) return 'Bad credentials — token is invalid or expired';
+      if (/not found/i.test(msg)) return 'Repo not found — check the name, or the token can’t access it';
+      if (/resource not accessible/i.test(msg)) return 'Token lacks permission — needs Issues: Read & write (and Contents: Read & write for screenshots)';
+      if (/rate limit/i.test(msg)) return 'GitHub rate limit hit — try again in a few minutes';
+      if (/issues.*disabled/i.test(msg)) return 'Issues are disabled on that repository';
+      return msg;
+    }
+
     async function ghApi(path, token, options = {}) {
       const resp = await fetch(`https://api.github.com${path}`, {
         ...options,
@@ -5902,6 +5913,7 @@
         const sessionUrl = `${window.location.origin}${window.location.pathname}#session=${encodeURIComponent(sessionId)}`;
         const stamp = Date.now();
         let created = 0, failed = 0;
+        const failReasons = [];
         const filter = ghActiveFilter;
         const extras = sessionCanvasExtras(session, filter);
         const total = sessionExportTotal(session, filter);
@@ -5949,6 +5961,7 @@
           } catch (noteErr) {
             console.error('Issue creation failed', noteErr);
             failed++;
+            failReasons.push(noteErr.message);
           }
         }
 
@@ -5988,6 +6001,7 @@
           } catch (err) {
             console.error('Canvas image issue failed', err);
             failed++;
+            failReasons.push(err.message);
           }
         }
 
@@ -6003,18 +6017,20 @@
           } catch (err) {
             console.error('Canvas text issue failed', err);
             failed++;
+            failReasons.push(err.message);
           }
         }
 
         if (failed) {
-          ghSetStatus(`Created ${created} issue${created === 1 ? '' : 's'}, ${failed} failed`, true);
+          const reason = ghFriendlyError(failReasons.find(Boolean));
+          ghSetStatus(`Created ${created} issue${created === 1 ? '' : 's'}, ${failed} failed${reason ? ` — ${reason}` : ''}`, true);
           if (goBtn) goBtn.disabled = false;
         } else {
           closeGithubExportDialog();
           showToast(`Created ${created} issue${created === 1 ? '' : 's'} in ${repo}`);
         }
       } catch (e) {
-        ghSetStatus(e.message === 'Bad credentials' ? `Bad credentials — check the ${ownerKey} token` : e.message, true);
+        ghSetStatus(e.message === 'Bad credentials' ? `Bad credentials — check the ${ownerKey} token` : ghFriendlyError(e.message), true);
         if (e.message === 'Bad credentials') {
           delete tokens[ownerKey];
           ghSaveTokens(tokens);
