@@ -1001,7 +1001,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 16px;
+      padding: 10px 12px 10px 16px;
       background: var(--floating-bg);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
@@ -1013,6 +1013,8 @@
     }
     .scrub-bar.hidden { opacity: 0; pointer-events: none; }
     .scrub-time {
+      position: relative;
+      overflow: hidden;
       font-size: 12px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
@@ -1020,9 +1022,35 @@
       white-space: nowrap;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
       min-width: 92px;
       justify-content: center;
+      flex-shrink: 0;
+    }
+    /* Live badge ↔ scrub time swap: same vertical slide as the draw/cursor
+       mode toggle in the canvas toolbar */
+    .scrub-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
+      transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out), filter 400ms var(--ease-out);
+    }
+    .scrub-label-past {
+      position: absolute;
+      inset: 0;
+      transform: translateY(-250%);
+      opacity: 0;
+      filter: blur(3px);
+    }
+    .scrub-bar.scrubbing .scrub-label-live {
+      transform: translateY(250%);
+      opacity: 0;
+      filter: blur(3px);
+    }
+    .scrub-bar.scrubbing .scrub-label-past {
+      transform: translateY(0);
+      opacity: 1;
+      filter: blur(0);
     }
     .scrub-live-dot {
       width: 8px; height: 8px; border-radius: 999px;
@@ -1056,20 +1084,36 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
       pointer-events: none;
     }
-    /* Always occupies its slot (visibility, not display) so the bar keeps
-       the same size in live and scrubbed modes. Colors come from .btn-primary. */
+    /* Live: fully collapsed so the track runs to the bar's right padding.
+       Scrubbed: slides in from the right while the track shrinks to fit.
+       Colors come from .btn-primary. */
     .scrub-live-btn {
       display: inline-flex;
       align-items: center;
-      visibility: hidden;
-      padding: 6px 14px;
+      max-width: 0;
+      padding: 6px 0;
+      margin-left: -12px; /* swallow the flex gap while collapsed */
+      opacity: 0;
+      transform: translateX(24px);
+      filter: blur(6px);
+      overflow: hidden;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
       flex-shrink: 0;
+      transition: max-width 400ms var(--ease-out), padding 400ms var(--ease-out),
+        margin 400ms var(--ease-out), transform 400ms var(--ease-out),
+        opacity 400ms var(--ease-out), filter 400ms var(--ease-out);
     }
-    .scrub-live-btn.visible { visibility: visible; }
+    .scrub-bar.scrubbing .scrub-live-btn {
+      max-width: 140px;
+      padding: 6px 14px;
+      margin-left: 0;
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
 
     .rec-pill {
       position: fixed;
@@ -4034,32 +4078,52 @@
       updateScrubBarUI();
     }
 
-    async function onScrubTrackMouseDown(e) {
+    function onScrubTrackMouseDown(e) {
       e.preventDefault();
-      if (!scrubActive) {
-        const ok = await enterScrubMode();
-        if (!ok) return;
-      } else {
-        await refreshScrubBlobIfStale();
-      }
       const track = document.getElementById('scrubTrack');
       if (!track) return;
-      const apply = (ev) => {
+      // Listeners attach synchronously: if they attached after awaiting the
+      // blob load and the mouse was released during the await, mouseup was
+      // missed and the handle stuck to the cursor.
+      let lastX = e.clientX;
+      let released = false;
+      const apply = () => {
+        if (!scrubActive) return;
         const r = track.getBoundingClientRect();
-        const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+        const frac = Math.max(0, Math.min(1, (lastX - r.left) / r.width));
         seekScrub(frac * scrubElapsedMs());
       };
-      apply(e);
-      const onMove = (ev) => apply(ev);
-      const onUp = (ev) => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        apply(ev);
+      const finish = () => {
+        if (!scrubActive) return;
+        apply();
         // Releasing at the live edge returns to the live view — no button needed
         if (scrubTimeMs >= scrubElapsedMs() - 500) backToLive();
       };
+      const onMove = (ev) => { lastX = ev.clientX; apply(); };
+      const onUp = (ev) => {
+        released = true;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        lastX = ev.clientX;
+        finish();
+      };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
+      (async () => {
+        if (!scrubActive) {
+          const ok = await enterScrubMode();
+          if (!ok) {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            return;
+          }
+        } else {
+          await refreshScrubBlobIfStale();
+        }
+        // Mouse released while the blob was loading — apply the final position
+        if (released) finish();
+        else apply();
+      })();
     }
 
     function setupScrubber() {
@@ -4083,21 +4147,20 @@
       const bar = document.getElementById('scrubBar');
       if (!bar) return;
       bar.classList.toggle('hidden', !scrubberAvailable() && !scrubActive);
+      bar.classList.toggle('scrubbing', scrubActive);
       const elapsed = scrubElapsedMs();
       const frac = scrubActive && elapsed ? Math.min(1, scrubTimeMs / elapsed) : 1;
       const fill = document.getElementById('scrubFill');
       const handle = document.getElementById('scrubHandle');
       if (fill) fill.style.width = `${frac * 100}%`;
       if (handle) handle.style.left = `${frac * 100}%`;
+      // Live badge clock (rec pill was removed — this is the session timer now)
+      const clock = document.getElementById('liveClock');
+      if (clock && recordingStartTime) clock.textContent = formatDuration(Date.now() - recordingStartTime);
+      // The right side is the live clock — it keeps ticking while scrubbed
+      // (updated every second by the recording timer).
       const label = document.getElementById('scrubTimeLabel');
-      if (label) {
-        // The right side is the live clock — it keeps ticking while scrubbed
-        // (updated every second by the recording timer).
-        label.innerHTML = scrubActive
-          ? `${formatDuration(scrubTimeMs)} / ${formatDuration(elapsed)}`
-          : `<span class="scrub-live-dot"></span>LIVE`;
-      }
-      document.getElementById('backToLiveBtn')?.classList.toggle('visible', scrubActive);
+      if (label) label.textContent = `${formatDuration(scrubTimeMs)} / ${formatDuration(elapsed)}`;
     }
 
     // Screenshots come from the scrubbed frame while scrubbing, live otherwise
@@ -7028,17 +7091,15 @@
     function renderRecordingView() {
       return `
         <div class="recording-view">
-          <div class="rec-pill">
-            <div class="rec-dot"></div>
-            <span class="rec-timer" id="recTimer">00:00</span>
-            <span class="rec-status-label">Recording</span>
-          </div>
           <div class="recording-body">
             <div class="video-panel" id="videoPanel">
               <video id="screenVideo" autoplay playsinline muted></video>
               <video id="playbackVideo" playsinline muted></video>
               <div class="scrub-bar hidden" id="scrubBar">
-                <span class="scrub-time" id="scrubTimeLabel"><span class="scrub-live-dot"></span>LIVE</span>
+                <span class="scrub-time">
+                  <span class="scrub-label scrub-label-live"><span class="scrub-live-dot"></span>LIVE <span id="liveClock">00:00</span></span>
+                  <span class="scrub-label scrub-label-past" id="scrubTimeLabel">00:00 / 00:00</span>
+                </span>
                 <div class="scrub-track" id="scrubTrack">
                   <div class="scrub-fill" id="scrubFill"></div>
                   <div class="scrub-handle" id="scrubHandle"></div>

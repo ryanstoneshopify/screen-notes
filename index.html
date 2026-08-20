@@ -1063,6 +1063,7 @@
       position: relative;
       flex: 1;
       height: 6px;
+      margin-right: 12px; /* inner breathing room so the handle never touches the bar edge */
       border-radius: 999px;
       background: var(--surface-hover-strong);
       cursor: pointer;
@@ -1084,35 +1085,41 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
       pointer-events: none;
     }
-    /* Live: fully collapsed so the track runs to the bar's right padding.
-       Scrubbed: slides in from the right while the track shrinks to fit.
-       Colors come from .btn-primary. */
-    .scrub-live-btn {
-      display: inline-flex;
-      align-items: center;
-      max-width: 0;
-      padding: 6px 0;
-      margin-left: -12px; /* swallow the flex gap while collapsed */
-      opacity: 0;
-      transform: translateX(24px);
-      filter: blur(6px);
-      overflow: hidden;
+    /* "Back to live" floats 20px above the scrub bar and enters/exits with
+       the toast pattern: emerging from behind the bar, springing up. */
+    .scrub-back-float {
+      position: absolute;
+      left: 24px;
+      right: calc(var(--notes-w, 400px) + 48px);
+      bottom: 86px; /* scrub bar bottom (20px) + bar height (~46px) + 20px */
+      display: flex;
+      justify-content: center;
+      z-index: 119; /* just below the scrub bar (120) so it emerges from behind it */
+      pointer-events: none;
+    }
+    .scrub-back-btn {
+      pointer-events: none;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 600;
+      padding: 8px 16px;
       white-space: nowrap;
-      flex-shrink: 0;
-      transition: max-width 400ms var(--ease-out), padding 400ms var(--ease-out),
-        margin 400ms var(--ease-out), transform 400ms var(--ease-out),
-        opacity 400ms var(--ease-out), filter 400ms var(--ease-out);
+      box-shadow: var(--shadow-pop);
+      transform: translateY(calc(100% + 26px)) scale(0.8);
+      filter: blur(8px);
+      opacity: 0;
+      transition: transform var(--ease-out-duration) var(--ease-out),
+                  filter var(--ease-out-duration) var(--ease-out),
+                  opacity var(--ease-out-duration) var(--ease-out);
     }
-    .scrub-bar.scrubbing .scrub-live-btn {
-      max-width: 140px;
-      padding: 6px 14px;
-      margin-left: 0;
+    .scrub-back-float.visible .scrub-back-btn {
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
       opacity: 1;
-      transform: none;
-      filter: none;
+      transition: transform var(--ease-out-spring-duration) var(--ease-out-spring),
+                  filter 400ms var(--ease-out),
+                  opacity 400ms var(--ease-out);
     }
 
     .rec-pill {
@@ -4161,6 +4168,7 @@
       // (updated every second by the recording timer).
       const label = document.getElementById('scrubTimeLabel');
       if (label) label.textContent = `${formatDuration(scrubTimeMs)} / ${formatDuration(elapsed)}`;
+      document.getElementById('scrubBackFloat')?.classList.toggle('visible', scrubActive);
     }
 
     // Screenshots come from the scrubbed frame while scrubbing, live otherwise
@@ -7104,7 +7112,9 @@
                   <div class="scrub-fill" id="scrubFill"></div>
                   <div class="scrub-handle" id="scrubHandle"></div>
                 </div>
-                <button type="button" class="btn btn-primary scrub-live-btn" id="backToLiveBtn" onclick="backToLive()">Back to live</button>
+              </div>
+              <div class="scrub-back-float" id="scrubBackFloat">
+                <button type="button" class="btn btn-primary scrub-back-btn" onclick="backToLive()">Back to live</button>
               </div>
             </div>
             <div class="notes-panel">
