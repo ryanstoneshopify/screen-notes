@@ -986,6 +986,94 @@
       background: var(--surface-sunken);
     }
 
+    /* ── Session scrubbing ── */
+    #playbackVideo { display: none; }
+    .video-panel.scrubbing #playbackVideo { display: block; }
+    .video-panel.scrubbing #screenVideo { display: none; }
+
+    .scrub-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 24px;
+      right: calc(var(--notes-w, 400px) + 48px);
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      border-radius: 999px;
+      box-shadow: var(--shadow-pop);
+      z-index: 120;
+      transition: opacity 200ms ease;
+    }
+    .scrub-bar.hidden { opacity: 0; pointer-events: none; }
+    .scrub-time {
+      font-size: 12px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-dim);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 52px;
+      justify-content: center;
+    }
+    .scrub-live-dot {
+      width: 8px; height: 8px; border-radius: 999px;
+      background: var(--terra-cotta);
+      animation: pulse 1.6s ease-in-out infinite;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .scrub-track {
+      position: relative;
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--surface-hover-strong);
+      cursor: pointer;
+    }
+    .scrub-track::before { content: ''; position: absolute; inset: -10px 0; } /* fat hit area */
+    .scrub-fill {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 100%;
+      border-radius: 999px;
+      background: var(--terra-cotta);
+    }
+    .scrub-handle {
+      position: absolute; top: 50%; left: 100%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--terra-cotta);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+    .scrub-live-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: none;
+      background: var(--terra-cotta);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .scrub-live-btn:hover { filter: brightness(1.08); }
+    .scrub-live-btn.visible { display: inline-flex; }
+
     .rec-pill {
       position: fixed;
       top: 12px;
@@ -3777,6 +3865,227 @@
       await startRecording({ intoCanvas: true });
     }
 
+    // ── Session scrubbing ──
+    // The screen stream is recorded into an in-memory buffer (never uploaded,
+    // freed when the recording stops) so the user can scrub back in time and
+    // screenshot a moment they missed.
+    let sessionRecorder = null;
+    let recordedChunks = [];
+    let recordedBytes = 0;
+    let recorderMimeType = '';
+    let recorderStartTime = null;
+    let recorderEndTime = null;
+    let scrubActive = false;
+    let scrubEntering = false;
+    let scrubTimeMs = 0;
+    let scrubDurationMs = 0;
+    let scrubBlobUrl = null;
+    let scrubSeekBusy = false;
+    let scrubSeekPending = null;
+    const SCRUB_MAX_BYTES = 1_500_000_000; // ~1.5 GB in-memory cap (~10 hrs at 2.5 Mbps → realistically hours)
+
+    function startSessionRecorder() {
+      recordedChunks = [];
+      recordedBytes = 0;
+      recorderStartTime = Date.now();
+      recorderEndTime = null;
+      const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+      recorderMimeType = window.MediaRecorder
+        ? candidates.find(t => MediaRecorder.isTypeSupported(t)) || '' : '';
+      if (!recorderMimeType || !mediaStream) { sessionRecorder = null; return; }
+      try {
+        sessionRecorder = new MediaRecorder(mediaStream, {
+          mimeType: recorderMimeType,
+          videoBitsPerSecond: 2_500_000,
+        });
+      } catch (e) {
+        console.warn('[screen-notes] MediaRecorder unavailable — scrubbing disabled', e);
+        sessionRecorder = null;
+        return;
+      }
+      sessionRecorder.ondataavailable = (e) => {
+        if (!e.data || !e.data.size) return;
+        recordedChunks.push(e.data);
+        recordedBytes += e.data.size;
+        if (recordedBytes > SCRUB_MAX_BYTES && sessionRecorder?.state === 'recording') {
+          // Keep what we have: scrubbing still covers the session so far.
+          try { sessionRecorder.stop(); } catch (_) {}
+          recorderEndTime = Date.now();
+          console.warn('[screen-notes] scrub buffer full — history frozen at', formatDuration(recorderEndTime - recorderStartTime));
+        }
+      };
+      sessionRecorder.onerror = (e) => console.warn('[screen-notes] session recorder error', e?.error || e);
+      sessionRecorder.start(1000);
+    }
+
+    function stopSessionRecorder() {
+      if (sessionRecorder && sessionRecorder.state !== 'inactive') {
+        try { sessionRecorder.stop(); } catch (_) {}
+      }
+      sessionRecorder = null;
+      // Free the scrub buffer — the recording is never persisted anywhere.
+      recordedChunks = [];
+      recordedBytes = 0;
+      if (scrubBlobUrl) { URL.revokeObjectURL(scrubBlobUrl); scrubBlobUrl = null; }
+      scrubActive = false;
+      scrubTimeMs = 0;
+      scrubDurationMs = 0;
+      scrubSeekBusy = false;
+      scrubSeekPending = null;
+    }
+
+    function scrubberAvailable() {
+      return recordedChunks.length > 0;
+    }
+
+    async function enterScrubMode() {
+      if (scrubActive) return true;
+      if (scrubEntering || !scrubberAvailable()) return false;
+      scrubEntering = true;
+      try {
+        const video = document.getElementById('playbackVideo');
+        if (!video) return false;
+        if (scrubBlobUrl) URL.revokeObjectURL(scrubBlobUrl);
+        // Cheap: the Blob references the chunk memory, it doesn't copy it.
+        const blob = new Blob(recordedChunks, { type: recorderMimeType });
+        scrubBlobUrl = URL.createObjectURL(blob);
+        video.src = scrubBlobUrl;
+        await new Promise((resolve, reject) => {
+          const ok = () => { cleanup(); resolve(); };
+          const bad = () => { cleanup(); reject(new Error('playback load failed')); };
+          const cleanup = () => {
+            video.removeEventListener('loadedmetadata', ok);
+            video.removeEventListener('error', bad);
+          };
+          video.addEventListener('loadedmetadata', ok);
+          video.addEventListener('error', bad);
+          setTimeout(bad, 5000);
+        });
+        // MediaRecorder webm carries no duration header. Seeking far past the
+        // end forces the browser to compute the real duration.
+        if (!isFinite(video.duration) || !video.duration) {
+          video.currentTime = 1e10;
+          await new Promise(resolve => {
+            const done = () => { video.removeEventListener('seeked', done); resolve(); };
+            video.addEventListener('seeked', done);
+            setTimeout(done, 3000);
+          });
+        }
+        scrubDurationMs = isFinite(video.duration) && video.duration
+          ? video.duration * 1000
+          : ((recorderEndTime || Date.now()) - recorderStartTime);
+        scrubActive = true;
+        scrubTimeMs = scrubDurationMs;
+        document.getElementById('videoPanel')?.classList.add('scrubbing');
+        updateScrubBarUI();
+        return true;
+      } catch (e) {
+        console.warn('[screen-notes] could not enter scrub mode', e);
+        return false;
+      } finally {
+        scrubEntering = false;
+      }
+    }
+
+    function backToLive() {
+      scrubActive = false;
+      scrubSeekBusy = false;
+      scrubSeekPending = null;
+      const video = document.getElementById('playbackVideo');
+      if (video) { video.removeAttribute('src'); video.load(); }
+      if (scrubBlobUrl) { URL.revokeObjectURL(scrubBlobUrl); scrubBlobUrl = null; }
+      document.getElementById('videoPanel')?.classList.remove('scrubbing');
+      updateScrubBarUI();
+    }
+
+    function seekScrub(ms) {
+      const video = document.getElementById('playbackVideo');
+      if (!video || !scrubActive) return;
+      scrubTimeMs = Math.max(0, Math.min(ms, scrubDurationMs));
+      // Stay a hair short of the end so a decodable frame is always shown
+      const target = Math.min(scrubTimeMs / 1000, Math.max(0, (video.duration || 0) - 0.05));
+      if (scrubSeekBusy) {
+        scrubSeekPending = target;
+      } else {
+        scrubSeekBusy = true;
+        video.currentTime = target;
+      }
+      updateScrubBarUI();
+    }
+
+    async function onScrubTrackMouseDown(e) {
+      e.preventDefault();
+      if (!scrubActive) {
+        const ok = await enterScrubMode();
+        if (!ok) return;
+      }
+      const track = document.getElementById('scrubTrack');
+      if (!track) return;
+      const apply = (ev) => {
+        const r = track.getBoundingClientRect();
+        const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+        seekScrub(frac * scrubDurationMs);
+      };
+      apply(e);
+      const onMove = (ev) => apply(ev);
+      const onUp = (ev) => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        apply(ev);
+        // Releasing at the live edge returns to the live view
+        if (scrubDurationMs && scrubTimeMs >= scrubDurationMs - 200) backToLive();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    function setupScrubber() {
+      const video = document.getElementById('playbackVideo');
+      const track = document.getElementById('scrubTrack');
+      if (!video || !track) return;
+      video.addEventListener('seeked', () => {
+        scrubSeekBusy = false;
+        if (scrubSeekPending != null) {
+          const t = scrubSeekPending;
+          scrubSeekPending = null;
+          scrubSeekBusy = true;
+          video.currentTime = t;
+        }
+      });
+      track.addEventListener('mousedown', onScrubTrackMouseDown);
+      updateScrubBarUI();
+    }
+
+    function updateScrubBarUI() {
+      const bar = document.getElementById('scrubBar');
+      if (!bar) return;
+      bar.classList.toggle('hidden', !scrubberAvailable() && !scrubActive);
+      const frac = scrubActive && scrubDurationMs ? scrubTimeMs / scrubDurationMs : 1;
+      const fill = document.getElementById('scrubFill');
+      const handle = document.getElementById('scrubHandle');
+      if (fill) fill.style.width = `${frac * 100}%`;
+      if (handle) handle.style.left = `${frac * 100}%`;
+      const label = document.getElementById('scrubTimeLabel');
+      if (label) {
+        label.innerHTML = scrubActive
+          ? `${formatDuration(scrubTimeMs)} / ${formatDuration(scrubDurationMs)}`
+          : `<span class="scrub-live-dot"></span>LIVE`;
+      }
+      document.getElementById('backToLiveBtn')?.classList.toggle('visible', scrubActive);
+    }
+
+    // Screenshots come from the scrubbed frame while scrubbing, live otherwise
+    function activeCaptureVideo() {
+      const playback = document.getElementById('playbackVideo');
+      if (scrubActive && playback && playback.readyState >= 2) return playback;
+      return document.getElementById('screenVideo');
+    }
+
+    // Note timestamps reflect the moment shown on screen, not wall-clock time
+    function currentCaptureTimestampMs() {
+      return scrubActive ? Math.round(scrubTimeMs) : (Date.now() - recordingStartTime);
+    }
+
     async function startRecording(opts = {}) {
       try {
         // Request highest possible resolution. Browsers will clamp to what the source supports.
@@ -3843,6 +4152,9 @@
         stopRecording();
       };
 
+      // In-memory recording that powers the scrubber (freed at session end)
+      startSessionRecorder();
+
       render();
       startTimer();
       if (voiceCommandsEnabledPreference) {
@@ -3881,6 +4193,7 @@
       // whether voice commands should start automatically next time.
       stopVoiceCommands(false);
 
+      stopSessionRecorder();
       if (mediaStream) {
         mediaStream.getTracks().forEach(t => t.stop());
         mediaStream = null;
@@ -3970,6 +4283,8 @@
       timerInterval = setInterval(() => {
         const el = document.getElementById('recTimer');
         if (el) el.textContent = formatDuration(Date.now() - recordingStartTime);
+        // Reveals the scrub bar once the first recorded chunk exists
+        updateScrubBarUI();
       }, 1000);
     }
 
@@ -4423,7 +4738,7 @@
     const MAX_DIM = 2560; // longest-edge cap, in CSS pixels of the source
 
     async function captureScreenshotBlob() {
-      const video = document.getElementById('screenVideo');
+      const video = activeCaptureVideo();
       if (!video || !video.videoWidth) {
         console.warn('[screen-notes] no video frame available');
         return null;
@@ -4455,7 +4770,7 @@
     // Quick low-cost preview of the current frame for the "captured" indicator.
     // We DON'T persist this — only the uploaded URL goes into the DB.
     function captureScreenshotPreview() {
-      const video = document.getElementById('screenVideo');
+      const video = activeCaptureVideo();
       if (!video || !video.videoWidth) return null;
       const c = document.getElementById('screenshotCanvas');
       c.width  = video.videoWidth;
@@ -4478,7 +4793,7 @@
       const preview = captureScreenshotPreview();
       if (!preview) return null;
 
-      const timeStr = formatDuration(Date.now() - recordingStartTime);
+      const timeStr = formatDuration(currentCaptureTimestampMs());
       const indicator = document.getElementById('screenshotIndicator');
       const previewEl = document.getElementById('screenshotPreview');
       const previewImg = document.getElementById('screenshotPreviewImg');
@@ -4527,7 +4842,7 @@
         }
       })();
 
-      pendingScreenshot = { previewDataUrl: preview, uploadPromise };
+      pendingScreenshot = { previewDataUrl: preview, uploadPromise, capturedTimestampMs: currentCaptureTimestampMs() };
       updateSaveNoteButtonState();
 
       uploadPromise.then(() => {});
@@ -4631,7 +4946,7 @@
       const note = {
         text,
         screenshotUrl: url,    // null = text-only note (no screenshot)
-        timestamp: Date.now() - recordingStartTime,
+        timestamp: pendingScreenshot?.capturedTimestampMs ?? currentCaptureTimestampMs(),
         createdAt: new Date().toISOString(),
       };
       // Carry composer markup over so the saved note stays re-editable
@@ -4738,7 +5053,7 @@
       try {
         const url = await uploadCurrentFrameScreenshot();
         currentNotes[index].screenshotUrl = url;
-        currentNotes[index].timestamp = Date.now() - recordingStartTime;
+        currentNotes[index].timestamp = currentCaptureTimestampMs();
         delete currentNotes[index].screenshot;
         const session = allSessions.find(s => s.id === activeSessionId);
         if (session) {
@@ -6693,9 +7008,17 @@
             <span class="rec-status-label">Recording</span>
           </div>
           <div class="recording-body">
-            <div class="video-panel">
+            <div class="video-panel" id="videoPanel">
               <video id="screenVideo" autoplay playsinline muted></video>
-
+              <video id="playbackVideo" playsinline muted></video>
+              <div class="scrub-bar hidden" id="scrubBar">
+                <span class="scrub-time" id="scrubTimeLabel"><span class="scrub-live-dot"></span>LIVE</span>
+                <div class="scrub-track" id="scrubTrack">
+                  <div class="scrub-fill" id="scrubFill"></div>
+                  <div class="scrub-handle" id="scrubHandle"></div>
+                </div>
+                <button type="button" class="scrub-live-btn" id="backToLiveBtn" onclick="backToLive()">Back to live</button>
+              </div>
             </div>
             <div class="notes-panel">
               <div class="notes-panel-resize" id="notesPanelResize"
@@ -6767,6 +7090,7 @@
       if (video && mediaStream) {
         video.srcObject = mediaStream;
       }
+      setupScrubber();
       renderNotesList();
 
 
