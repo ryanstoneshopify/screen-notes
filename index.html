@@ -4191,7 +4191,10 @@
     function updateScrubBarUI() {
       const bar = document.getElementById('scrubBar');
       if (!bar) return;
-      bar.classList.toggle('hidden', !scrubberAvailable() && !scrubActive);
+      // Visible as soon as the recorder is running — not delayed until the
+      // first chunk lands. Scrub attempts before footage exists just no-op.
+      const recorderRunning = !!sessionRecorder && sessionRecorder.state === 'recording';
+      bar.classList.toggle('hidden', !recorderRunning && !scrubberAvailable() && !scrubActive);
       bar.classList.toggle('scrubbing', scrubActive);
       const elapsed = scrubElapsedMs();
       const frac = scrubActive && elapsed ? Math.min(1, scrubTimeMs / elapsed) : 1;
