@@ -2813,7 +2813,7 @@
     const voiceRemoveScreenshotResultIndexes = new Set();
     let voiceSaveNoteInFlight = false;
     let suppressNextNoteFocusCapture = false;
-    const VOICE_LISTENING_HINTS = ['screenshot', 'remove screenshot', 'delete screenshot', 'save note'];
+    const VOICE_LISTENING_HINTS = ['screenshot', 'remove screenshot', 'delete screenshot', 'save note', 'period', 'comma', 'question mark', 'new line'];
     let voiceHintAnimationRun = 0;
     let voiceHintAnimationElement = null;
 
@@ -3152,6 +3152,18 @@
       return owner === currentUserEmail();
     }
 
+    // A brand-new session being recorded right now (in this tab or another).
+    // These stay out of the session lists: opening the canvas mid-recording
+    // materializes canvas items early and forks the session state.
+    function sessionIsMidRecording(s) {
+      if (!s?.recording) return false;
+      if (isRecording && s.id === activeSessionId) return true;
+      // Crash safety: if the recording tab died, the flag never clears. Let
+      // stale sessions reappear instead of hiding them forever.
+      const updated = new Date(s.updated_at || s.created_at || 0).getTime();
+      return Date.now() - updated < 15 * 60 * 1000;
+    }
+
     // ── Sharing model ──
     // Legacy sessions (created before sharing existed) stay link-visible.
     function sessionSharing(session) {
@@ -3203,11 +3215,7 @@
         allSessions = (result || []).sort((a, b) =>
           new Date(b.created_at) - new Date(a.created_at)
         );
-        const sharedIds = new Set(sharedSessionIds());
-        sessions = allSessions.filter(isMySession);
-        // Others: sessions explicitly shared with me, or public ones I opened via link
-        sharedSessions = allSessions.filter(s => !isMySession(s) && canViewSession(s)
-          && (sharedIds.has(s.id) || !!sharingEntryFor(s)));
+        refreshSessionLists();
       } catch(e) {
         allSessions = [];
         sessions = [];
@@ -3304,9 +3312,9 @@
 
     function refreshSessionLists() {
       const sharedIds = new Set(sharedSessionIds());
-      sessions = allSessions.filter(isMySession);
+      sessions = allSessions.filter(s => isMySession(s) && !sessionIsMidRecording(s));
       sharedSessions = allSessions.filter(s => !isMySession(s) && canViewSession(s)
-        && (sharedIds.has(s.id) || !!sharingEntryFor(s)));
+        && (sharedIds.has(s.id) || !!sharingEntryFor(s)) && !sessionIsMidRecording(s));
     }
 
     function upsertRemoteSession(doc) {
@@ -3823,6 +3831,8 @@
           duration: 0,
           // New sessions are hidden from the rest of Shopify by default
           sharing: { publicView: false, people: [] },
+          // Keeps the session out of session lists until recording ends
+          recording: true,
         };
         await saveSession(session);
         activeSessionId = session.id;
@@ -3883,9 +3893,9 @@
         let session = allSessions.find(s => s.id === stoppedSessionId);
         if (session) {
           const intoCanvas = recordingIntoCanvas;
-          const baseIndex = recordingBaseNotes.length;
           session.duration = recordingBaseDuration + (Date.now() - recordingStartTime);
           session.notes = composedSessionNotes();
+          session.recording = false;
           recordingIntoCanvas = false;
           recordingBaseNotes = [];
           recordingBaseDuration = 0;
@@ -3898,19 +3908,30 @@
               viewport: { x: 0, y: 0, scale: 1 },
               items: generateInitialLayout(session.notes),
             };
-          } else if (intoCanvas && currentNotes.length) {
-            // Append the new notes to the right of the existing canvas content,
-            // leaving everything already on the canvas untouched.
+          } else {
+            // Canvas already exists (recording into an existing canvas, or
+            // another tab opened this session mid-recording and materialized
+            // it early). Append items for any notes that don't have one yet,
+            // to the right of the existing content, leaving everything already
+            // on the canvas untouched.
             const existing = session.canvas.items;
-            const offsetX = Math.max(...existing.map(it => it.x + (it.w || 0))) + 128;
-            const minY = Math.min(...existing.map(it => it.y));
-            const newItems = generateInitialLayout(currentNotes).map(it => ({
-              ...it,
-              noteIndex: it.noteIndex + baseIndex,
-              x: it.x + offsetX,
-              y: it.y + minY,
-            }));
-            session.canvas.items = [...existing, ...newItems];
+            const covered = new Set(existing
+              .filter(it => it.noteIndex != null)
+              .map(it => it.noteIndex));
+            const missing = session.notes.map((_, i) => i).filter(i => !covered.has(i));
+            if (missing.length) {
+              const offsetX = existing.length
+                ? Math.max(...existing.map(it => it.x + (it.w || 0))) + 128 : 0;
+              const minY = existing.length
+                ? Math.min(...existing.map(it => it.y)) : 0;
+              const newItems = generateInitialLayout(missing.map(i => session.notes[i])).map(it => ({
+                ...it,
+                noteIndex: missing[it.noteIndex],
+                x: it.x + offsetX,
+                y: it.y + minY,
+              }));
+              session.canvas.items = [...existing, ...newItems];
+            }
           }
           await saveSession(session);
           activeSessionId = stoppedSessionId;
@@ -4047,9 +4068,9 @@
     }
 
     function formatVoiceDictationText(prefix, text) {
-      const next = String(text || '').trim();
+      const next = String(text || '').replace(/^[ \t]+|[ \t]+$/g, '');
       if (!next) return '';
-      if (!prefix || /\s$/.test(prefix) || /^[,.;!?]/.test(next)) return next;
+      if (!prefix || /\s$/.test(prefix) || /^[,.;:!?\u2026\n)\]]/.test(next)) return next;
       return ` ${next}`;
     }
 
@@ -4080,6 +4101,9 @@
       }
 
       input.scrollLeft = 0;
+      // Typing scrolls the caret into view automatically; setRangeText does
+      // not. Keep the latest dictated line visible.
+      input.scrollTop = input.scrollHeight;
       updateSaveNoteButtonState();
       requestAnimationFrame(updateVoiceDictationMarker);
     }
@@ -4090,6 +4114,31 @@
         .replace(/\b(?:remove|delete)\s+(?:the\s+)?screenshot\b/ig, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+    }
+
+    // Spoken punctuation, e.g. "hello comma world period" -> "hello, world."
+    function applyVoicePunctuation(text) {
+      return String(text || '')
+        .replace(/\s*\b(?:new\s+paragraph|paragraph\s+break)\b\s*/ig, '\n\n')
+        .replace(/\s*\b(?:new\s+line|line\s+break)\b\s*/ig, '\n')
+        .replace(/\s*\bquestion\s+mark\b/ig, '?')
+        .replace(/\s*\bexclamation\s+(?:mark|point)\b/ig, '!')
+        .replace(/\s*\bfull\s+stop\b/ig, '.')
+        .replace(/\s*\bperiod\b/ig, '.')
+        .replace(/\s*\bcomma\b/ig, ',')
+        .replace(/\s*\bsemicolon\b/ig, ';')
+        .replace(/\s*\bcolon\b/ig, ':')
+        .replace(/\s*\bellips[ei]s\b/ig, '\u2026')
+        .replace(/\s*\bdot\s+dot\s+dot\b/ig, '\u2026')
+        .replace(/\s*\bdash\b\s*/ig, ' \u2014 ')
+        .replace(/\s*\bhyphen\b\s*/ig, '-')
+        .replace(/\b(?:open|left)\s+paren(?:thesis|theses)?\b\s*/ig, '(')
+        .replace(/\s*\b(?:close[d]?|right)\s+paren(?:thesis|theses)?\b/ig, ')')
+        .replace(/\b(?:open|left)\s+bracket\b\s*/ig, '[')
+        .replace(/\s*\b(?:close[d]?|right)\s+bracket\b/ig, ']')
+        .replace(/\b(?:open|begin)\s+quotes?\b\s*/ig, '"')
+        .replace(/\s*\b(?:close[d]?|end)\s+quotes?\b/ig, '"')
+        .replace(/[ \t]+\n/g, '\n');
     }
 
     async function saveNoteFromVoice() {
@@ -4167,7 +4216,7 @@
         }
 
         if (voiceNoteDictationActive) {
-          updateVoiceDictationText(stripVoiceControlPhrases(noteText), result.isFinal);
+          updateVoiceDictationText(applyVoicePunctuation(stripVoiceControlPhrases(noteText)), result.isFinal);
         }
 
         if (saveCommand && result.isFinal && !voiceSaveResultIndexes.has(i)) {
@@ -4288,6 +4337,12 @@
         speechRecognition.onend = () => {
           voiceCommandsStarting = false;
           voiceCommandsListening = false;
+          // The session ended before finalizing the last interim result. Commit
+          // it as-is: the next session starts fresh results at index 0 and must
+          // append after the existing text (e.g. a dictated "new paragraph"),
+          // not replace it.
+          voiceInterimStart = null;
+          voiceInterimText = '';
           clearTimeout(voiceRecognitionRestartTimer);
           if (voiceCommandsShouldListen && isRecording) {
             // SpeechRecognition regularly ends its own session. Keep the UI
@@ -6874,6 +6929,10 @@
       const target = allSessions.find(s => s.id === id);
       if (target && !canViewSession(target)) {
         showToast('This session is private');
+        return;
+      }
+      if (target && id !== activeSessionId && sessionIsMidRecording(target)) {
+        showToast('This session is still recording — open it once the recording ends');
         return;
       }
       if (isRecording && id !== activeSessionId) {
