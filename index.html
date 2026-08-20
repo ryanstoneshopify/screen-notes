@@ -1091,18 +1091,18 @@
       position: absolute;
       left: 24px;
       right: calc(var(--notes-w, 400px) + 48px);
-      bottom: 86px; /* scrub bar bottom (20px) + bar height (~46px) + 20px */
+      bottom: 78px; /* 20px above the scrub bar, lowered 8px */
       display: flex;
       justify-content: center;
       z-index: 119; /* just below the scrub bar (120) so it emerges from behind it */
       pointer-events: none;
     }
+    /* Primary button size; always the white inverse look in both themes */
     .scrub-back-btn {
       pointer-events: none;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 8px 16px;
+      background: #ffffff;
+      color: #141413;
+      border-color: #ffffff;
       white-space: nowrap;
       box-shadow: var(--shadow-pop);
       transform: translateY(calc(100% + 26px)) scale(0.8);
@@ -1112,6 +1112,7 @@
                   filter var(--ease-out-duration) var(--ease-out),
                   opacity var(--ease-out-duration) var(--ease-out);
     }
+    .scrub-back-btn:hover { background: #f1efe9; border-color: #f1efe9; }
     .scrub-back-float.visible .scrub-back-btn {
       pointer-events: auto;
       transform: translateY(0) scale(1);
@@ -7114,7 +7115,7 @@
                 </div>
               </div>
               <div class="scrub-back-float" id="scrubBackFloat">
-                <button type="button" class="btn btn-primary scrub-back-btn" onclick="backToLive()">Back to live</button>
+                <button type="button" class="btn scrub-back-btn" onclick="backToLive()">Back to live</button>
               </div>
             </div>
             <div class="notes-panel">
