@@ -1021,7 +1021,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      min-width: 52px;
+      min-width: 92px;
       justify-content: center;
     }
     .scrub-live-dot {
@@ -1056,23 +1056,20 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
       pointer-events: none;
     }
+    /* Always occupies its slot (visibility, not display) so the bar keeps
+       the same size in live and scrubbed modes. Colors come from .btn-primary. */
     .scrub-live-btn {
-      display: none;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      visibility: hidden;
       padding: 6px 14px;
       border-radius: 999px;
-      border: none;
-      background: var(--terra-cotta);
-      color: #fff;
       font-size: 12px;
       font-weight: 600;
-      cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .scrub-live-btn:hover { filter: brightness(1.08); }
-    .scrub-live-btn.visible { display: inline-flex; }
+    .scrub-live-btn.visible { visibility: visible; }
 
     .rec-pill {
       position: fixed;
@@ -3938,44 +3935,57 @@
       return recordedChunks.length > 0;
     }
 
+    // The scrub timeline is anchored to "now": its right edge is the current
+    // moment of the still-running recording, not the end of the loaded blob.
+    function scrubElapsedMs() {
+      return Math.max(0, (recorderEndTime || Date.now()) - (recorderStartTime || Date.now()));
+    }
+
+    async function loadScrubBlob() {
+      const video = document.getElementById('playbackVideo');
+      if (!video || !scrubberAvailable()) return false;
+      if (scrubBlobUrl) URL.revokeObjectURL(scrubBlobUrl);
+      // Cheap: the Blob references the chunk memory, it doesn't copy it.
+      const blob = new Blob(recordedChunks, { type: recorderMimeType });
+      scrubBlobUrl = URL.createObjectURL(blob);
+      video.src = scrubBlobUrl;
+      await new Promise((resolve, reject) => {
+        const ok = () => { cleanup(); resolve(); };
+        const bad = () => { cleanup(); reject(new Error('playback load failed')); };
+        const cleanup = () => {
+          video.removeEventListener('loadedmetadata', ok);
+          video.removeEventListener('error', bad);
+        };
+        video.addEventListener('loadedmetadata', ok);
+        video.addEventListener('error', bad);
+        setTimeout(bad, 5000);
+      });
+      // MediaRecorder webm carries no duration header. Seeking far past the
+      // end forces the browser to compute the real duration.
+      if (!isFinite(video.duration) || !video.duration) {
+        video.currentTime = 1e10;
+        await new Promise(resolve => {
+          const done = () => { video.removeEventListener('seeked', done); resolve(); };
+          video.addEventListener('seeked', done);
+          setTimeout(done, 3000);
+        });
+      }
+      scrubDurationMs = isFinite(video.duration) && video.duration
+        ? video.duration * 1000
+        : scrubElapsedMs();
+      scrubSeekBusy = false;
+      scrubSeekPending = null;
+      return true;
+    }
+
     async function enterScrubMode() {
       if (scrubActive) return true;
       if (scrubEntering || !scrubberAvailable()) return false;
       scrubEntering = true;
       try {
-        const video = document.getElementById('playbackVideo');
-        if (!video) return false;
-        if (scrubBlobUrl) URL.revokeObjectURL(scrubBlobUrl);
-        // Cheap: the Blob references the chunk memory, it doesn't copy it.
-        const blob = new Blob(recordedChunks, { type: recorderMimeType });
-        scrubBlobUrl = URL.createObjectURL(blob);
-        video.src = scrubBlobUrl;
-        await new Promise((resolve, reject) => {
-          const ok = () => { cleanup(); resolve(); };
-          const bad = () => { cleanup(); reject(new Error('playback load failed')); };
-          const cleanup = () => {
-            video.removeEventListener('loadedmetadata', ok);
-            video.removeEventListener('error', bad);
-          };
-          video.addEventListener('loadedmetadata', ok);
-          video.addEventListener('error', bad);
-          setTimeout(bad, 5000);
-        });
-        // MediaRecorder webm carries no duration header. Seeking far past the
-        // end forces the browser to compute the real duration.
-        if (!isFinite(video.duration) || !video.duration) {
-          video.currentTime = 1e10;
-          await new Promise(resolve => {
-            const done = () => { video.removeEventListener('seeked', done); resolve(); };
-            video.addEventListener('seeked', done);
-            setTimeout(done, 3000);
-          });
-        }
-        scrubDurationMs = isFinite(video.duration) && video.duration
-          ? video.duration * 1000
-          : ((recorderEndTime || Date.now()) - recorderStartTime);
+        if (!await loadScrubBlob()) return false;
         scrubActive = true;
-        scrubTimeMs = scrubDurationMs;
+        scrubTimeMs = Math.min(scrubDurationMs, scrubElapsedMs());
         document.getElementById('videoPanel')?.classList.add('scrubbing');
         updateScrubBarUI();
         return true;
@@ -3985,6 +3995,16 @@
       } finally {
         scrubEntering = false;
       }
+    }
+
+    // Footage keeps recording while scrubbed; the loaded blob goes stale.
+    // Reload it so the user can scrub right up to (and back onto) live.
+    async function refreshScrubBlobIfStale() {
+      if (!scrubActive || scrubEntering) return;
+      if (!sessionRecorder || sessionRecorder.state !== 'recording') return;
+      if (scrubElapsedMs() - scrubDurationMs < 2000) return;
+      scrubEntering = true;
+      try { await loadScrubBlob(); } catch (_) {} finally { scrubEntering = false; }
     }
 
     function backToLive() {
@@ -4001,8 +4021,9 @@
     function seekScrub(ms) {
       const video = document.getElementById('playbackVideo');
       if (!video || !scrubActive) return;
-      scrubTimeMs = Math.max(0, Math.min(ms, scrubDurationMs));
-      // Stay a hair short of the end so a decodable frame is always shown
+      scrubTimeMs = Math.max(0, Math.min(ms, scrubElapsedMs()));
+      // Clamp to the loaded footage, a hair short of its end so a decodable
+      // frame is always shown
       const target = Math.min(scrubTimeMs / 1000, Math.max(0, (video.duration || 0) - 0.05));
       if (scrubSeekBusy) {
         scrubSeekPending = target;
@@ -4018,13 +4039,15 @@
       if (!scrubActive) {
         const ok = await enterScrubMode();
         if (!ok) return;
+      } else {
+        await refreshScrubBlobIfStale();
       }
       const track = document.getElementById('scrubTrack');
       if (!track) return;
       const apply = (ev) => {
         const r = track.getBoundingClientRect();
         const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
-        seekScrub(frac * scrubDurationMs);
+        seekScrub(frac * scrubElapsedMs());
       };
       apply(e);
       const onMove = (ev) => apply(ev);
@@ -4032,8 +4055,8 @@
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         apply(ev);
-        // Releasing at the live edge returns to the live view
-        if (scrubDurationMs && scrubTimeMs >= scrubDurationMs - 200) backToLive();
+        // Releasing at the live edge returns to the live view — no button needed
+        if (scrubTimeMs >= scrubElapsedMs() - 500) backToLive();
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
@@ -4060,15 +4083,18 @@
       const bar = document.getElementById('scrubBar');
       if (!bar) return;
       bar.classList.toggle('hidden', !scrubberAvailable() && !scrubActive);
-      const frac = scrubActive && scrubDurationMs ? scrubTimeMs / scrubDurationMs : 1;
+      const elapsed = scrubElapsedMs();
+      const frac = scrubActive && elapsed ? Math.min(1, scrubTimeMs / elapsed) : 1;
       const fill = document.getElementById('scrubFill');
       const handle = document.getElementById('scrubHandle');
       if (fill) fill.style.width = `${frac * 100}%`;
       if (handle) handle.style.left = `${frac * 100}%`;
       const label = document.getElementById('scrubTimeLabel');
       if (label) {
+        // The right side is the live clock — it keeps ticking while scrubbed
+        // (updated every second by the recording timer).
         label.innerHTML = scrubActive
-          ? `${formatDuration(scrubTimeMs)} / ${formatDuration(scrubDurationMs)}`
+          ? `${formatDuration(scrubTimeMs)} / ${formatDuration(elapsed)}`
           : `<span class="scrub-live-dot"></span>LIVE`;
       }
       document.getElementById('backToLiveBtn')?.classList.toggle('visible', scrubActive);
@@ -7017,7 +7043,7 @@
                   <div class="scrub-fill" id="scrubFill"></div>
                   <div class="scrub-handle" id="scrubHandle"></div>
                 </div>
-                <button type="button" class="scrub-live-btn" id="backToLiveBtn" onclick="backToLive()">Back to live</button>
+                <button type="button" class="btn btn-primary scrub-live-btn" id="backToLiveBtn" onclick="backToLive()">Back to live</button>
               </div>
             </div>
             <div class="notes-panel">
