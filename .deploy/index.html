@@ -1012,9 +1012,9 @@
       transition: opacity 200ms ease;
     }
     .scrub-bar.hidden { opacity: 0; pointer-events: none; }
+    /* The pill itself crops the sliding labels during the live↔past swap */
+    .scrub-bar { overflow: hidden; }
     .scrub-time {
-      position: relative;
-      overflow: hidden;
       font-size: 12px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
@@ -1022,22 +1022,25 @@
       white-space: nowrap;
       display: inline-flex;
       align-items: center;
-      min-width: 92px;
-      justify-content: center;
+      gap: 6px;
       flex-shrink: 0;
     }
-    /* Live badge ↔ scrub time swap: same vertical slide as the draw/cursor
-       mode toggle in the canvas toolbar */
+    /* Only the left part swaps (LIVE badge ↔ scrubbed position); the current
+       time clock to its right never moves. Layers stack in a grid so the
+       width — and therefore the clock position — stays constant. */
+    .scrub-swap {
+      display: inline-grid;
+      align-items: center;
+      justify-items: end;
+    }
+    .scrub-swap > .scrub-label { grid-area: 1 / 1; }
     .scrub-label {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      justify-content: center;
       transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out), filter 400ms var(--ease-out);
     }
     .scrub-label-past {
-      position: absolute;
-      inset: 0;
       transform: translateY(-250%);
       opacity: 0;
       filter: blur(3px);
@@ -4162,13 +4165,14 @@
       const handle = document.getElementById('scrubHandle');
       if (fill) fill.style.width = `${frac * 100}%`;
       if (handle) handle.style.left = `${frac * 100}%`;
-      // Live badge clock (rec pill was removed — this is the session timer now)
+      // Current-time clock (the rec pill's replacement) — fixed in place,
+      // keeps ticking in both live and scrubbed modes.
       const clock = document.getElementById('liveClock');
-      if (clock && recordingStartTime) clock.textContent = formatDuration(Date.now() - recordingStartTime);
-      // The right side is the live clock — it keeps ticking while scrubbed
-      // (updated every second by the recording timer).
+      if (clock && recordingStartTime) {
+        clock.textContent = formatDuration(scrubActive ? elapsed : Date.now() - recordingStartTime);
+      }
       const label = document.getElementById('scrubTimeLabel');
-      if (label) label.textContent = `${formatDuration(scrubTimeMs)} / ${formatDuration(elapsed)}`;
+      if (label) label.textContent = `${formatDuration(scrubTimeMs)} /`;
       document.getElementById('scrubBackFloat')?.classList.toggle('visible', scrubActive);
     }
 
@@ -7106,8 +7110,11 @@
               <video id="playbackVideo" playsinline muted></video>
               <div class="scrub-bar hidden" id="scrubBar">
                 <span class="scrub-time">
-                  <span class="scrub-label scrub-label-live"><span class="scrub-live-dot"></span>LIVE <span id="liveClock">00:00</span></span>
-                  <span class="scrub-label scrub-label-past" id="scrubTimeLabel">00:00 / 00:00</span>
+                  <span class="scrub-swap">
+                    <span class="scrub-label scrub-label-live"><span class="scrub-live-dot"></span>LIVE</span>
+                    <span class="scrub-label scrub-label-past" id="scrubTimeLabel">00:00 /</span>
+                  </span>
+                  <span class="scrub-clock" id="liveClock">00:00</span>
                 </span>
                 <div class="scrub-track" id="scrubTrack">
                   <div class="scrub-fill" id="scrubFill"></div>

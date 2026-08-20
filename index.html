@@ -991,13 +991,44 @@
     .video-panel.scrubbing #playbackVideo { display: block; }
     .video-panel.scrubbing #screenVideo { display: none; }
 
-    .scrub-bar {
+    /* Bottom overlay row: [ scrubber stack ] [ End session ] centered as a
+       group; the Back to live float lives inside the stack so it stays
+       centered on the timeline itself. */
+    .scrub-row {
       position: absolute;
       bottom: 20px;
       left: 24px;
       right: calc(var(--notes-w, 400px) + 48px);
-      max-width: 640px;
-      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 12px;
+      z-index: 120;
+      pointer-events: none;
+    }
+    .scrub-row > * { pointer-events: auto; }
+    .scrub-stack {
+      position: relative;
+      flex: 0 1 640px;
+      min-width: 0;
+    }
+    .end-session-btn {
+      background: #d0453c;
+      color: #fff;
+      border-color: #d0453c;
+      border-radius: 999px;
+      font-weight: 500;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-pop);
+    }
+    .end-session-btn:hover { background: #b93a32; border-color: #b93a32; }
+    html.dark .end-session-btn { background: #e0655a; border-color: #e0655a; }
+    html.dark .end-session-btn:hover { background: #d5544a; border-color: #d5544a; }
+
+    .scrub-bar {
+      position: relative;
+      z-index: 2;
+      width: 100%;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -1008,7 +1039,6 @@
       border: 1px solid var(--parchment);
       border-radius: 999px;
       box-shadow: var(--shadow-pop);
-      z-index: 120;
       transition: opacity 200ms ease;
     }
     .scrub-bar.hidden { opacity: 0; pointer-events: none; }
@@ -1092,12 +1122,12 @@
        the toast pattern: emerging from behind the bar, springing up. */
     .scrub-back-float {
       position: absolute;
-      left: 24px;
-      right: calc(var(--notes-w, 400px) + 48px);
-      bottom: 78px; /* 20px above the scrub bar, lowered 8px */
+      left: 0;
+      right: 0;
+      bottom: calc(100% + 12px); /* 12px above the scrub bar */
       display: flex;
       justify-content: center;
-      z-index: 119; /* just below the scrub bar (120) so it emerges from behind it */
+      z-index: 1; /* behind the scrub bar (2) so it emerges from behind it */
       pointer-events: none;
     }
     /* Primary button size; always the white inverse look in both themes */
@@ -6738,7 +6768,7 @@
       bar.style.width = '';
       bar.style.transition = '';
       actions.innerHTML = isRecording
-        ? `<button class="tb-btn bar-action" onclick="stopRecording()" title="End session">End session</button>`
+        ? '' // End session lives next to the scrub bar during recording
         : session ? topBarActionsHTML(session) : '';
       const target = bar.getBoundingClientRect().width;
       // Slide distance = width delta so icons travel at the exact pace the bar grows
@@ -7108,21 +7138,26 @@
             <div class="video-panel" id="videoPanel">
               <video id="screenVideo" autoplay playsinline muted></video>
               <video id="playbackVideo" playsinline muted></video>
-              <div class="scrub-bar hidden" id="scrubBar">
-                <span class="scrub-time">
-                  <span class="scrub-swap">
-                    <span class="scrub-label scrub-label-live"><span class="scrub-live-dot"></span>LIVE</span>
-                    <span class="scrub-label scrub-label-past" id="scrubTimeLabel">00:00 /</span>
-                  </span>
-                  <span class="scrub-clock" id="liveClock">00:00</span>
-                </span>
-                <div class="scrub-track" id="scrubTrack">
-                  <div class="scrub-fill" id="scrubFill"></div>
-                  <div class="scrub-handle" id="scrubHandle"></div>
+              <div class="scrub-row">
+                <div class="scrub-stack">
+                  <div class="scrub-back-float" id="scrubBackFloat">
+                    <button type="button" class="btn scrub-back-btn" onclick="backToLive()">Back to live</button>
+                  </div>
+                  <div class="scrub-bar hidden" id="scrubBar">
+                    <span class="scrub-time">
+                      <span class="scrub-swap">
+                        <span class="scrub-label scrub-label-live"><span class="scrub-live-dot"></span>LIVE</span>
+                        <span class="scrub-label scrub-label-past" id="scrubTimeLabel">00:00 /</span>
+                      </span>
+                      <span class="scrub-clock" id="liveClock">00:00</span>
+                    </span>
+                    <div class="scrub-track" id="scrubTrack">
+                      <div class="scrub-fill" id="scrubFill"></div>
+                      <div class="scrub-handle" id="scrubHandle"></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="scrub-back-float" id="scrubBackFloat">
-                <button type="button" class="btn scrub-back-btn" onclick="backToLive()">Back to live</button>
+                <button type="button" class="btn end-session-btn" onclick="stopRecording()">End session</button>
               </div>
             </div>
             <div class="notes-panel">
