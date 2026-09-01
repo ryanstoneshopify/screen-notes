@@ -2568,42 +2568,181 @@
     }
     .markup-toolbar.cursor-mode .markup-tools { opacity: 0; margin-right: -4px; /* swallow the flex gap */ }
     .markup-tools .tb-divider { align-self: stretch; margin: 0 4px 0 0; }
-    .markup-toolbar {
+    .markup-bottom {
       position: absolute;
       bottom: 12px;
       left: 50%;
       z-index: 1001;
       display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 10px;
-      background: var(--floating-bg);
-      -webkit-backdrop-filter: blur(12px);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--parchment);
-      border-radius: 999px;
-      box-shadow: var(--shadow-pop);
+      align-items: stretch;
       transform: translate(-50%, 100px);
       opacity: 0;
       transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out);
     }
-    .markup-lightbox.in .markup-toolbar { transform: translate(-50%, 0); opacity: 1; }
-    /* Lightbox toolbar keeps its light-mode look even in dark mode */
-    html.dark .markup-toolbar {
+    .markup-lightbox.in .markup-bottom { transform: translate(-50%, 0); opacity: 1; }
+    .markup-toolbar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 10px;
       background: rgba(255, 255, 255, 0.95);
-      border-color: #dedcd1;
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid #dedcd1;
+      border-radius: 999px;
+      box-shadow: var(--shadow-pop);
     }
-    html.dark .markup-toolbar .tb-btn { color: #3d3d3a; }
+    /* Apply/Discard slide out from behind the toolbar when crop mode is on */
+    .lb-crop-actions {
+      position: absolute;
+      left: calc(100% + 8px);
+      top: 0;
+      bottom: 0;
+      z-index: 1;
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      transform: translateX(-72px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out);
+    }
+    .lb-crop-actions.visible {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .lb-crop-actions .btn { height: 100%; }
+    .lb-crop-actions.wiggle { animation: lb-wiggle 400ms ease; }
+    /* Lightbox toolbar always uses the light look, in both themes */
+    .markup-toolbar .tb-btn { color: #3d3d3a; }
+    .markup-toolbar .tb-btn:hover { background: rgba(31, 30, 29, 0.06); color: #141413; }
+    .markup-toolbar .tb-markup-toggle.active,
+    .markup-toolbar .mk-style-btn.active {
+      background: rgba(31, 30, 29, 0.1);
+      color: #141413;
+    }
     html.dark .markup-toolbar .tb-btn:hover { background: rgba(31, 30, 29, 0.06); color: #141413; }
     html.dark .markup-toolbar .tb-markup-toggle.active,
     html.dark .markup-toolbar .mk-style-btn.active {
       background: rgba(31, 30, 29, 0.1);
       color: #141413;
     }
-    html.dark .markup-toolbar .mk-width-val { color: #3d3d3a; }
-    html.dark .markup-toolbar .tb-divider { background: #dedcd1; }
-    html.dark .markup-toolbar .mk-color { border-color: rgba(31, 30, 29, 0.3); }
-    html.dark .markup-toolbar .mk-width {
+    .markup-toolbar .mk-width-val { color: #3d3d3a; }
+    .markup-toolbar .tb-divider { background: #dedcd1; }
+    .markup-toolbar .mk-color { border-color: rgba(31, 30, 29, 0.3); }
+    /* ── Lightbox top buttons ── */
+    .lb-close-btn {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 1001;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--floating-bg);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--parchment);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      color: var(--ink-black);
+      cursor: pointer;
+    }
+    .lb-close-btn .icon { width: 18px; height: 18px; }
+    .lb-close-btn:hover { background: #f1efe9; }
+    html.dark .lb-close-btn { background: rgba(255, 255, 255, 0.95); border-color: #dedcd1; color: #141413; }
+    html.dark .lb-close-btn:hover { background: #f1efe9; }
+    .lb-top-actions {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    @keyframes lb-wiggle {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .lb-close-btn,
+    .lb-top-actions {
+      transform: translateY(-14px);
+      opacity: 0;
+      transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out), background 160ms ease;
+    }
+    .markup-lightbox.in .lb-close-btn,
+    .markup-lightbox.in .lb-top-actions { transform: translateY(0); opacity: 1; }
+    /* Always blue, regardless of theme */
+    .lb-save-btn {
+      background: #4092E5;
+      color: #ffffff;
+      border-color: #4092E5;
+      font-weight: 500;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+    .lb-save-btn:hover { filter: brightness(1.08); }
+    .lb-save-btn:disabled { cursor: default; }
+    .lb-btn-spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #ffffff;
+      animation: spin 900ms linear infinite;
+    }
+    .lb-discard-btn {
+      background: #ffffff;
+      color: #141413;
+      border-color: #ffffff;
+      box-shadow: var(--shadow-pop);
+    }
+    .lb-discard-btn:hover { background: #f1efe9; border-color: #f1efe9; }
+    /* ── Lightbox crop mode ── */
+    .markup-svg.crop-mode { pointer-events: none; }
+    .crop-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 900;
+      overflow: visible; /* handles at the image edge stay fully visible */
+      cursor: default;
+    }
+    .crop-mask {
+      position: absolute;
+      background: rgba(20, 20, 19, 0.6);
+      pointer-events: none;
+    }
+    .crop-rect {
+      position: absolute;
+      border: 1.5px solid #fff;
+      cursor: move;
+    }
+    .crop-handle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border: 1px solid rgba(20, 20, 19, 0.45);
+      border-radius: 4px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+    }
+    .crop-nw { top: -7px; left: -7px; cursor: nwse-resize; }
+    .crop-n  { top: -7px; left: 50%; margin-left: -7px; cursor: ns-resize; }
+    .crop-ne { top: -7px; right: -7px; cursor: nesw-resize; }
+    .crop-e  { top: 50%; right: -7px; margin-top: -7px; cursor: ew-resize; }
+    .crop-se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+    .crop-s  { bottom: -7px; left: 50%; margin-left: -7px; cursor: ns-resize; }
+    .crop-sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+    .crop-w  { top: 50%; left: -7px; margin-top: -7px; cursor: ew-resize; }
+    .markup-toolbar .mk-width {
       background: linear-gradient(to right,
         var(--terra-cotta) 0%,
         var(--terra-cotta) var(--mk-fill, 20%),
@@ -2769,6 +2908,13 @@
       transition: transform var(--ease-out-duration) var(--ease-out),
                   opacity var(--ease-out-duration) var(--ease-out),
                   background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    /* ⌘. also hides the lightbox chrome (toolbar + buttons), keeping the image */
+    body.ui-hidden .markup-lightbox .markup-bottom,
+    body.ui-hidden .markup-lightbox .lb-close-btn,
+    body.ui-hidden .markup-lightbox .lb-top-actions {
+      opacity: 0;
+      pointer-events: none;
     }
     body.ui-hidden .sidebar {
       transform: translateX(calc(-100% - 24px));
@@ -2945,6 +3091,7 @@
         pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
         scribble: '<path d="M4 16.5c3-7 5.5-10.1 7-9.2 1.7 1-4.2 8.6-2.3 9.8 1.9 1.2 6-7.8 8-6.7 1.9 1-2.3 6-.8 6.9 1 .6 2.4-.7 3.6-2.3"/>',
         cursor: '<path d="M5.5 3.5l14.2 6.6-6.3 1.7-2.7 6L5.5 3.5z"/>',
+        crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
         camcorder: '<rect x="3" y="7" width="12.5" height="10" rx="2.5"/><path d="M15.5 10.8l4.2-2.3a.6.6 0 0 1 .9.5v6a.6.6 0 0 1-.9.5l-4.2-2.3"/>',
         gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
       };
@@ -5088,6 +5235,13 @@
         timestamp: pendingScreenshot?.capturedTimestampMs ?? currentCaptureTimestampMs(),
         createdAt: new Date().toISOString(),
       };
+      // Carry crop provenance so the saved note can be re-cropped/reverted
+      if (url && pendingScreenshot?.cropBase) {
+        note.cropBaseUrl = pendingScreenshot.cropBase.src;
+        note.cropBaseW = pendingScreenshot.cropBase.w;
+        note.cropBaseH = pendingScreenshot.cropBase.h;
+        note.cropRect = pendingScreenshot.cropRect;
+      }
       // Carry composer markup over so the saved note stays re-editable
       if (url && pendingScreenshot?.markupStrokes) {
         note.markupStrokes = pendingScreenshot.markupStrokes;
@@ -5624,7 +5778,11 @@
       const note = currentNotes[noteIndex];
       const src = note && (note.markupOriginalUrl || note.screenshotUrl || note.screenshot);
       if (!src) return;
-      openMarkupSession({ mode: 'note', noteIndex, src, strokes: note.markupStrokes || [] });
+      openMarkupSession({
+        mode: 'note', noteIndex, src, strokes: note.markupStrokes || [],
+        cropBase: note.cropBaseUrl ? { src: note.cropBaseUrl, w: note.cropBaseW, h: note.cropBaseH } : null,
+        cropRect: note.cropRect || null,
+      });
     }
 
     async function openComposerMarkupLightbox(e) {
@@ -5633,15 +5791,20 @@
       const src = await pendingScreenshot.uploadPromise;
       if (!src) return showToast('Screenshot is still uploading…');
       if (!pendingScreenshot || screenshotRemoved) return; // may have changed while awaiting
-      openMarkupSession({ mode: 'composer', src, strokes: pendingScreenshot.markupStrokes || [] });
+      openMarkupSession({
+        mode: 'composer', src, strokes: pendingScreenshot.markupStrokes || [],
+        cropBase: pendingScreenshot.cropBase || null,
+        cropRect: pendingScreenshot.cropRect || null,
+      });
     }
 
-    function openMarkupSession({ mode, noteIndex = null, src, strokes }) {
+    function openMarkupSession({ mode, noteIndex = null, src, strokes, cropBase = null, cropRect = null }) {
       document.getElementById('markupLightbox')?.remove();
       noteMarkup = {
         mode, noteIndex, src,
         strokes: JSON.parse(JSON.stringify(strokes || [])),
-        natW: 0, natH: 0, tool: 'cursor', selectedIds: [], marquee: null, dirty: false,
+        natW: 0, natH: 0, tool: 'draw', selectedIds: [], marquee: null, dirty: false,
+        crop: null, cropBase, cropRect, _cropBaseView: false, _displaySrc: null,
       };
       const lb = document.createElement('div');
       lb.className = 'lightbox markup-lightbox';
@@ -5650,10 +5813,21 @@
         <div class="markup-stage">
           <img id="markupImg" src="${src}" alt="Screenshot" draggable="false">
           <svg class="markup-svg" id="markupSvg" preserveAspectRatio="none"></svg>
-          <div class="markup-toolbar" id="markupToolbar">
-            <div class="markup-tools" id="markupTools">${markupControlsHTML()}<div class="tb-divider"></div></div>
-            <button class="tb-btn tb-markup-toggle" id="lbCursorBtn" onclick="setLightboxTool('cursor')" title="Cursor (⇧C)">${icon('cursor')}</button>
-            <button class="tb-btn tb-markup-toggle active" id="lbDrawBtn" onclick="setLightboxTool('draw')" title="Draw (⇧D)">${icon('scribble')}</button>
+          <div class="markup-bottom" id="markupBottom">
+            <div class="markup-toolbar" id="markupToolbar">
+              <div class="markup-tools" id="markupTools">${markupControlsHTML()}<div class="tb-divider"></div></div>
+              <button class="tb-btn tb-markup-toggle" id="lbCursorBtn" onclick="setLightboxTool('cursor')" title="Cursor (⇧C)">${icon('cursor')}</button>
+              <button class="tb-btn tb-markup-toggle active" id="lbDrawBtn" onclick="setLightboxTool('draw')" title="Draw (⇧D)">${icon('scribble')}</button>
+              <button class="tb-btn tb-markup-toggle" id="lbCropBtn" onclick="setLightboxTool('crop')" title="Crop (⇧E)">${icon('crop')}</button>
+            </div>
+            <div class="lb-crop-actions" id="lbCropActions">
+              <button class="btn lb-discard-btn" id="lbDiscardBtn" onclick="discardLightboxCrop()">Cancel</button>
+              <button class="btn lb-save-btn" id="lbApplyBtn" onclick="applyLightboxCrop()">Done</button>
+            </div>
+          </div>
+          <button class="lb-close-btn" id="lbCloseBtn" onclick="closeMarkupLightbox()" title="Close" aria-label="Close">${icon('close')}</button>
+          <div class="lb-top-actions" id="lbTopActions">
+            <button class="btn lb-save-btn" id="lbSaveBtn" onclick="lightboxSaveNote()" title="Save note (⌘↩)">Save note</button>
           </div>
         </div>`;
       document.body.appendChild(lb);
@@ -5667,15 +5841,14 @@
         attachNoteMarkupDrawing(svg);
         // Measured max-width so collapse/expand animate symmetrically
         const tools = lb.querySelector('#markupTools');
-        if (tools) tools.style.maxWidth = noteMarkup.tool === 'cursor' ? '0px' : `${tools.scrollWidth}px`;
+        if (tools) tools.style.maxWidth = noteMarkup.tool !== 'draw' ? '0px' : `${tools.scrollWidth}px`;
       };
       if (img.complete && img.naturalWidth) ready(); else img.onload = ready;
-      // Opens in cursor mode: tools collapsed, mode toggle visible
-      lb.querySelector('#markupToolbar')?.classList.add('cursor-mode');
-      lb.querySelector('#markupSvg')?.classList.add('cursor-mode');
-      lb.querySelector('#lbCursorBtn')?.classList.add('active');
-      lb.querySelector('#lbDrawBtn')?.classList.remove('active');
-      lb.addEventListener('mousedown', (e) => { if (e.target === lb) closeMarkupLightbox(); });
+      lb.addEventListener('mousedown', (e) => {
+        if (e.target !== lb) return;
+        if (noteMarkup?.tool === 'crop') wiggleCropActions();
+        else closeMarkupLightbox();
+      });
       document.addEventListener('keydown', onMarkupKeydown);
       requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('show', 'in')));
     }
@@ -5692,28 +5865,308 @@
 
     function setLightboxTool(tool) {
       if (!noteMarkup) return;
+      if (noteMarkup.tool === 'crop' && tool !== 'crop') teardownLightboxCrop();
       noteMarkup.tool = tool;
       noteMarkup.selectedIds = [];
       const tools = document.getElementById('markupTools');
-      if (tools) tools.style.maxWidth = tool === 'cursor' ? '0px' : `${tools.scrollWidth}px`;
-      document.getElementById('markupToolbar')?.classList.toggle('cursor-mode', tool === 'cursor');
-      document.getElementById('markupSvg')?.classList.toggle('cursor-mode', tool === 'cursor');
+      if (tools) tools.style.maxWidth = tool !== 'draw' ? '0px' : `${tools.scrollWidth}px`;
+      document.getElementById('markupToolbar')?.classList.toggle('cursor-mode', tool !== 'draw');
+      const svg = document.getElementById('markupSvg');
+      svg?.classList.toggle('cursor-mode', tool === 'cursor');
+      svg?.classList.toggle('crop-mode', tool === 'crop');
       document.getElementById('lbCursorBtn')?.classList.toggle('active', tool === 'cursor');
       document.getElementById('lbDrawBtn')?.classList.toggle('active', tool === 'draw');
+      document.getElementById('lbCropBtn')?.classList.toggle('active', tool === 'crop');
+      if (tool === 'crop') startLightboxCrop();
+      updateLightboxTopButtons();
       renderNoteMarkupSvg();
+    }
+
+    function updateLightboxTopButtons() {
+      const cropping = noteMarkup?.tool === 'crop';
+      const save = document.getElementById('lbSaveBtn');
+      const closeBtn = document.getElementById('lbCloseBtn');
+      const cropActions = document.getElementById('lbCropActions');
+      if (save) save.style.display = cropping ? 'none' : '';
+      if (closeBtn) closeBtn.style.display = cropping ? 'none' : '';
+      if (cropActions) {
+        cropActions.classList.toggle('visible', cropping);
+        if (!cropping) {
+          const apply = document.getElementById('lbApplyBtn');
+          if (apply) { apply.disabled = false; apply.textContent = 'Done'; apply.style.width = ''; }
+        }
+      }
+    }
+
+    function wiggleCropActions() {
+      const el = document.getElementById('lbCropActions');
+      if (!el) return;
+      el.classList.remove('wiggle');
+      void el.offsetWidth;
+      el.classList.add('wiggle');
+    }
+
+    // "Save note" — close the lightbox and save whatever is in the composer
+    async function lightboxSaveNote() {
+      const lb = document.getElementById('markupLightbox');
+      const state = noteMarkup;
+      noteMarkup = null;
+      clearTimeout(markupSaveTimer);
+      document.removeEventListener('keydown', onMarkupKeydown);
+      if (lb) {
+        lb.classList.remove('show', 'in');
+        lb.style.pointerEvents = 'none';
+        setTimeout(() => lb.remove(), 400);
+      }
+      if (state?.dirty) await persistMarkup(state);
+      if (state?.mode === 'composer') await addNote();
+    }
+
+    // ── Lightbox crop mode ──
+    // Cropping is non-destructive: the original (base) image is kept so
+    // re-entering crop mode shows the full image with the current crop framed.
+    function startLightboxCrop() {
+      const stage = document.querySelector('#markupLightbox .markup-stage');
+      const img = document.getElementById('markupImg');
+      const state = noteMarkup;
+      if (!stage || !img || !state) return;
+      document.getElementById('cropOverlay')?.remove();
+      if (!state.cropBase) state.cropBase = { src: state.src, w: state.natW, h: state.natH };
+      const base = state.cropBase;
+      const setup = () => {
+        if (!noteMarkup || noteMarkup.tool !== 'crop') return;
+        const r = img.getBoundingClientRect();
+        const k = r.width / base.w; // base image px → display px
+        const cr = state.cropRect || { x: 0, y: 0, w: base.w, h: base.h };
+        state.crop = { x: cr.x * k, y: cr.y * k, w: cr.w * k, h: cr.h * k };
+        const ov = document.createElement('div');
+        ov.className = 'crop-overlay';
+        ov.id = 'cropOverlay';
+        ov.innerHTML = ['n', 's', 'w', 'e'].map(m => `<div class="crop-mask" id="cropMask-${m}"></div>`).join('')
+          + `<div class="crop-rect" id="cropRect">`
+          + ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(h => `<div class="crop-handle crop-${h}" data-h="${h}"></div>`).join('')
+          + `</div>`;
+        stage.appendChild(ov);
+        layoutCropRect();
+        attachCropHandlers(ov, img);
+      };
+      // Show the full base image with strokes offset into base coordinates
+      state._cropBaseView = true;
+      document.getElementById('markupSvg')?.setAttribute('viewBox', `0 0 ${base.w} ${base.h}`);
+      renderNoteMarkupSvg();
+      if (state.cropRect) {
+        img.onload = () => { img.onload = null; setup(); };
+        img.src = base.src;
+      } else {
+        setup();
+      }
+    }
+
+    function teardownLightboxCrop() {
+      document.getElementById('cropOverlay')?.remove();
+      const state = noteMarkup;
+      if (!state) return;
+      state.crop = null;
+      if (state._cropBaseView) {
+        state._cropBaseView = false;
+        const img = document.getElementById('markupImg');
+        if (img) img.src = state._displaySrc || state.src;
+        document.getElementById('markupSvg')?.setAttribute('viewBox', `0 0 ${state.natW} ${state.natH}`);
+      }
+    }
+
+    function discardLightboxCrop() {
+      setLightboxTool('draw');
+    }
+
+    function layoutCropRect() {
+      const rect = document.getElementById('cropRect');
+      const ov = document.getElementById('cropOverlay');
+      const c = noteMarkup?.crop;
+      if (!rect || !ov || !c) return;
+      rect.style.left = `${c.x}px`;
+      rect.style.top = `${c.y}px`;
+      rect.style.width = `${c.w}px`;
+      rect.style.height = `${c.h}px`;
+      const W = ov.clientWidth;
+      const H = ov.clientHeight;
+      const m = {
+        n: { left: 0, top: 0, width: W, height: c.y },
+        s: { left: 0, top: c.y + c.h, width: W, height: Math.max(0, H - c.y - c.h) },
+        w: { left: 0, top: c.y, width: c.x, height: c.h },
+        e: { left: c.x + c.w, top: c.y, width: Math.max(0, W - c.x - c.w), height: c.h },
+      };
+      for (const [key, s] of Object.entries(m)) {
+        const el = document.getElementById(`cropMask-${key}`);
+        if (!el) continue;
+        el.style.left = `${s.left}px`;
+        el.style.top = `${s.top}px`;
+        el.style.width = `${Math.max(0, s.width)}px`;
+        el.style.height = `${Math.max(0, s.height)}px`;
+      }
+    }
+
+    function attachCropHandlers(ov, img) {
+      const MIN = 24;
+      ov.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || !noteMarkup?.crop) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const bounds = img.getBoundingClientRect();
+        const start = { x: e.clientX, y: e.clientY };
+        const c0 = { ...noteMarkup.crop };
+        const h = e.target.dataset?.h || (e.target.id === 'cropRect' ? 'move' : null);
+        if (!h) return;
+        const onMove = (ev) => {
+          const dx = ev.clientX - start.x;
+          const dy = ev.clientY - start.y;
+          const c = noteMarkup.crop;
+          if (h === 'move') {
+            c.x = Math.min(Math.max(0, c0.x + dx), bounds.width - c0.w);
+            c.y = Math.min(Math.max(0, c0.y + dy), bounds.height - c0.h);
+          } else {
+            let x1 = c0.x, y1 = c0.y, x2 = c0.x + c0.w, y2 = c0.y + c0.h;
+            if (h.includes('w')) x1 = Math.min(Math.max(0, c0.x + dx), x2 - MIN);
+            if (h.includes('e')) x2 = Math.max(Math.min(bounds.width, c0.x + c0.w + dx), x1 + MIN);
+            if (h.includes('n')) y1 = Math.min(Math.max(0, c0.y + dy), y2 - MIN);
+            if (h.includes('s')) y2 = Math.max(Math.min(bounds.height, c0.y + c0.h + dy), y1 + MIN);
+            c.x = x1; c.y = y1; c.w = x2 - x1; c.h = y2 - y1;
+          }
+          layoutCropRect();
+        };
+        const onUp = () => {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    }
+
+    async function applyLightboxCrop() {
+      const state = noteMarkup;
+      const img = document.getElementById('markupImg');
+      const c = state?.crop;
+      const base = state?.cropBase;
+      if (!state || !img || !c || !base) return;
+      const bounds = img.getBoundingClientRect();
+      const k = base.w / bounds.width; // display px → base image px
+      const nat = {
+        x: Math.max(0, Math.round(c.x * k)),
+        y: Math.max(0, Math.round(c.y * k)),
+        w: Math.round(c.w * k),
+        h: Math.round(c.h * k),
+      };
+      nat.w = Math.min(nat.w, base.w - nat.x);
+      nat.h = Math.min(nat.h, base.h - nat.y);
+      const isFull = nat.x === 0 && nat.y === 0 && nat.w >= base.w && nat.h >= base.h;
+      const prev = state.cropRect || { x: 0, y: 0, w: base.w, h: base.h };
+      // Same crop as before — nothing to do
+      if (nat.x === prev.x && nat.y === prev.y && nat.w === prev.w && nat.h === prev.h) {
+        setLightboxTool('draw');
+        return;
+      }
+      const saveBtn = document.getElementById('lbApplyBtn');
+      if (saveBtn) {
+        saveBtn.style.width = `${saveBtn.offsetWidth}px`; // lock width while spinning
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="lb-btn-spinner"></span>';
+      }
+      try {
+        let url, displaySrc;
+        if (isFull) {
+          // Reverted to the whole original image — reuse it, no upload
+          url = base.src;
+          displaySrc = base.src;
+        } else {
+          const im = await loadMarkupImage(base.src);
+          const cnv = document.createElement('canvas');
+          cnv.width = nat.w;
+          cnv.height = nat.h;
+          cnv.getContext('2d').drawImage(im, nat.x, nat.y, nat.w, nat.h, 0, 0, nat.w, nat.h);
+          displaySrc = cnv.toDataURL('image/jpeg', 0.92);
+          const blob = await new Promise(res => cnv.toBlob(res, 'image/jpeg', 0.92));
+          if (!blob) throw new Error('Crop failed');
+          const file = new File([blob], `screenshot-crop-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const r = await quick.fs.uploadFile(file);
+          const f = r?.files?.[0] || r?.[0] || r?.file || null;
+          url = f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+          if (!url) throw new Error('Upload failed');
+        }
+        if (!noteMarkup || noteMarkup !== state) return; // lightbox closed while uploading
+        // Shift strokes from the previous crop space into the new one
+        const dx = prev.x - nat.x;
+        const dy = prev.y - nat.y;
+        if (dx || dy) {
+          state.strokes.forEach(s => {
+            s.points = s.points.map(([x, y]) => [Math.round((x + dx) * 10) / 10, Math.round((y + dy) * 10) / 10]);
+          });
+        }
+        state.src = url;
+        state.natW = nat.w;
+        state.natH = nat.h;
+        state.cropRect = isFull ? null : { ...nat };
+        state._displaySrc = displaySrc;
+        // Point the underlying screenshot at the cropped image
+        if (state.mode === 'composer') {
+          if (pendingScreenshot) {
+            pendingScreenshot.uploadPromise = Promise.resolve(url);
+            pendingScreenshot.previewDataUrl = displaySrc;
+            if (isFull) {
+              delete pendingScreenshot.cropBase;
+              delete pendingScreenshot.cropRect;
+            } else {
+              pendingScreenshot.cropBase = { ...base };
+              pendingScreenshot.cropRect = { ...nat };
+            }
+          }
+        } else {
+          const note = currentNotes[state.noteIndex];
+          if (note) {
+            note.screenshotUrl = url;
+            delete note.screenshot;
+            delete note.markupOriginalUrl;
+            if (isFull) {
+              delete note.cropBaseUrl;
+              delete note.cropBaseW;
+              delete note.cropBaseH;
+              delete note.cropRect;
+            } else {
+              note.cropBaseUrl = base.src;
+              note.cropBaseW = base.w;
+              note.cropBaseH = base.h;
+              note.cropRect = { ...nat };
+            }
+          }
+        }
+        markupChanged();
+        setLightboxTool('draw'); // teardown restores the (new) cropped view
+      } catch (err) {
+        console.error('[screen-notes] crop failed', err);
+        showToast('Could not apply crop');
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Done'; saveBtn.style.width = ''; }
+      }
     }
 
     function onMarkupKeydown(e) {
       if (!noteMarkup) return;
       if (e.key === 'Escape') {
-        closeMarkupLightbox();
+        if (noteMarkup.tool === 'crop') discardLightboxCrop();
+        else closeMarkupLightbox();
         e.preventDefault();
         return;
       }
-      // Shift+C / Shift+D — switch between cursor and draw mode
-      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && ['c', 'd'].includes(e.key.toLowerCase())
+      // ⌘+Enter — save the note from the lightbox
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        if (noteMarkup.tool !== 'crop') lightboxSaveNote();
+        e.preventDefault();
+        return;
+      }
+      // Shift+C / Shift+D / Shift+E — switch between cursor, draw, and crop mode
+      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && ['c', 'd', 'e'].includes(e.key.toLowerCase())
           && !e.target.matches?.('input, textarea, select, [contenteditable="true"]')) {
-        setLightboxTool(e.key.toLowerCase() === 'd' ? 'draw' : 'cursor');
+        const key = e.key.toLowerCase();
+        setLightboxTool(key === 'd' ? 'draw' : key === 'e' ? 'crop' : 'cursor');
         e.preventDefault();
         return;
       }
@@ -5774,9 +6227,13 @@
       const svg = document.getElementById('markupSvg');
       if (!svg || !noteMarkup) return;
       const k = markupNatScale(); // screen px → image px
-      const paths = noteMarkup.strokes.map(s =>
+      // In crop mode the full base image is shown — offset strokes into base coords
+      const off = (noteMarkup._cropBaseView && noteMarkup.cropRect)
+        ? [noteMarkup.cropRect.x, noteMarkup.cropRect.y] : [0, 0];
+      let paths = noteMarkup.strokes.map(s =>
         `<path d="${strokePathD(s.points)}" data-stroke-id="${s.id}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(s)}/>`
       ).join('');
+      if (off[0] || off[1]) paths = `<g transform="translate(${off[0]} ${off[1]})">${paths}</g>`;
       // Selection UI matches the canvas: solid outline + round terra-cotta handle
       let selection = '';
       const selected = markupSelectedStrokes();
@@ -7208,7 +7665,7 @@
                       aria-hidden="true"
                     >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
                     <div class="note-input-button-row">
-                      <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" disabled>
+                      <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" title="Save note (⌘↩)" disabled>
                         Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
                       </button>
                       <button
