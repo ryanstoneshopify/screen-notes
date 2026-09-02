@@ -1743,15 +1743,15 @@
       display: flex;
       gap: 4px;
       opacity: 0;
-      filter: blur(4px);
+      /* No filter here — a parent filter (even blur(0)) creates a backdrop root
+         that disables the glass backdrop-filter on the buttons */
       transform: translateY(1px);
       pointer-events: none;
-      transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease;
+      transition: opacity 180ms ease, transform 180ms ease;
     }
     .note-card:hover .note-card-screenshot-actions,
     .note-card:focus-within .note-card-screenshot-actions {
       opacity: 1;
-      filter: blur(0);
       transform: translateY(0);
       pointer-events: auto;
     }
