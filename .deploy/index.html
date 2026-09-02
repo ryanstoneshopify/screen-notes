@@ -3553,7 +3553,7 @@
     function getGlassSettings() { return { ...glassSettings }; }
 
     // ── PiP animation settings ──
-    const PIPANIM_DEFAULTS = { composerScale: 1.15, composerDuration: 400, emptyScale: 0.85, emptyDuration: 0, blur: true };
+    const PIPANIM_DEFAULTS = { composerScale: 1.15, composerDuration: 400, emptyScale: 0.85, emptyDuration: 400, blur: true };
     let pipAnimSettings = (() => {
       try { return { ...PIPANIM_DEFAULTS, ...JSON.parse(localStorage.getItem('sn-pipanim') || '{}') }; }
       catch (_) { return { ...PIPANIM_DEFAULTS }; }
@@ -3690,6 +3690,10 @@
       composer.style.top = `${box.top}px`;
       composer.style.width = `${box.width}px`;
       composer.style.height = `${box.height}px`;
+      // offsetTop/Height are border-box + post-margin — neutralize the scroll
+      // area's negative margin and content-box sizing so the height doesn't jump
+      composer.style.margin = '0';
+      composer.style.boxSizing = 'border-box';
       composer.style.zIndex = '10';
       composer.style.pointerEvents = 'none';
       const anim = pipAnimSettings;
