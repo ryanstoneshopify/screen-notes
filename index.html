@@ -3232,7 +3232,12 @@
         const pt = ev => [Math.round(ev.clientX - r.left), Math.round(ev.clientY - r.top)];
         const stroke = { color: '#e5484d', width: 3, dash: 'solid', points: [pt(e)] };
         homeDraw.strokes.push(stroke);
-        const onMove = ev => { stroke.points.push(pt(ev)); renderHomeDrawSvg(); };
+        const onMove = ev => {
+          const p = pt(ev);
+          if (ev.shiftKey) stroke.points = [stroke.points[0], shiftLineEnd(stroke.points[0], p)];
+          else stroke.points.push(p);
+          renderHomeDrawSvg();
+        };
         const onUp = () => {
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
@@ -5740,6 +5745,18 @@
       }
     }
 
+    // Shift-drawing: straight line from the stroke start, snapped to 45° increments
+    function shiftLineEnd(start, p) {
+      const dx = p[0] - start[0];
+      const dy = p[1] - start[1];
+      const snap = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+      const len = Math.hypot(dx, dy);
+      return [
+        Math.round((start[0] + Math.cos(snap) * len) * 10) / 10,
+        Math.round((start[1] + Math.sin(snap) * len) * 10) / 10,
+      ];
+    }
+
     function strokePathD(points) {
       return points.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
     }
@@ -6362,7 +6379,12 @@
           points: [toNatural(e)],
         };
         noteMarkup.strokes.push(stroke);
-        const onMove = ev => { stroke.points.push(toNatural(ev)); renderNoteMarkupSvg(); };
+        const onMove = ev => {
+          const p = toNatural(ev);
+          if (ev.shiftKey) stroke.points = [stroke.points[0], shiftLineEnd(stroke.points[0], p)];
+          else stroke.points.push(p);
+          renderNoteMarkupSvg();
+        };
         const onUp = () => {
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
@@ -6509,7 +6531,12 @@
         const pts = stroke.points.map(([x, y]) => [x * canvas.scale + canvas.x, y * canvas.scale + canvas.y]);
         live.innerHTML = `<path d="${strokePathD(pts)}" fill="none" stroke="${stroke.color}" stroke-width="${stroke.width * canvas.scale}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(stroke, canvas.scale)}/>`;
       };
-      const onMove = ev => { stroke.points.push(toWorld(ev)); draw(); };
+      const onMove = ev => {
+        const p = toWorld(ev);
+        if (ev.shiftKey) stroke.points = [stroke.points[0], shiftLineEnd(stroke.points[0], p)];
+        else stroke.points.push(p);
+        draw();
+      };
       const onUp = () => {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
