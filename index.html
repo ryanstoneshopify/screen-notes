@@ -5275,8 +5275,13 @@
             initCanvas(session);
             // Let images/text render, then measure actual heights and arrange once.
             // (Skip auto-arrange when appending to an existing canvas.)
-            setTimeout(() => {
-              if (!intoCanvas) autoArrangeCanvas();
+            setTimeout(async () => {
+              if (!intoCanvas) {
+                // Unloaded screenshots measure tiny and clump the layout —
+                // wait for them (capped) so heights are real before arranging
+                await waitForCanvasImages();
+                autoArrangeCanvas();
+              }
               fitToScreen();
             }, 100);
           });
@@ -10081,6 +10086,22 @@
       const horizontal = docById('guideHorizontal');
       if (vertical) vertical.style.display = 'none';
       if (horizontal) horizontal.style.display = 'none';
+    }
+
+    // Resolves when every canvas image has loaded (or errored), capped at maxMs
+    function waitForCanvasImages(maxMs = 3000) {
+      const world = docById('canvasWorld');
+      if (!world) return Promise.resolve();
+      const pending = [...world.querySelectorAll('img')]
+        .filter(im => !(im.complete && im.naturalWidth));
+      if (!pending.length) return Promise.resolve();
+      return Promise.race([
+        Promise.all(pending.map(im => new Promise(res => {
+          im.addEventListener('load', res, { once: true });
+          im.addEventListener('error', res, { once: true });
+        }))),
+        new Promise(res => setTimeout(res, maxMs)),
+      ]);
     }
 
     function autoArrangeCanvas() {
