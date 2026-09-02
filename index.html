@@ -8600,13 +8600,16 @@
         );
         enteringNoteCreatedAt = null; // consume immediately, no timers
         if (enteringCard) {
-          enteringCard.animate(
+          const anim = enteringCard.animate(
             [
               { transform: 'translateY(-48px) scale(0.8)', opacity: 0, filter: 'blur(8px)' },
               { transform: 'translateY(0) scale(1)', opacity: 1, filter: 'blur(0px)' },
             ],
             { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0, 1)', fill: 'both' }
           );
+          // A lingering filter (even blur(0)) creates a backdrop root that kills
+          // the glass blur on the card's overlay buttons — drop it when done
+          anim.onfinish = () => anim.cancel();
         }
       }
 
