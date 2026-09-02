@@ -8274,35 +8274,14 @@
       const root = docById('emptyState');
       if (!root) { homeInvertItems = []; homeSilHosts = []; return; }
 
-      // Buttons: wrap each label once so it can host a positioned clone
-      const btns = [...root.querySelectorAll('.btn')];
-      btns.forEach(btn => {
-        if (btn.querySelector('.btn-label-wrap')) return;
-        const label = document.createElement('span');
-        label.className = 'btn-label-wrap';
-        [...btn.childNodes].forEach(n => {
-          if (n.nodeType === Node.ELEMENT_NODE && n.classList.contains('home-silhouette')) return;
-          label.appendChild(n);
-        });
-        label.textContent = label.textContent.trim();
-        btn.appendChild(label);
-      });
+      // Buttons keep their default glass look — no silhouette/invert sweep on them
+      homeSilHosts = [];
 
-      // Silhouette hosts: both hero buttons
-      homeSilHosts = btns.map(el => {
-        el.classList.add('home-sil-host');
-        return { el, rect: el.getBoundingClientRect() };
-      });
-
-      // Inverted clones: heading, subheader, button label, and logo strokes
+      // Inverted clones: heading, subheader, and logo strokes
       homeInvertItems = [];
       root.querySelectorAll('h2, p').forEach(el => {
         if (el.classList.contains('home-invert-overlay')) return;
         homeInvertItems.push({ el, host: root, rect: el.getBoundingClientRect() });
-      });
-      btns.forEach(btn => {
-        const label = btn.querySelector('.btn-label-wrap:not(.home-invert-overlay)');
-        if (label) homeInvertItems.push({ el: label, host: btn, rect: label.getBoundingClientRect() });
       });
       const iconHost = root.querySelector('.empty-state-icon');
       const iconSvg = iconHost?.querySelector('.logo-icon:not(.home-invert-overlay)');
