@@ -1566,6 +1566,8 @@
     .pip-body .screenshot-pip-btn { display: none; }
     /* ── Picture-in-picture composer ── */
     .pip-placeholder {
+      position: relative;
+      z-index: 1; /* under the composer, which layers in over top */
       height: 340px;
       flex-shrink: 0;
       box-sizing: border-box;
@@ -1710,6 +1712,8 @@
       /* Slides up behind the header so content fades through it, not under a hard edge */
       margin-top: -54px;
       padding-top: 54px;
+      position: relative;
+      z-index: 2; /* above the PiP empty-state placeholder (z 1), below the header (z 6) */
     }
 
     .notes-list {
@@ -3817,6 +3821,8 @@
       const ph = document.getElementById('pipPlaceholder');
       // If the tab re-rendered while PiP was open it already has a fresh composer
       if (composer && !document.getElementById('notesPanelScroll')) {
+        // Snapshot the placeholder's position BEFORE the returning notes reflow it
+        const phBox = ph ? { left: ph.offsetLeft, top: ph.offsetTop, width: ph.offsetWidth } : null;
         if (ph) ph.parentElement.insertBefore(composer, ph);
         else document.querySelector('.notes-panel')?.appendChild(composer);
         rebindInlineHandlers(composer);
@@ -3834,13 +3840,15 @@
           } catch (_) {}
         }
         // Optional empty-state fade-out (off by default)
-        if (anim.emptyDuration > 0 && ph) {
+        if (anim.emptyDuration > 0 && ph && phBox) {
           const ghost = ph.cloneNode(true);
           ghost.id = '';
           ghost.style.position = 'absolute';
-          ghost.style.left = `${ph.offsetLeft}px`;
-          ghost.style.top = `${ph.offsetTop}px`;
-          ghost.style.width = `${ph.offsetWidth}px`;
+          ghost.style.left = `${phBox.left}px`;
+          ghost.style.top = `${phBox.top}px`;
+          ghost.style.width = `${phBox.width}px`;
+          ghost.style.margin = '0';
+          ghost.style.zIndex = '1'; // under the returning notes
           ghost.style.pointerEvents = 'none';
           ph.parentElement?.appendChild(ghost);
           try {
