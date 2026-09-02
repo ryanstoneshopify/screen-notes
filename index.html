@@ -47,7 +47,7 @@
       --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --radius: 9.6px;
       --radius-sm: 9.6px;
-      --radius-lg: 16px;
+      --radius-lg: 24px;
       --radius-hero: 24px;
       --surface-sunken: #f4f2ec;
       --surface-hover-strong: #ebe8df;
@@ -1257,7 +1257,28 @@
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+      position: relative;
+      z-index: 6;
+      height: 54px;
+      box-sizing: border-box;
     }
+    /* Content scrolls behind the header; the header itself blurs + fades it out */
+    .notes-panel-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      bottom: -22px;
+      z-index: -1;
+      pointer-events: none;
+      background: linear-gradient(to bottom, var(--glass-bg), transparent);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent);
+      mask-image: linear-gradient(to bottom, black 55%, transparent);
+      opacity: 0;
+      transition: opacity 300ms var(--ease-out);
+    }
+    .notes-panel.scrolled .notes-panel-header::before { opacity: 1; }
     .notes-panel-header h3 {
       font-family: var(--font-serif);
       font-size: 24px;
@@ -1276,7 +1297,7 @@
       position: relative;
       background: var(--snow-white);
       border: 1px solid var(--border-soft);
-      border-radius: 24px;
+      border-radius: 20px;
       overflow: hidden;
       transition: border-color 160ms ease, box-shadow 160ms ease;
     }
@@ -1528,6 +1549,59 @@
     }
     .screenshot-preview.has-image .screenshot-preview-actions { display: flex; }
     .screenshot-preview .screenshot-preview-actions { display: none; }
+    /* PiP toggle: always visible, filled screenshot or not */
+    .screenshot-pip-btn {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 3;
+    }
+    .screenshot-preview.saving-out .screenshot-pip-btn { display: none; }
+    /* The PiP frame has a native close button — hide ours there */
+    .pip-body .screenshot-pip-btn { display: none; }
+    /* ── Picture-in-picture composer ── */
+    .pip-placeholder {
+      height: 340px;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      margin: 0 20px 20px;
+      padding: 28px 20px;
+      border: 1.5px dashed var(--parchment);
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
+    }
+    .pip-placeholder-icon { width: 26px; height: 26px; color: var(--stone); margin-bottom: 4px; }
+    .pip-placeholder-title { font-size: 14px; color: var(--ink-black); }
+    .pip-placeholder .btn-secondary {
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+    .pip-placeholder-title { margin-bottom: 10px; }
+    .pip-body {
+      margin: 0;
+      background: var(--vellum-white, var(--snow-white));
+      overflow: hidden;
+    }
+    /* The whole notes scroll area lives in the PiP window: composer + saved notes */
+    .pip-body .notes-panel-scroll {
+      height: 100vh;
+      margin-top: 0;
+      padding-top: 12px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .pip-body .note-input-area { padding: 0 12px 12px; }
+    .pip-body .notes-list { padding: 0 12px 12px; }
+    .pip-body .screenshot-preview { height: 180px; flex-shrink: 0; }
+    .pip-body .markup-lightbox img { max-height: 70vh; }
+    .pip-body .lb-top-actions { top: 8px; right: 8px; }
+    .pip-body .lb-close-btn { top: 8px; left: 8px; }
     .screenshot-preview-actions {
       position: absolute;
       top: 8px;
@@ -1587,6 +1661,9 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
+      /* Slides up behind the header so content fades through it, not under a hard edge */
+      margin-top: -54px;
+      padding-top: 54px;
     }
 
     .notes-list {
@@ -1596,7 +1673,7 @@
     .note-card {
       background: var(--snow-white);
       border: 1px solid var(--parchment);
-      border-radius: 24px;
+      border-radius: 20px;
       overflow: hidden;
       margin-bottom: 12px;
     }
@@ -2881,6 +2958,37 @@
       left: auto;
       right: 12px;
       transform: translateX(calc(100% + 24px));
+      /* No chrome — the DialKit panel provides its own shell */
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      width: 320px;
+      overflow: visible;
+    }
+    .sidebar.proto-panel { z-index: 1200; } /* floats above lightbox and dialogs */
+    .sidebar.proto-panel .sidebar-header { display: none; }
+    .sidebar.proto-panel .proto-panel-body {
+      padding: 0;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    /* DialKit inline panel stretches to the bottom of the screen */
+    #dialkitInline { height: 100%; display: flex; flex-direction: column; }
+    /* Panel corners use the app's radius token */
+    #dialkitInline .dialkit-panel-inner,
+    #dialkitInline .dialkit-panel-inline { border-radius: var(--radius-lg) !important; }
+    /* No divider above the Liquid Glass folder */
+    #dialkitInline .dialkit-folder:not(.dialkit-folder-root) { border-top: none !important; margin-top: 0 !important; }
+    #dialkitInline .dialkit-root[data-mode="inline"],
+    #dialkitInline .dialkit-panel[data-mode="inline"],
+    #dialkitInline .dialkit-panel-inline,
+    #dialkitInline .dialkit-panel[data-mode="inline"] .dialkit-panel-wrapper {
+      height: 100% !important;
+      max-height: 100% !important;
     }
     .sidebar.proto-panel.open { transform: translateX(0); }
     .proto-panel-title {
@@ -2898,6 +3006,25 @@
       padding: 12px;
     }
     .proto-panel-body .btn { justify-content: flex-start; }
+    .proto-glass-title {
+      margin-top: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--stone);
+    }
+    .proto-glass-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+      color: var(--graphite);
+    }
+    .proto-glass-row span { flex: 0 0 92px; }
+    .proto-glass-row input[type="range"] { flex: 1; min-width: 0; }
+    .proto-glass-hint { font-size: 12px; color: var(--stone); }
+    #dialkitInline { flex: 1; min-height: 0; overflow: auto; }
 
     /* ── ⌘. toggle UI ──
        Chrome slides out toward its nearest edge with the same timing as the
@@ -2949,6 +3076,262 @@
     @media (max-width: 900px) {
       .notes-panel { width: 320px; min-width: 320px; }
       .empty-state h2 { font-size: 40px; }
+    }
+    /* ═══ Liquid glass material ═══
+       CSS port of the material spec from github.com/samasante/liquid-glass:
+       tint (translucent colour) + frost (blur/saturate veil) + sheen (rim
+       light pooling at the top edge) + inner glow. The per-pixel refraction
+       (SDF displacement) needs the library's runtime and is omitted. */
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.5);
+      --glass-bg-strong: rgba(255, 255, 255, 0.68);
+      --glass-border: rgba(255, 255, 255, 0.6);
+      --glass-sheen: rgba(255, 255, 255, 0.9);
+      --glass-sheen-soft: rgba(255, 255, 255, 0.3);
+      --glass-glow: rgba(255, 255, 255, 0.25);
+      --glass-frost: blur(16px) saturate(1.7) brightness(1.05);
+      --glass-shadow: 0 16px 40px rgba(20, 20, 19, 0.14);
+    }
+    html.dark {
+      --glass-bg: rgba(42, 41, 37, 0.5);
+      --glass-bg-strong: rgba(42, 41, 37, 0.66);
+      --glass-border: rgba(255, 255, 255, 0.14);
+      --glass-sheen: rgba(255, 255, 255, 0.22);
+      --glass-sheen-soft: rgba(255, 255, 255, 0.07);
+      --glass-glow: rgba(255, 255, 255, 0.06);
+      --glass-frost: blur(16px) saturate(1.6) brightness(1.12);
+      --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    }
+
+    /* Panels: toolbars, left nav drawer, pills, popovers, modals */
+    .nav-pill,
+    .sidebar,
+    .session-menu-popover,
+    .scrub-bar,
+    .canvas-toolbar,
+    .rec-pill,
+    .review-header-right,
+    .video-overlay-hint,
+    .gh-dialog,
+    .share-suggest,
+    .help-fab,
+    .notes-panel {
+      background: var(--glass-bg);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      border-color: var(--glass-border);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        inset 0 -1px 0 var(--glass-sheen-soft),
+        inset 0 0 18px var(--glass-glow),
+        var(--glass-shadow);
+    }
+
+    /* Share modal: role picker matches secondary buttons */
+    .share-role-btn {
+      background: var(--glass-bg-strong);
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    .share-role-btn:not(:disabled):hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #1f1e1d); }
+    html.dark .share-role-btn:not(:disabled):hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #f0efe9); }
+    /* Modals: stronger tint for legibility */
+    .gh-dialog { background: rgba(255, 255, 255, 0.95); }
+    html.dark .gh-dialog { background: rgba(42, 41, 37, 0.95); }
+    /* Lightbox toolbar: always the light glass, over the dim backdrop */
+    .markup-toolbar {
+      background: rgba(255, 255, 255, 0.72);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      border-color: rgba(255, 255, 255, 0.65);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 0 18px rgba(255, 255, 255, 0.25),
+        var(--shadow-pop);
+    }
+
+    /* Buttons — the tint is the button colour, translucent, frosted */
+    .btn-primary,
+    .save-note-inline {
+      background: color-mix(in srgb, var(--ink-black) var(--glass-btn-mix, 86%), transparent);
+      border-color: color-mix(in srgb, var(--ink-black) 40%, transparent);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 0 12px rgba(255, 255, 255, 0.08);
+    }
+    /* Hover moves away from the surface: dark buttons lighten, light buttons darken */
+    .btn-primary:hover {
+      background: color-mix(in srgb, color-mix(in srgb, var(--ink-black) 82%, white) var(--glass-btn-mix, 86%), transparent);
+    }
+    /* Dark mode primary is light — hover goes slightly darker */
+    html.dark .btn-primary:hover,
+    html.dark .save-note-inline:hover {
+      background: color-mix(in srgb, color-mix(in srgb, var(--ink-black) 94%, black) var(--glass-btn-mix, 86%), transparent);
+    }
+    .btn-primary:active:not(:disabled),
+    .save-note-inline:active:not(:disabled),
+    .lb-save-btn:active:not(:disabled),
+    .end-session-btn:active {
+      transform: translateY(1px) scale(0.985);
+      box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(0, 0, 0, 0.2);
+    }
+    .btn-secondary:active,
+    .lb-discard-btn:active,
+    .scrub-back-btn:active {
+      transform: translateY(1px) scale(0.985);
+      box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.14),
+        inset 0 1px 0 rgba(0, 0, 0, 0.08);
+    }
+    .btn-secondary,
+    .lb-discard-btn,
+    .scrub-back-btn {
+      background: var(--glass-bg-strong);
+      border-color: var(--glass-border);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        inset 0 -1px 0 var(--glass-sheen-soft),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+    /* Light mode secondary is light — hover goes slightly darker (like #fff → #f1efe9) */
+    .btn-secondary:hover,
+    .lb-discard-btn:hover {
+      background: color-mix(in srgb, var(--glass-bg-strong) 92%, #1f1e1d);
+      border-color: var(--glass-border);
+    }
+    /* Dark mode secondary is dark — hover goes slightly lighter */
+    html.dark .btn-secondary:hover,
+    html.dark .lb-discard-btn:hover {
+      background: color-mix(in srgb, var(--glass-bg-strong) 92%, #f0efe9);
+      border-color: var(--glass-border);
+    }
+    /* Back to live: tertiary glass in both themes */
+    .scrub-back-btn { color: var(--ink-black); }
+    .scrub-back-btn:hover {
+      background: color-mix(in srgb, var(--glass-bg-strong) 92%, #1f1e1d);
+      border-color: var(--glass-border);
+    }
+    html.dark .scrub-back-btn:hover {
+      background: color-mix(in srgb, var(--glass-bg-strong) 92%, #f0efe9);
+    }
+    .lb-discard-btn { color: var(--ink-black); }
+    .end-session-btn {
+      background: color-mix(in srgb, #d0453c var(--glass-btn-mix, 86%), transparent);
+      border-color: rgba(208, 69, 60, 0.4);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 0 12px rgba(255, 255, 255, 0.08);
+    }
+    .end-session-btn:hover {
+      background: color-mix(in srgb, color-mix(in srgb, #d0453c 82%, white) var(--glass-btn-mix, 86%), transparent);
+    }
+    .lb-save-btn,
+    html.dark .lb-save-btn {
+      background: color-mix(in srgb, #4092E5 var(--glass-btn-mix, 86%), transparent);
+      border-color: rgba(64, 146, 229, 0.4);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 0 12px rgba(255, 255, 255, 0.1),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+    .lb-save-btn:hover {
+      background: color-mix(in srgb, color-mix(in srgb, #4092E5 82%, white) var(--glass-btn-mix, 86%), transparent);
+      filter: none;
+    }
+
+    /* Small icon buttons */
+    .screenshot-preview-btn,
+    html.dark .screenshot-preview-btn {
+      background: var(--glass-bg-strong);
+      border-color: var(--glass-border);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      color: var(--ink-black);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+    .screenshot-preview-btn:hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #1f1e1d); }
+    html.dark .screenshot-preview-btn:hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #f0efe9); }
+    .screenshot-preview-btn:active { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.14); }
+    /* Composer secondary/tertiary buttons */
+    .screenshot-empty-action,
+    .voice-input-toggle {
+      background: var(--glass-bg-strong);
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    .screenshot-empty-action:hover,
+    .voice-input-toggle:hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #1f1e1d); }
+    html.dark .screenshot-empty-action:hover,
+    html.dark .voice-input-toggle:hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #f0efe9); }
+    /* Dark mode mic matches the floating buttons above the image (tertiary glass) */
+    html.dark .voice-input-toggle:not(.listening) {
+      background: var(--glass-bg-strong);
+      color: var(--ink-black);
+    }
+    html.dark .voice-input-toggle:not(.listening):hover {
+      background: color-mix(in srgb, var(--glass-bg-strong) 92%, #f0efe9);
+    }
+    .screenshot-empty-action:active,
+    .voice-input-toggle:active { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.14); }
+    /* Lightbox close: always light glass, like the lightbox toolbar */
+    .lb-close-btn,
+    html.dark .lb-close-btn {
+      background: rgba(255, 255, 255, 0.68);
+      border-color: rgba(255, 255, 255, 0.6);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      color: #141413;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+    .lb-close-btn:hover,
+    html.dark .lb-close-btn:hover { background: rgba(255, 255, 255, 0.85); }
+    .lb-close-btn:active,
+    .markup-lightbox.in .lb-close-btn:active,
+    html.dark .lb-close-btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.14);
+    }
+    .help-fab:hover,
+    html.dark .help-fab:hover { background: var(--glass-bg-strong); border-color: var(--glass-border); }
+
+    /* Live bending — Chromium-only backdrop-filter: url() refraction.
+       Safari/Firefox keep the frost via -webkit-backdrop-filter. */
+    html.glass-bend .nav-pill,
+    html.glass-bend .sidebar,
+    html.glass-bend .session-menu-popover,
+    html.glass-bend .scrub-bar,
+    html.glass-bend .canvas-toolbar,
+    html.glass-bend .rec-pill,
+    html.glass-bend .review-header-right,
+    html.glass-bend .gh-dialog,
+    html.glass-bend .share-suggest,
+    html.glass-bend .help-fab,
+    html.glass-bend .notes-panel,
+    html.glass-bend .markup-toolbar {
+      backdrop-filter: url(#glassBend) var(--glass-frost);
     }
   </style>
 </head>
@@ -3053,10 +3436,17 @@
       </div>
     </div>
     <div class="proto-panel-body">
-      <button class="btn btn-ghost" onclick="protoTriggerPrivateSession()">Trigger private session</button>
-      <button class="btn btn-ghost" id="protoReadOnlyBtn" onclick="protoToggleReadOnly()">Trigger read-only mode</button>
+      <div id="dialkitInline"></div>
     </div>
   </div>
+
+  <!-- Liquid glass refraction filter (Chromium backdrop-filter: url()) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="glassBend" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feImage id="glassBendMap" href="" preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" result="map"/>
+      <feDisplacementMap id="glassBendDisp" in="SourceGraphic" in2="map" scale="60" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
 
   <!-- Hidden canvas for screenshots -->
   <canvas id="screenshotCanvas"></canvas>
@@ -3092,10 +3482,342 @@
         scribble: '<path d="M4 16.5c3-7 5.5-10.1 7-9.2 1.7 1-4.2 8.6-2.3 9.8 1.9 1.2 6-7.8 8-6.7 1.9 1-2.3 6-.8 6.9 1 .6 2.4-.7 3.6-2.3"/>',
         cursor: '<path d="M5.5 3.5l14.2 6.6-6.3 1.7-2.7 6L5.5 3.5z"/>',
         crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
+        pip: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12.5" width="6.5" height="4.5" rx="1" class="icon-filled"/>',
+        pipexit: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M14.5 9.5L9 15"/><path d="M9 11.2V15h3.8"/>',
         camcorder: '<rect x="3" y="7" width="12.5" height="10" rx="2.5"/><path d="M15.5 10.8l4.2-2.3a.6.6 0 0 1 .9.5v6a.6.6 0 0 1-.9.5l-4.2-2.3"/>',
         gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
       };
       return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || ''}</svg>`;
+    }
+
+    // ── Liquid glass settings ──
+    const GLASS_DEFAULTS = { alpha: 56, blur: 19, sat: 171, sheen: 107, glow: 150, btn: 100, bend: false, bendStrength: 17 };
+    let glassSettings = (() => {
+      try { return { ...GLASS_DEFAULTS, ...JSON.parse(localStorage.getItem('sn-glass') || '{}') }; }
+      catch (_) { return { ...GLASS_DEFAULTS }; }
+    })();
+
+    function applyGlassSettings() {
+      const g = glassSettings;
+      const dark = document.documentElement.classList.contains('dark');
+      const base = dark ? '42, 41, 37' : '255, 255, 255';
+      const a = g.alpha / 100;
+      const sheenK = g.sheen / 100;
+      const glowK = g.glow / 100;
+      const cl = v => Math.min(1, Math.max(0, v));
+      const r = document.documentElement.style;
+      r.setProperty('--glass-bg', `rgba(${base}, ${a})`);
+      r.setProperty('--glass-bg-strong', `rgba(${base}, ${cl(a + 0.18)})`);
+      r.setProperty('--glass-border', `rgba(255, 255, 255, ${cl((dark ? 0.14 : 0.6) * sheenK)})`);
+      r.setProperty('--glass-sheen', `rgba(255, 255, 255, ${cl((dark ? 0.22 : 0.9) * sheenK)})`);
+      r.setProperty('--glass-sheen-soft', `rgba(255, 255, 255, ${cl((dark ? 0.07 : 0.3) * sheenK)})`);
+      r.setProperty('--glass-glow', `rgba(255, 255, 255, ${cl((dark ? 0.06 : 0.25) * glowK)})`);
+      r.setProperty('--glass-frost', `blur(${g.blur}px) saturate(${g.sat / 100}) brightness(${dark ? 1.12 : 1.05})`);
+      r.setProperty('--glass-btn-mix', `${g.btn}%`);
+      const bendOk = typeof CSS !== 'undefined' && CSS.supports?.('backdrop-filter', 'url(#x)');
+      document.documentElement.classList.toggle('glass-bend', !!g.bend && bendOk);
+      document.getElementById('glassBendDisp')?.setAttribute('scale', g.bendStrength);
+      // Mirror the inline glass vars into the PiP window's document
+      // (try/catch also covers the TDZ window before `pipWindow` is declared)
+      try {
+        if (pipWindow && !pipWindow.closed) {
+          pipWindow.document.documentElement.style.cssText = document.documentElement.style.cssText;
+          pipWindow.document.documentElement.className = document.documentElement.className;
+        }
+      } catch (_) {}
+    }
+
+    function setGlassSetting(key, value) {
+      glassSettings[key] = value;
+      try { localStorage.setItem('sn-glass', JSON.stringify(glassSettings)); } catch (_) {}
+      applyGlassSettings();
+      updateGlassValueLabels();
+    }
+
+    function updateGlassValueLabels() {
+      for (const [k, v] of Object.entries(glassSettings)) {
+        const el = document.getElementById(`glassVal-${k}`);
+        if (el) el.textContent = typeof v === 'boolean' ? '' : v;
+      }
+    }
+
+    function resetGlassSettings() {
+      glassSettings = { ...GLASS_DEFAULTS };
+      try { localStorage.removeItem('sn-glass'); } catch (_) {}
+      applyGlassSettings();
+      initGlassControls();
+      window.__dialkitResetGlass?.();
+    }
+
+    // Bridge for the DialKit island (module scope can't see these lets)
+    function getGlassSettings() { return { ...glassSettings }; }
+
+    // ── PiP animation settings ──
+    const PIPANIM_DEFAULTS = { composerScale: 1.15, composerDuration: 400, emptyScale: 0.85, emptyDuration: 0, blur: true };
+    let pipAnimSettings = (() => {
+      try { return { ...PIPANIM_DEFAULTS, ...JSON.parse(localStorage.getItem('sn-pipanim') || '{}') }; }
+      catch (_) { return { ...PIPANIM_DEFAULTS }; }
+    })();
+    function getPipAnimSettings() { return { ...pipAnimSettings }; }
+    function setPipAnimSetting(key, value) {
+      pipAnimSettings[key] = value;
+      try { localStorage.setItem('sn-pipanim', JSON.stringify(pipAnimSettings)); } catch (_) {}
+    }
+    function resetPipAnimSettings() {
+      pipAnimSettings = { ...PIPANIM_DEFAULTS };
+      try { localStorage.removeItem('sn-pipanim'); } catch (_) {}
+    }
+
+    function initGlassControls() {
+      for (const [k, v] of Object.entries(glassSettings)) {
+        const el = document.getElementById(`glassCtl-${k}`);
+        if (!el) continue;
+        if (el.type === 'checkbox') el.checked = !!v;
+        else el.value = v;
+      }
+      updateGlassValueLabels();
+    }
+
+    // Displacement map for the Chromium-only live bend: R/G encode X/Y offsets,
+    // flat in the middle, ramping up at the edges (the "liquid" lip).
+    function buildGlassBendMap() {
+      const img = document.getElementById('glassBendMap');
+      if (!img) return;
+      const N = 128;
+      const cnv = document.createElement('canvas');
+      cnv.width = cnv.height = N;
+      const ctx = cnv.getContext('2d');
+      const data = ctx.createImageData(N, N);
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const nx = (x / (N - 1)) * 2 - 1;
+          const ny = (y / (N - 1)) * 2 - 1;
+          const dx = Math.sign(nx) * Math.pow(Math.abs(nx), 3);
+          const dy = Math.sign(ny) * Math.pow(Math.abs(ny), 3);
+          const i = (y * N + x) * 4;
+          data.data[i] = Math.round(128 + dx * 127);
+          data.data[i + 1] = Math.round(128 + dy * 127);
+          data.data[i + 2] = 128;
+          data.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(data, 0, 0);
+      img.setAttribute('href', cnv.toDataURL());
+    }
+
+    buildGlassBendMap();
+    applyGlassSettings();
+    initGlassControls();
+
+    // ── Picture-in-picture (Document PiP) ──
+    let pipWindow = null;
+
+    function pipOpen() {
+      return !!(pipWindow && !pipWindow.closed);
+    }
+
+    // Element lookup that also searches the PiP window (the composer may live there)
+    function docById(id) {
+      return document.getElementById(id)
+        || (pipOpen() ? pipWindow.document.getElementById(id) : null);
+    }
+
+    // Inline on* handlers on nodes moved into the PiP window resolve against
+    // that window's globals — copy over every function they reference.
+    function bindPipGlobals(win) {
+      const names = new Set();
+      win.document.querySelectorAll('*').forEach(el => {
+        for (const attr of el.attributes) {
+          if (!attr.name.startsWith('on')) continue;
+          for (const m of attr.value.matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)) names.add(m[1]);
+        }
+      });
+      names.forEach(n => {
+        if (typeof window[n] === 'function' && !(n in win)) win[n] = window[n];
+      });
+    }
+
+    // Inline on* handlers compile against the realm they were invoked in. After
+    // the PiP window closes, handlers compiled there point at a dead window —
+    // re-setting the attribute forces recompilation in the current document.
+    function rebindInlineHandlers(root) {
+      if (!root) return;
+      [root, ...root.querySelectorAll('*')].forEach(el => {
+        for (const attr of [...el.attributes]) {
+          if (attr.name.startsWith('on')) el.setAttribute(attr.name, attr.value);
+        }
+      });
+    }
+
+    async function openComposerPiP({ silent = false } = {}) {
+      if (!('documentPictureInPicture' in window)) {
+        if (!silent) showToast('Picture-in-picture is not supported in this browser');
+        return false;
+      }
+      if (pipOpen()) { try { pipWindow.focus(); } catch (_) {} return true; }
+      const composer = document.getElementById('notesPanelScroll');
+      if (!composer) return false;
+      let pip;
+      try {
+        pip = await documentPictureInPicture.requestWindow({ width: 358, height: 460 });
+      } catch (err) {
+        console.warn('[screen-notes] pip open failed', err);
+        if (!silent) showToast('Could not open picture-in-picture');
+        return false;
+      }
+      pipWindow = pip;
+      // Copy every stylesheet so the composer looks identical
+      [...document.styleSheets].forEach(ss => {
+        try {
+          const st = pip.document.createElement('style');
+          st.textContent = [...ss.cssRules].map(r => r.cssText).join('\n');
+          pip.document.head.appendChild(st);
+        } catch (_) {}
+      });
+      pip.document.documentElement.className = document.documentElement.className;
+      pip.document.documentElement.style.cssText = document.documentElement.style.cssText;
+      pip.document.body.className = 'pip-body';
+      pip.document.title = 'Screen Notes';
+      // "Pop out": placeholder scales in at the same time the notes scale out.
+      // The outgoing notes are absolutely positioned so both can occupy the panel.
+      const box = {
+        left: composer.offsetLeft, top: composer.offsetTop,
+        width: composer.offsetWidth, height: composer.offsetHeight,
+      };
+      const ph = insertPipPlaceholder(composer);
+      composer.style.position = 'absolute';
+      composer.style.left = `${box.left}px`;
+      composer.style.top = `${box.top}px`;
+      composer.style.width = `${box.width}px`;
+      composer.style.height = `${box.height}px`;
+      composer.style.zIndex = '10';
+      composer.style.pointerEvents = 'none';
+      const anim = pipAnimSettings;
+      const blurTo = anim.blur ? 'blur(8px)' : 'blur(0px)';
+      // Placeholder animation (off by default: emptyDuration 0)
+      if (anim.emptyDuration > 0) {
+        try {
+          ph?.animate(
+            [
+              { transform: `scale(${anim.emptyScale})`, opacity: 0, filter: anim.blur ? 'blur(8px)' : 'blur(0px)' },
+              { transform: 'scale(1)', opacity: 1, filter: 'blur(0px)' },
+            ],
+            { duration: anim.emptyDuration, easing: 'cubic-bezier(0.2, 0.8, 0, 1)' }
+          );
+        } catch (_) {}
+      }
+      if (anim.composerDuration > 0) {
+        try {
+          await composer.animate(
+            [
+              { transform: 'scale(1)', opacity: 1, filter: 'blur(0px)' },
+              { transform: `scale(${anim.composerScale})`, opacity: 0, filter: blurTo },
+            ],
+            { duration: anim.composerDuration, easing: 'cubic-bezier(0.2, 0.8, 0, 1)' } // --ease-out
+          ).finished;
+        } catch (_) {}
+      }
+      composer.style.cssText = '';
+      pip.document.body.appendChild(composer);
+      bindPipGlobals(pip);
+      updatePipToggleBtn();
+      pip.addEventListener('pagehide', () => closeComposerPiP(true));
+      return true;
+    }
+
+    function insertPipPlaceholder(composer) {
+      document.getElementById('pipPlaceholder')?.remove();
+      const ph = document.createElement('div');
+      ph.id = 'pipPlaceholder';
+      ph.className = 'pip-placeholder';
+      ph.innerHTML = `
+        ${icon('pip', 'icon pip-placeholder-icon')}
+        <div class="pip-placeholder-title">Notes open in another window</div>
+        <button type="button" class="btn btn-secondary" onclick="closeComposerPiP()">Bring back here</button>`;
+      // Match the composer card's exact footprint (the input wrapper, not the padded area)
+      const wrapperEl = document.querySelector('#noteComposer .note-input-wrapper');
+      if (wrapperEl?.offsetHeight) ph.style.height = `${wrapperEl.offsetHeight}px`;
+      composer.parentElement.insertBefore(ph, composer);
+      return ph;
+    }
+
+    function closeComposerPiP(alreadyClosing = false) {
+      const pip = pipWindow;
+      pipWindow = null;
+      if (!pip) return;
+      // A lightbox living in the PiP window closes with it (markup auto-saves)
+      if (noteMarkup && markupWin === pip) closeMarkupLightbox();
+      let composer = null;
+      try { composer = pip.document?.getElementById('notesPanelScroll'); } catch (_) {}
+      const ph = document.getElementById('pipPlaceholder');
+      // If the tab re-rendered while PiP was open it already has a fresh composer
+      if (composer && !document.getElementById('notesPanelScroll')) {
+        if (ph) ph.parentElement.insertBefore(composer, ph);
+        else document.querySelector('.notes-panel')?.appendChild(composer);
+        rebindInlineHandlers(composer);
+        // "Pop back in": scale down + fade into place (toast's ease-out spring)
+        const anim = pipAnimSettings;
+        if (anim.composerDuration > 0) {
+          try {
+            composer.animate(
+              [
+                { transform: `scale(${anim.composerScale})`, opacity: 0, filter: anim.blur ? 'blur(8px)' : 'blur(0px)' },
+                { transform: 'scale(1)', opacity: 1, filter: 'blur(0px)' },
+              ],
+              { duration: anim.composerDuration, easing: 'cubic-bezier(0.1, 1.25, 0, 1)' } // --ease-out-spring
+            );
+          } catch (_) {}
+        }
+        // Optional empty-state fade-out (off by default)
+        if (anim.emptyDuration > 0 && ph) {
+          const ghost = ph.cloneNode(true);
+          ghost.id = '';
+          ghost.style.position = 'absolute';
+          ghost.style.left = `${ph.offsetLeft}px`;
+          ghost.style.top = `${ph.offsetTop}px`;
+          ghost.style.width = `${ph.offsetWidth}px`;
+          ghost.style.pointerEvents = 'none';
+          ph.parentElement?.appendChild(ghost);
+          try {
+            ghost.animate(
+              [
+                { transform: 'scale(1)', opacity: 1, filter: 'blur(0px)' },
+                { transform: `scale(${anim.emptyScale})`, opacity: 0, filter: anim.blur ? 'blur(8px)' : 'blur(0px)' },
+              ],
+              { duration: anim.emptyDuration, easing: 'cubic-bezier(0.2, 0.8, 0, 1)' }
+            ).finished.then(() => ghost.remove());
+          } catch (_) { ghost.remove(); }
+          setTimeout(() => ghost.remove(), anim.emptyDuration + 100);
+        }
+      }
+      ph?.remove();
+      if (!alreadyClosing) { try { pip.close(); } catch (_) {} }
+      updatePipToggleBtn();
+    }
+
+    function toggleComposerPiP() {
+      if (pipOpen()) closeComposerPiP();
+      else openComposerPiP();
+    }
+
+    function updatePipToggleBtn() {
+      const btn = docById('pipToggleBtn');
+      if (!btn) return;
+      const inPip = pipOpen();
+      btn.innerHTML = icon(inPip ? 'pipexit' : 'pip', 'icon icon-sm');
+      btn.title = inPip ? 'Bring composer back to tab' : 'Open picture-in-picture';
+    }
+
+    // After a recording-view re-render, move the fresh composer back into PiP
+    function syncComposerPiP() {
+      if (!pipOpen()) return;
+      const composer = document.getElementById('notesPanelScroll');
+      if (!composer) return;
+      try { pipWindow.document.getElementById('notesPanelScroll')?.remove(); } catch (_) {}
+      insertPipPlaceholder(composer);
+      pipWindow.document.body.appendChild(composer);
+      bindPipGlobals(pipWindow);
+      updatePipToggleBtn();
     }
 
     // ── State ──
@@ -3166,8 +3888,8 @@
       initSidebarResize();
       // Drawer open by default on larger screens
       if (window.innerWidth >= 900) {
-        document.getElementById('sidebarDrawer')?.classList.add('open');
-        document.getElementById('navPill')?.classList.add('drawer-open');
+        docById('sidebarDrawer')?.classList.add('open');
+        docById('navPill')?.classList.add('drawer-open');
       }
       document.addEventListener('mousedown', (e) => {
         const card = e.target.closest('.home-hidden-note');
@@ -3222,9 +3944,9 @@
       // Home background drawing (red pen)
       document.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
-        const svg = document.getElementById('homeDrawSvg');
+        const svg = docById('homeDrawSvg');
         if (!svg) return; // only on home
-        const main = document.getElementById('mainContent');
+        const main = docById('mainContent');
         if (e.target !== main && e.target !== svg && !e.target.closest('#gridBg')) return;
         if (e.target.closest('.home-hidden-note, button, input, select, textarea, [contenteditable="true"]')) return;
         e.preventDefault();
@@ -3292,7 +4014,7 @@
         if (undoHomeAction()) e.preventDefault();
       });
       document.addEventListener('mousemove', (e) => {
-        const g = document.getElementById('gridBg');
+        const g = docById('gridBg');
         if (!g) return;
         const r = g.getBoundingClientRect();
         g.style.setProperty('--mx', `${e.clientX - r.left}px`);
@@ -3326,7 +4048,7 @@
 
     function renderUserInfo() {
       updateProtoSettingsVisibility();
-      const el = document.getElementById('userInfo');
+      const el = docById('userInfo');
       if (!currentUser) return;
       el.innerHTML = `
         ${currentUser.slackImageUrl ? `<img class="user-avatar" src="${currentUser.slackImageUrl}" alt="">` : ''}
@@ -3373,14 +4095,14 @@
         await presenceRoom.leave();
         presenceRoom = null;
       }
-      const container = document.getElementById('remoteCursors');
+      const container = docById('remoteCursors');
       if (container) container.innerHTML = '';
       // Keep your own avatar locked in place; just drop remote users
       renderSelfAvatar();
     }
 
     function renderPresenceAvatars() {
-      const container = document.getElementById('presenceAvatars');
+      const container = docById('presenceAvatars');
       if (!container || !presenceRoom) return;
 
       let html = '';
@@ -3411,7 +4133,7 @@
 
     function broadcastCursorPosition(e) {
       if (!presenceRoom || !activeSessionId) return;
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       if (!viewport) return;
       const rect = viewport.getBoundingClientRect();
       // Convert screen position to world coordinates
@@ -3421,7 +4143,7 @@
     }
 
     function renderRemoteCursors() {
-      const container = document.getElementById('remoteCursors');
+      const container = docById('remoteCursors');
       if (!container || !presenceRoom) return;
 
       let html = '';
@@ -3722,7 +4444,7 @@
     let shareBaseline = null;
 
     function updateShareSaveEnabled() {
-      const btn = document.getElementById('shareSaveBtn');
+      const btn = docById('shareSaveBtn');
       if (btn) btn.disabled = !shareDraft || JSON.stringify(shareDraft) === shareBaseline;
     }
 
@@ -3732,7 +4454,7 @@
       shareModalSessionId = id;
       shareDraft = JSON.parse(JSON.stringify(sessionSharing(session)));
       shareBaseline = JSON.stringify(shareDraft);
-      document.getElementById('shareOverlay')?.remove();
+      docById('shareOverlay')?.remove();
       const overlay = document.createElement('div');
       overlay.className = 'gh-dialog-overlay';
       overlay.id = 'shareOverlay';
@@ -3770,9 +4492,9 @@
           <div class="share-access-label">Who has access</div>
           <div class="share-access-list" id="shareAccessList"></div>
           <div class="gh-dialog-actions share-footer">
-            <button class="btn btn-ghost share-copy-btn" onclick="shareModalCopyLink()">${icon('link', 'icon icon-sm')} Copy link</button>
+            <button class="btn btn-secondary share-copy-btn" onclick="shareModalCopyLink()">${icon('link', 'icon icon-sm')} Copy link</button>
             <span class="share-footer-right">
-              <button class="btn btn-ghost" onclick="closeShareModal()">Cancel</button>
+              <button class="btn btn-secondary" onclick="closeShareModal()">Cancel</button>
               <button class="btn btn-primary" id="shareSaveBtn" onclick="shareModalSave()" disabled>Save</button>
             </span>
           </div>
@@ -3783,7 +4505,7 @@
       // Warm the directory so access rows can resolve avatars
       loadPeopleDirectory().then(() => { if (shareModalSessionId === id) renderShareAccessList(); });
       requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('in')));
-      document.getElementById('shareSearchInput')?.focus();
+      docById('shareSearchInput')?.focus();
     }
 
     async function shareModalSave() {
@@ -3808,7 +4530,7 @@
     }
 
     function closeShareModal() {
-      const overlay = document.getElementById('shareOverlay');
+      const overlay = docById('shareOverlay');
       const session = shareModalSession();
       // Unsaved edits on the way out → they're being discarded
       if (session && shareDraft && JSON.stringify(shareDraft) !== shareBaseline) {
@@ -3884,13 +4606,13 @@
     }
 
     function hideShareSuggestions() {
-      const el = document.getElementById('shareSuggest');
+      const el = docById('shareSuggest');
       if (el) { el.style.display = 'none'; el.innerHTML = ''; }
     }
 
     async function renderShareSuggestions() {
-      const input = document.getElementById('shareSearchInput');
-      const el = document.getElementById('shareSuggest');
+      const input = docById('shareSearchInput');
+      const el = docById('shareSuggest');
       const session = shareModalSession();
       if (!input || !el || !session) return;
       const q = input.value.trim().toLowerCase();
@@ -3918,12 +4640,12 @@
 
     function shareModalAddPersonEntry(email, name, image) {
       if (!shareDraft) return;
-      const role = document.getElementById('shareRoleBtn')?.dataset.value || 'viewer';
+      const role = docById('shareRoleBtn')?.dataset.value || 'viewer';
       const lower = email.toLowerCase();
       const existing = shareDraft.people.find(p => p.email.toLowerCase() === lower);
       if (existing) existing.role = role;
       else shareDraft.people.push({ email: lower, role, name: name || null, image: image || null });
-      const input = document.getElementById('shareSearchInput');
+      const input = docById('shareSearchInput');
       if (input) input.value = '';
       hideShareSuggestions();
       renderShareAccessList();
@@ -3966,13 +4688,13 @@
     }
 
     function openShareRolePopover(event) {
-      const btn = document.getElementById('shareRoleBtn');
+      const btn = docById('shareRoleBtn');
       openRolePopover(event.currentTarget, [
         { value: 'editor', label: 'Editor' },
         { value: 'viewer', label: 'Viewer' },
       ], btn.dataset.value, (value) => {
         btn.dataset.value = value;
-        document.getElementById('shareRoleBtnLabel').textContent = value === 'editor' ? 'Editor' : 'Viewer';
+        docById('shareRoleBtnLabel').textContent = value === 'editor' ? 'Editor' : 'Viewer';
       });
     }
 
@@ -3993,7 +4715,7 @@
     }
 
     function renderShareAccessList() {
-      const list = document.getElementById('shareAccessList');
+      const list = docById('shareAccessList');
       const session = shareModalSession();
       if (!list || !session) return;
       const ownerEmail = sessionOwnerEmail(session) || currentUserEmail();
@@ -4029,7 +4751,7 @@
     }
 
     function shareModalAddPerson() {
-      const input = document.getElementById('shareSearchInput');
+      const input = docById('shareSearchInput');
       if (!input) return;
       // Prefer the top directory suggestion; otherwise treat input as an email
       const first = document.querySelector('#shareSuggest .share-suggest-row');
@@ -4057,7 +4779,7 @@
     function shareModalTogglePublic() {
       if (!shareDraft) return;
       shareDraft.publicView = !shareDraft.publicView;
-      const toggle = document.getElementById('sharePublicToggle');
+      const toggle = docById('sharePublicToggle');
       toggle?.classList.toggle('on', shareDraft.publicView);
       toggle?.setAttribute('aria-checked', String(shareDraft.publicView));
       updateShareSaveEnabled();
@@ -4183,7 +4905,7 @@
     }
 
     async function loadScrubBlob() {
-      const video = document.getElementById('playbackVideo');
+      const video = docById('playbackVideo');
       if (!video || !scrubberAvailable()) return false;
       if (scrubBlobUrl) URL.revokeObjectURL(scrubBlobUrl);
       // Cheap: the Blob references the chunk memory, it doesn't copy it.
@@ -4227,7 +4949,7 @@
         if (!await loadScrubBlob()) return false;
         scrubActive = true;
         scrubTimeMs = Math.min(scrubDurationMs, scrubElapsedMs());
-        document.getElementById('videoPanel')?.classList.add('scrubbing');
+        docById('videoPanel')?.classList.add('scrubbing');
         updateScrubBarUI();
         return true;
       } catch (e) {
@@ -4252,15 +4974,15 @@
       scrubActive = false;
       scrubSeekBusy = false;
       scrubSeekPending = null;
-      const video = document.getElementById('playbackVideo');
+      const video = docById('playbackVideo');
       if (video) { video.removeAttribute('src'); video.load(); }
       if (scrubBlobUrl) { URL.revokeObjectURL(scrubBlobUrl); scrubBlobUrl = null; }
-      document.getElementById('videoPanel')?.classList.remove('scrubbing');
+      docById('videoPanel')?.classList.remove('scrubbing');
       updateScrubBarUI();
     }
 
     function seekScrub(ms) {
-      const video = document.getElementById('playbackVideo');
+      const video = docById('playbackVideo');
       if (!video || !scrubActive) return;
       scrubTimeMs = Math.max(0, Math.min(ms, scrubElapsedMs()));
       // Clamp to the loaded footage, a hair short of its end so a decodable
@@ -4277,7 +4999,7 @@
 
     function onScrubTrackMouseDown(e) {
       e.preventDefault();
-      const track = document.getElementById('scrubTrack');
+      const track = docById('scrubTrack');
       if (!track) return;
       // Listeners attach synchronously: if they attached after awaiting the
       // blob load and the mouse was released during the await, mouseup was
@@ -4324,8 +5046,8 @@
     }
 
     function setupScrubber() {
-      const video = document.getElementById('playbackVideo');
-      const track = document.getElementById('scrubTrack');
+      const video = docById('playbackVideo');
+      const track = docById('scrubTrack');
       if (!video || !track) return;
       video.addEventListener('seeked', () => {
         scrubSeekBusy = false;
@@ -4341,7 +5063,7 @@
     }
 
     function updateScrubBarUI() {
-      const bar = document.getElementById('scrubBar');
+      const bar = docById('scrubBar');
       if (!bar) return;
       // Visible as soon as the recorder is running — not delayed until the
       // first chunk lands. Scrub attempts before footage exists just no-op.
@@ -4350,26 +5072,26 @@
       bar.classList.toggle('scrubbing', scrubActive);
       const elapsed = scrubElapsedMs();
       const frac = scrubActive && elapsed ? Math.min(1, scrubTimeMs / elapsed) : 1;
-      const fill = document.getElementById('scrubFill');
-      const handle = document.getElementById('scrubHandle');
+      const fill = docById('scrubFill');
+      const handle = docById('scrubHandle');
       if (fill) fill.style.width = `${frac * 100}%`;
       if (handle) handle.style.left = `${frac * 100}%`;
       // Current-time clock (the rec pill's replacement) — fixed in place,
       // keeps ticking in both live and scrubbed modes.
-      const clock = document.getElementById('liveClock');
+      const clock = docById('liveClock');
       if (clock && recordingStartTime) {
         clock.textContent = formatDuration(scrubActive ? elapsed : Date.now() - recordingStartTime);
       }
-      const label = document.getElementById('scrubTimeLabel');
+      const label = docById('scrubTimeLabel');
       if (label) label.textContent = `${formatDuration(scrubTimeMs)} /`;
-      document.getElementById('scrubBackFloat')?.classList.toggle('visible', scrubActive);
+      docById('scrubBackFloat')?.classList.toggle('visible', scrubActive);
     }
 
     // Screenshots come from the scrubbed frame while scrubbing, live otherwise
     function activeCaptureVideo() {
-      const playback = document.getElementById('playbackVideo');
+      const playback = docById('playbackVideo');
       if (scrubActive && playback && playback.readyState >= 2) return playback;
-      return document.getElementById('screenVideo');
+      return docById('screenVideo');
     }
 
     // Note timestamps reflect the moment shown on screen, not wall-clock time
@@ -4448,6 +5170,8 @@
 
       render();
       startTimer();
+      // Pop the composer out so notes can be taken over the shared screen
+      openComposerPiP({ silent: true });
       if (voiceCommandsEnabledPreference) {
         // Start in dictation mode right away: marker visible, speech transcribed,
         // and the first spoken words auto-capture a screenshot (same as tapping the mic).
@@ -4478,6 +5202,7 @@
     }
 
     async function stopRecording() {
+      closeComposerPiP();
       const stoppedSessionId = activeSessionId;
       isRecording = false;
       // Stop this recording's listener without changing the user's choice for
@@ -4559,7 +5284,7 @@
     }
 
     function renderLoadingState(message = 'Loading…') {
-      const main = document.getElementById('mainContent');
+      const main = docById('mainContent');
       if (!main) return;
       main.innerHTML = `
         <div class="loading-state">
@@ -4572,7 +5297,7 @@
     function startTimer() {
       clearInterval(timerInterval);
       timerInterval = setInterval(() => {
-        const el = document.getElementById('recTimer');
+        const el = docById('recTimer');
         if (el) el.textContent = formatDuration(Date.now() - recordingStartTime);
         // Reveals the scrub bar once the first recorded chunk exists
         updateScrubBarUI();
@@ -4616,8 +5341,8 @@
     }
 
     function syncVoiceListeningHint() {
-      const hint = document.getElementById('voiceListeningHint');
-      const label = document.getElementById('voiceListeningLabel');
+      const hint = docById('voiceListeningHint');
+      const label = docById('voiceListeningLabel');
       const visible = voiceCommandsVisualActive;
       if (hint) hint.classList.toggle('visible', visible);
 
@@ -4635,7 +5360,7 @@
     }
 
     function updateVoiceCommandControl() {
-      const toggle = document.getElementById('voiceInputToggle');
+      const toggle = docById('voiceInputToggle');
       if (toggle) {
         toggle.classList.toggle('listening', voiceCommandsVisualActive);
         toggle.setAttribute('aria-pressed', String(voiceCommandsVisualActive));
@@ -4657,7 +5382,7 @@
         if (!voiceCommandsShouldListen) enableVoiceCommands();
         else startVoiceRecognition();
         updateVoiceCommandControl();
-        const input = document.getElementById('noteInput');
+        const input = docById('noteInput');
         if (input && document.activeElement !== input) {
           suppressNextNoteFocusCapture = true;
           input.focus();
@@ -4681,7 +5406,7 @@
     }
 
     function updateVoiceDictationText(text, isFinal) {
-      const input = document.getElementById('noteInput');
+      const input = docById('noteInput');
       if (!input) return;
 
       let start = voiceInterimStart;
@@ -4761,7 +5486,7 @@
     }
 
     function removeTrailingVoiceCommandPrefix() {
-      const input = document.getElementById('noteInput');
+      const input = docById('noteInput');
       if (!input) return;
       const next = input.value.replace(/\s*(?:remove|delete)(?:\s+the)?\s*$/i, '');
       if (next === input.value) return;
@@ -4833,8 +5558,8 @@
     }
 
     function updateVoiceDictationMarker() {
-      const input = document.getElementById('noteInput');
-      const marker = document.getElementById('voiceDictationMarker');
+      const input = docById('noteInput');
+      const marker = docById('voiceDictationMarker');
       if (!input || !marker) return;
 
       const visible = voiceCommandsVisualActive && voiceNoteDictationActive;
@@ -5044,7 +5769,7 @@
       const dstW = Math.round(srcW * scale);
       const dstH = Math.round(srcH * scale);
 
-      const c = document.getElementById('screenshotCanvas');
+      const c = docById('screenshotCanvas');
       c.width  = dstW;
       c.height = dstH;
       const ctx = c.getContext('2d');
@@ -5063,7 +5788,7 @@
     function captureScreenshotPreview() {
       const video = activeCaptureVideo();
       if (!video || !video.videoWidth) return null;
-      const c = document.getElementById('screenshotCanvas');
+      const c = docById('screenshotCanvas');
       c.width  = video.videoWidth;
       c.height = video.videoHeight;
       c.getContext('2d').drawImage(video, 0, 0);
@@ -5085,10 +5810,10 @@
       if (!preview) return null;
 
       const timeStr = formatDuration(currentCaptureTimestampMs());
-      const indicator = document.getElementById('screenshotIndicator');
-      const previewEl = document.getElementById('screenshotPreview');
-      const previewImg = document.getElementById('screenshotPreviewImg');
-      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
+      const indicator = docById('screenshotIndicator');
+      const previewEl = docById('screenshotPreview');
+      const previewImg = docById('screenshotPreviewImg');
+      const previewTimestamp = docById('screenshotPreviewTimestamp');
       if (previewEl && previewImg) {
         previewImg.src = preview;
         previewEl.classList.remove('capturing-image');
@@ -5142,8 +5867,8 @@
     }
 
     function updateSaveNoteButtonState() {
-      const input = document.getElementById('noteInput');
-      const button = document.getElementById('saveNoteBtn');
+      const input = docById('noteInput');
+      const button = docById('saveNoteBtn');
       if (!button) return;
       const hasText = !!input?.value.trim();
       const hasScreenshot = !!pendingScreenshot && !screenshotRemoved;
@@ -5154,29 +5879,29 @@
       pendingScreenshot = null;
       screenshotRemoved = false;
       updateSaveNoteButtonState();
-      const indicator = document.getElementById('screenshotIndicator');
+      const indicator = docById('screenshotIndicator');
       if (indicator) indicator.innerHTML = '';
-      const previewEl = document.getElementById('screenshotPreview');
-      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
+      const previewEl = docById('screenshotPreview');
+      const previewTimestamp = docById('screenshotPreviewTimestamp');
       if (previewEl) previewEl.classList.remove('has-image', 'saving-out', 'capturing-image');
       if (previewTimestamp) previewTimestamp.innerHTML = '';
       await beginNoteScreenshotCapture();
       updateSaveNoteButtonState();
-      const input = document.getElementById('noteInput');
+      const input = docById('noteInput');
       if (focusNoteInput) input?.focus();
     }
 
     function removeScreenshot() {
       pendingScreenshot = null;
       screenshotRemoved = true;
-      const indicator = document.getElementById('screenshotIndicator');
+      const indicator = docById('screenshotIndicator');
       if (indicator) {
         indicator.classList.remove('visible');
         indicator.innerHTML = '';
       }
-      const previewEl = document.getElementById('screenshotPreview');
-      const previewImg = document.getElementById('screenshotPreviewImg');
-      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
+      const previewEl = docById('screenshotPreview');
+      const previewImg = docById('screenshotPreviewImg');
+      const previewTimestamp = docById('screenshotPreviewTimestamp');
       if (previewEl) previewEl.classList.remove('has-image', 'saving-out', 'capturing-image');
       if (previewImg) previewImg.src = '';
       if (previewTimestamp) previewTimestamp.innerHTML = '';
@@ -5195,14 +5920,14 @@
     function onNoteInput() {
       // Important after saving: the textarea remains focused, so focus won't fire
       // again. The next screenshot should be captured when typing starts.
-      const input = document.getElementById('noteInput');
+      const input = docById('noteInput');
       updateSaveNoteButtonState();
       if (input?.value.trim()) beginNoteScreenshotCapture().then(updateSaveNoteButtonState);
       requestAnimationFrame(updateVoiceDictationMarker);
     }
 
     function animateScreenshotPreviewOut() {
-      const previewEl = document.getElementById('screenshotPreview');
+      const previewEl = docById('screenshotPreview');
       if (!previewEl?.classList.contains('has-image')) return Promise.resolve();
       previewEl.classList.remove('capturing-image');
       previewEl.classList.add('saving-out');
@@ -5214,7 +5939,7 @@
     }
 
     async function addNote() {
-      const input = document.getElementById('noteInput');
+      const input = docById('noteInput');
       const text = input.value.trim();
 
       let url = null;
@@ -5255,7 +5980,7 @@
         note._mkPreview = pendingScreenshot._mkPreview;
       }
 
-      const saveButton = document.getElementById('saveNoteBtn');
+      const saveButton = docById('saveNoteBtn');
       if (saveButton) saveButton.disabled = true;
       if (url) await animateScreenshotPreviewOut();
 
@@ -5272,11 +5997,11 @@
       voiceCaptureOnFirstDictationText = voiceCommandsShouldListen && voiceNoteDictationActive;
       updateVoiceCommandControl();
 
-      const indicator = document.getElementById('screenshotIndicator');
+      const indicator = docById('screenshotIndicator');
       if (indicator) indicator.classList.remove('visible');
-      const previewEl = document.getElementById('screenshotPreview');
-      const previewImg = document.getElementById('screenshotPreviewImg');
-      const previewTimestamp = document.getElementById('screenshotPreviewTimestamp');
+      const previewEl = docById('screenshotPreview');
+      const previewImg = docById('screenshotPreviewImg');
+      const previewTimestamp = docById('screenshotPreviewTimestamp');
       if (previewEl) previewEl.classList.remove('has-image', 'saving-out', 'capturing-image');
       if (previewImg) previewImg.src = '';
       if (previewTimestamp) previewTimestamp.innerHTML = '';
@@ -5417,17 +6142,18 @@
       const dark = !isDarkMode();
       document.documentElement.classList.toggle('dark', dark);
       try { localStorage.setItem('sn-theme', dark ? 'dark' : 'light'); } catch (e) {}
-      const btn = document.getElementById('themeToggle');
+      const btn = docById('themeToggle');
       if (btn) {
         btn.innerHTML = icon(dark ? 'sun' : 'moon');
         const label = dark ? 'Switch to light mode' : 'Switch to dark mode';
         btn.title = label;
         btn.setAttribute('aria-label', label);
       }
+      applyGlassSettings();
     }
 
     function render() {
-      const appLayout = document.getElementById('appLayout');
+      const appLayout = docById('appLayout');
       appLayout?.classList.toggle('recording-active', isRecording);
       appLayout?.classList.toggle('session-active', !!activeSessionId && !isRecording);
       document.body.classList.toggle('recording-active', isRecording);
@@ -5437,7 +6163,7 @@
     }
 
     function updateNavPill() {
-      const label = document.getElementById('navPillLabel');
+      const label = docById('navPillLabel');
       if (!label) return;
       const session = activeSessionId && !isRecording
         ? allSessions.find(s => s.id === activeSessionId) : null;
@@ -5450,13 +6176,13 @@
 
     function toggleNavDrawer(e) {
       e?.stopPropagation();
-      const drawer = document.getElementById('sidebarDrawer');
+      const drawer = docById('sidebarDrawer');
       if (!drawer) return;
       const opening = !drawer.classList.contains('open');
       if (window.innerWidth >= 900) drawerUserCollapsed = !opening;
       else if (opening) drawerUserCollapsed = false;
       drawer.classList.toggle('open', opening);
-      document.getElementById('navPill')?.classList.toggle('drawer-open', opening);
+      docById('navPill')?.classList.toggle('drawer-open', opening);
       if (opening) {
         setTimeout(() => document.addEventListener('mousedown', onNavDrawerOutside, true), 0);
       } else {
@@ -5467,11 +6193,11 @@
     // force = explicit user action (close button). Automatic closes only apply below 900px.
     function closeNavDrawer(force = false) {
       if (!force && window.innerWidth >= 900) return;
-      const drawer = document.getElementById('sidebarDrawer');
+      const drawer = docById('sidebarDrawer');
       if (drawer?.classList.contains('open')) {
         if (force && window.innerWidth >= 900) drawerUserCollapsed = true;
         drawer.classList.remove('open');
-        document.getElementById('navPill')?.classList.remove('drawer-open');
+        docById('navPill')?.classList.remove('drawer-open');
         document.removeEventListener('mousedown', onNavDrawerOutside, true);
       }
     }
@@ -5484,14 +6210,14 @@
       if (!wide) {
         closeNavDrawer();
       } else if (!navDrawerWasWide && !drawerUserCollapsed) {
-        document.getElementById('sidebarDrawer')?.classList.add('open');
-        document.getElementById('navPill')?.classList.add('drawer-open');
+        docById('sidebarDrawer')?.classList.add('open');
+        docById('navPill')?.classList.add('drawer-open');
       }
       navDrawerWasWide = wide;
     });
 
     function onNavDrawerOutside(e) {
-      const drawer = document.getElementById('sidebarDrawer');
+      const drawer = docById('sidebarDrawer');
       if (!drawer) return;
       if (drawer.contains(e.target) || e.target.closest('.nav-pill') || e.target.closest('.session-menu-popover')) return;
       closeNavDrawer();
@@ -5508,9 +6234,9 @@
     }
 
     function renderSidebar() {
-      document.getElementById('sessionTabs')?.setAttribute('data-active', sessionListTab);
-      document.getElementById('sessionsTabYours')?.classList.toggle('active', sessionListTab === 'yours');
-      document.getElementById('sessionsTabOthers')?.classList.toggle('active', sessionListTab === 'others');
+      docById('sessionTabs')?.setAttribute('data-active', sessionListTab);
+      docById('sessionsTabYours')?.classList.toggle('active', sessionListTab === 'yours');
+      docById('sessionsTabOthers')?.classList.toggle('active', sessionListTab === 'others');
 
       const renderSessionItem = (s) => `
         <div class="session-item ${s.id === activeSessionId ? 'active' : ''}"
@@ -5534,7 +6260,7 @@
         </div>
       `;
 
-      const list = document.getElementById('sessionList');
+      const list = docById('sessionList');
       const visibleSessions = sessionListTab === 'others' ? sharedSessions : sessions;
       if (visibleSessions.length === 0) {
         list.innerHTML = `<div class="session-empty-state">${sessionListTab === 'others' ? 'No sessions shared with you' : 'No sessions'}</div>`;
@@ -5660,7 +6386,7 @@
     // ── Center toast ──
     let toastTimer = null;
     function showToast(message) {
-      let toast = document.getElementById('centerToast');
+      let toast = docById('centerToast');
       if (!toast) {
         toast = document.createElement('div');
         toast.id = 'centerToast';
@@ -5676,7 +6402,7 @@
         toast.style.bottom = `${window.innerHeight - r.top + 24}px`;
         toast.style.zIndex = '15'; // below .canvas-toolbar (20)
       } else {
-        const main = document.getElementById('mainContent');
+        const main = docById('mainContent');
         if (main) {
           const r = main.getBoundingClientRect();
           toast.style.left = `${r.left + r.width / 2}px`;
@@ -5693,7 +6419,7 @@
 
     // ── Sidebar resize ──
     function initSidebarResize() {
-      const handle = document.getElementById('sidebarResize');
+      const handle = docById('sidebarResize');
       const sidebar = document.querySelector('.sidebar');
       if (!handle || !sidebar) return;
       handle.addEventListener('mousedown', (e) => {
@@ -5720,6 +6446,8 @@
     const markupStyle = { color: '#e5484d', width: 3, dash: 'solid' };
     const canvasMarkup = { active: false };
     let noteMarkup = null; // { noteIndex, strokes, src, natW, natH }
+    let markupWin = window; // window hosting the markup lightbox (tab or PiP)
+
 
     function markupControlsHTML() {
       return `
@@ -5730,16 +6458,23 @@
         <button type="button" class="tb-btn mk-style-btn${markupStyle.dash === 'dashed' ? ' active' : ''}" data-dash="dashed" onclick="setMarkupStyle('dash', 'dashed')" title="Dashed line"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3.2" aria-hidden="true"><path d="M3 12h18"/></svg></button>`;
     }
 
+    // Markup style controls can live in the tab and the PiP window at once
+    function markupControlEls(selector) {
+      const els = [...document.querySelectorAll(selector)];
+      if (pipOpen()) { try { els.push(...pipWindow.document.querySelectorAll(selector)); } catch (_) {} }
+      return els;
+    }
+
     function setMarkupStyle(key, value) {
       markupStyle[key] = key === 'width' ? Number(value) : value;
-      document.querySelectorAll('.mk-width-val').forEach(el => { el.textContent = markupStyle.width; });
+      markupControlEls('.mk-width-val').forEach(el => { el.textContent = markupStyle.width; });
       if (key === 'width') {
-        document.querySelectorAll('.mk-width').forEach(el => {
+        markupControlEls('.mk-width').forEach(el => {
           el.style.setProperty('--mk-fill', `${(markupStyle.width - 1) / 11 * 100}%`);
         });
       }
       if (key === 'dash') {
-        document.querySelectorAll('.mk-style-btn').forEach(el => {
+        markupControlEls('.mk-style-btn').forEach(el => {
           el.classList.toggle('active', el.dataset.dash === markupStyle.dash);
         });
       }
@@ -5816,7 +6551,9 @@
     }
 
     function openMarkupSession({ mode, noteIndex = null, src, strokes, cropBase = null, cropRect = null }) {
-      document.getElementById('markupLightbox')?.remove();
+      docById('markupLightbox')?.remove();
+      // Composer lightbox opens wherever the composer lives (tab or PiP window)
+      markupWin = (mode === 'composer' && pipOpen()) ? pipWindow : window;
       noteMarkup = {
         mode, noteIndex, src,
         strokes: JSON.parse(JSON.stringify(strokes || [])),
@@ -5847,7 +6584,8 @@
             <button class="btn lb-save-btn" id="lbSaveBtn" onclick="lightboxSaveNote()" title="Save note (⌘↩)">Save note</button>
           </div>
         </div>`;
-      document.body.appendChild(lb);
+      markupWin.document.body.appendChild(lb);
+      if (markupWin !== window) bindPipGlobals(markupWin);
       const img = lb.querySelector('#markupImg');
       const ready = () => {
         noteMarkup.natW = img.naturalWidth;
@@ -5866,7 +6604,7 @@
         if (noteMarkup?.tool === 'crop') wiggleCropActions();
         else closeMarkupLightbox();
       });
-      document.addEventListener('keydown', onMarkupKeydown);
+      markupWin.document.addEventListener('keydown', onMarkupKeydown);
       requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('show', 'in')));
     }
 
@@ -5885,15 +6623,15 @@
       if (noteMarkup.tool === 'crop' && tool !== 'crop') teardownLightboxCrop();
       noteMarkup.tool = tool;
       noteMarkup.selectedIds = [];
-      const tools = document.getElementById('markupTools');
+      const tools = docById('markupTools');
       if (tools) tools.style.maxWidth = tool !== 'draw' ? '0px' : `${tools.scrollWidth}px`;
-      document.getElementById('markupToolbar')?.classList.toggle('cursor-mode', tool !== 'draw');
-      const svg = document.getElementById('markupSvg');
+      docById('markupToolbar')?.classList.toggle('cursor-mode', tool !== 'draw');
+      const svg = docById('markupSvg');
       svg?.classList.toggle('cursor-mode', tool === 'cursor');
       svg?.classList.toggle('crop-mode', tool === 'crop');
-      document.getElementById('lbCursorBtn')?.classList.toggle('active', tool === 'cursor');
-      document.getElementById('lbDrawBtn')?.classList.toggle('active', tool === 'draw');
-      document.getElementById('lbCropBtn')?.classList.toggle('active', tool === 'crop');
+      docById('lbCursorBtn')?.classList.toggle('active', tool === 'cursor');
+      docById('lbDrawBtn')?.classList.toggle('active', tool === 'draw');
+      docById('lbCropBtn')?.classList.toggle('active', tool === 'crop');
       if (tool === 'crop') startLightboxCrop();
       updateLightboxTopButtons();
       renderNoteMarkupSvg();
@@ -5901,22 +6639,22 @@
 
     function updateLightboxTopButtons() {
       const cropping = noteMarkup?.tool === 'crop';
-      const save = document.getElementById('lbSaveBtn');
-      const closeBtn = document.getElementById('lbCloseBtn');
-      const cropActions = document.getElementById('lbCropActions');
+      const save = docById('lbSaveBtn');
+      const closeBtn = docById('lbCloseBtn');
+      const cropActions = docById('lbCropActions');
       if (save) save.style.display = cropping ? 'none' : '';
       if (closeBtn) closeBtn.style.display = cropping ? 'none' : '';
       if (cropActions) {
         cropActions.classList.toggle('visible', cropping);
         if (!cropping) {
-          const apply = document.getElementById('lbApplyBtn');
+          const apply = docById('lbApplyBtn');
           if (apply) { apply.disabled = false; apply.textContent = 'Done'; apply.style.width = ''; }
         }
       }
     }
 
     function wiggleCropActions() {
-      const el = document.getElementById('lbCropActions');
+      const el = docById('lbCropActions');
       if (!el) return;
       el.classList.remove('wiggle');
       void el.offsetWidth;
@@ -5925,11 +6663,11 @@
 
     // "Save note" — close the lightbox and save whatever is in the composer
     async function lightboxSaveNote() {
-      const lb = document.getElementById('markupLightbox');
+      const lb = docById('markupLightbox');
       const state = noteMarkup;
       noteMarkup = null;
       clearTimeout(markupSaveTimer);
-      document.removeEventListener('keydown', onMarkupKeydown);
+      try { markupWin.document.removeEventListener('keydown', onMarkupKeydown); } catch (_) {}
       if (lb) {
         lb.classList.remove('show', 'in');
         lb.style.pointerEvents = 'none';
@@ -5943,11 +6681,11 @@
     // Cropping is non-destructive: the original (base) image is kept so
     // re-entering crop mode shows the full image with the current crop framed.
     function startLightboxCrop() {
-      const stage = document.querySelector('#markupLightbox .markup-stage');
-      const img = document.getElementById('markupImg');
+      const stage = docById('markupLightbox')?.querySelector('.markup-stage');
+      const img = docById('markupImg');
       const state = noteMarkup;
       if (!stage || !img || !state) return;
-      document.getElementById('cropOverlay')?.remove();
+      docById('cropOverlay')?.remove();
       if (!state.cropBase) state.cropBase = { src: state.src, w: state.natW, h: state.natH };
       const base = state.cropBase;
       const setup = () => {
@@ -5969,7 +6707,7 @@
       };
       // Show the full base image with strokes offset into base coordinates
       state._cropBaseView = true;
-      document.getElementById('markupSvg')?.setAttribute('viewBox', `0 0 ${base.w} ${base.h}`);
+      docById('markupSvg')?.setAttribute('viewBox', `0 0 ${base.w} ${base.h}`);
       renderNoteMarkupSvg();
       if (state.cropRect) {
         img.onload = () => { img.onload = null; setup(); };
@@ -5980,15 +6718,15 @@
     }
 
     function teardownLightboxCrop() {
-      document.getElementById('cropOverlay')?.remove();
+      docById('cropOverlay')?.remove();
       const state = noteMarkup;
       if (!state) return;
       state.crop = null;
       if (state._cropBaseView) {
         state._cropBaseView = false;
-        const img = document.getElementById('markupImg');
+        const img = docById('markupImg');
         if (img) img.src = state._displaySrc || state.src;
-        document.getElementById('markupSvg')?.setAttribute('viewBox', `0 0 ${state.natW} ${state.natH}`);
+        docById('markupSvg')?.setAttribute('viewBox', `0 0 ${state.natW} ${state.natH}`);
       }
     }
 
@@ -5997,8 +6735,8 @@
     }
 
     function layoutCropRect() {
-      const rect = document.getElementById('cropRect');
-      const ov = document.getElementById('cropOverlay');
+      const rect = docById('cropRect');
+      const ov = docById('cropOverlay');
       const c = noteMarkup?.crop;
       if (!rect || !ov || !c) return;
       rect.style.left = `${c.x}px`;
@@ -6014,7 +6752,7 @@
         e: { left: c.x + c.w, top: c.y, width: Math.max(0, W - c.x - c.w), height: c.h },
       };
       for (const [key, s] of Object.entries(m)) {
-        const el = document.getElementById(`cropMask-${key}`);
+        const el = docById(`cropMask-${key}`);
         if (!el) continue;
         el.style.left = `${s.left}px`;
         el.style.top = `${s.top}px`;
@@ -6024,6 +6762,7 @@
     }
 
     function attachCropHandlers(ov, img) {
+      const doc = ov.ownerDocument;
       const MIN = 24;
       ov.addEventListener('mousedown', (e) => {
         if (e.button !== 0 || !noteMarkup?.crop) return;
@@ -6052,17 +6791,17 @@
           layoutCropRect();
         };
         const onUp = () => {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
+          doc.removeEventListener('mousemove', onMove);
+          doc.removeEventListener('mouseup', onUp);
         };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
+        doc.addEventListener('mousemove', onMove);
+        doc.addEventListener('mouseup', onUp);
       });
     }
 
     async function applyLightboxCrop() {
       const state = noteMarkup;
-      const img = document.getElementById('markupImg');
+      const img = docById('markupImg');
       const c = state?.crop;
       const base = state?.cropBase;
       if (!state || !img || !c || !base) return;
@@ -6083,7 +6822,7 @@
         setLightboxTool('draw');
         return;
       }
-      const saveBtn = document.getElementById('lbApplyBtn');
+      const saveBtn = docById('lbApplyBtn');
       if (saveBtn) {
         saveBtn.style.width = `${saveBtn.offsetWidth}px`; // lock width while spinning
         saveBtn.disabled = true;
@@ -6198,12 +6937,12 @@
     }
 
     function closeMarkupLightbox() {
-      const lb = document.getElementById('markupLightbox');
+      const lb = docById('markupLightbox');
       const state = noteMarkup;
       noteMarkup = null;
       clearTimeout(markupSaveTimer);
       if (state?.dirty) persistMarkup(state); // flush pending auto-save
-      document.removeEventListener('keydown', onMarkupKeydown);
+      try { markupWin.document.removeEventListener('keydown', onMarkupKeydown); } catch (_) {}
       if (!lb) return;
       lb.classList.remove('show', 'in');
       lb.style.pointerEvents = 'none';
@@ -6220,7 +6959,7 @@
     }
 
     function markupNatScale() {
-      const svg = document.getElementById('markupSvg');
+      const svg = docById('markupSvg');
       const w = svg?.getBoundingClientRect().width;
       return w && noteMarkup ? noteMarkup.natW / w : 1;
     }
@@ -6241,7 +6980,7 @@
     }
 
     function renderNoteMarkupSvg() {
-      const svg = document.getElementById('markupSvg');
+      const svg = docById('markupSvg');
       if (!svg || !noteMarkup) return;
       const k = markupNatScale(); // screen px → image px
       // In crop mode the full base image is shown — offset strokes into base coords
@@ -6270,6 +7009,7 @@
     }
 
     function attachNoteMarkupDrawing(svg) {
+      const doc = svg.ownerDocument;
       const toNatural = (e) => {
         const r = svg.getBoundingClientRect();
         return [
@@ -6302,12 +7042,12 @@
               renderNoteMarkupSvg();
             };
             const onUp = () => {
-              document.removeEventListener('mousemove', onMove);
-              document.removeEventListener('mouseup', onUp);
+              doc.removeEventListener('mousemove', onMove);
+              doc.removeEventListener('mouseup', onUp);
               markupChanged();
             };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
+            doc.addEventListener('mousemove', onMove);
+            doc.addEventListener('mouseup', onUp);
             return;
           }
           // Drag inside the selection bounds, or on a line (selecting it first)
@@ -6328,12 +7068,12 @@
               renderNoteMarkupSvg();
             };
             const onUp = () => {
-              document.removeEventListener('mousemove', onMove);
-              document.removeEventListener('mouseup', onUp);
+              doc.removeEventListener('mousemove', onMove);
+              doc.removeEventListener('mouseup', onUp);
               markupChanged();
             };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
+            doc.addEventListener('mousemove', onMove);
+            doc.addEventListener('mouseup', onUp);
             return;
           }
           // Empty area: marquee to select squiggles
@@ -6350,8 +7090,8 @@
             renderNoteMarkupSvg();
           };
           const onUp = () => {
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
+            doc.removeEventListener('mousemove', onMove);
+            doc.removeEventListener('mouseup', onUp);
             const m = noteMarkup?.marquee;
             if (noteMarkup) {
               if (m && m.w > 2 && m.h > 2) {
@@ -6364,8 +7104,8 @@
               renderNoteMarkupSvg();
             }
           };
-          document.addEventListener('mousemove', onMove);
-          document.addEventListener('mouseup', onUp);
+          doc.addEventListener('mousemove', onMove);
+          doc.addEventListener('mouseup', onUp);
           renderNoteMarkupSvg();
           return;
         }
@@ -6386,16 +7126,16 @@
           renderNoteMarkupSvg();
         };
         const onUp = () => {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
+          doc.removeEventListener('mousemove', onMove);
+          doc.removeEventListener('mouseup', onUp);
           if (stroke.points.length < 2 && noteMarkup) {
             noteMarkup.strokes = noteMarkup.strokes.filter(s => s !== stroke);
           }
           renderNoteMarkupSvg();
           markupChanged();
         };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
+        doc.addEventListener('mousemove', onMove);
+        doc.addEventListener('mouseup', onUp);
         renderNoteMarkupSvg();
       });
     }
@@ -6419,7 +7159,7 @@
       try {
         if (state.mode === 'composer') {
           if (!pendingScreenshot) return;
-          const previewImg = document.getElementById('screenshotPreviewImg');
+          const previewImg = docById('screenshotPreviewImg');
           if (!strokes.length) {
             delete pendingScreenshot.markupStrokes;
             delete pendingScreenshot.markupNatW;
@@ -6498,10 +7238,10 @@
       if (active && canvasReadOnly()) return;
       if (canvasMarkup.active === active) return;
       canvasMarkup.active = active;
-      document.getElementById('canvasToolbar')?.classList.toggle('markup-mode', active);
-      document.getElementById('markupToggleBtn')?.classList.toggle('active', active);
-      document.getElementById('markupCursorBtn')?.classList.toggle('active', !active);
-      document.getElementById('canvasViewport')?.classList.toggle('markup-mode', active);
+      docById('canvasToolbar')?.classList.toggle('markup-mode', active);
+      docById('markupToggleBtn')?.classList.toggle('active', active);
+      docById('markupCursorBtn')?.classList.toggle('active', !active);
+      docById('canvasViewport')?.classList.toggle('markup-mode', active);
       syncToolbarWidth(active);
       if (active) setSelectedItems([]);
     }
@@ -6509,7 +7249,7 @@
     function handleMarkupCanvasMouseDown(e) {
       if (e.button !== 0 || spaceDown) return false;
       if (e.target.closest('.canvas-toolbar, .canvas-help, .help-fab, .zoom-indicator')) return false;
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       if (!viewport) return false;
       const rect = viewport.getBoundingClientRect();
       const toWorld = (ev) => [
@@ -6760,25 +7500,25 @@
     }
 
     function openGhOwnerPopover(event) {
-      const btn = document.getElementById('ghOwnerBtn');
+      const btn = docById('ghOwnerBtn');
       openRolePopover(event.currentTarget, GH_OWNERS.map(o => ({
         value: o.key,
         label: ghOwnerLabel(o.key),
       })), btn.dataset.value, (value) => {
         btn.dataset.value = value;
-        document.getElementById('ghOwnerBtnLabel').textContent = ghOwnerLabel(value);
+        docById('ghOwnerBtnLabel').textContent = ghOwnerLabel(value);
         ghOwnerChanged();
       }, { fullWidth: true });
     }
 
     function ghOwnerChanged() {
-      const ownerKey = document.getElementById('ghOwnerBtn')?.dataset.value;
-      const input = document.getElementById('ghTokenInput');
+      const ownerKey = docById('ghOwnerBtn')?.dataset.value;
+      const input = docById('ghTokenInput');
       if (!input) return;
       const saved = ghLoadTokens()[ownerKey];
       // Empty until a token is added for this specific owner
       input.value = saved?.token ? GH_TOKEN_MASK : '';
-      const label = document.getElementById('ghTokenLabel');
+      const label = docById('ghTokenLabel');
       if (label) {
         const owner = GH_OWNERS.find(o => o.key === ownerKey);
         label.textContent = `Access token — ${owner?.label || ownerKey}${saved?.token ? ' (saved)' : ''}`;
@@ -6787,7 +7527,7 @@
 
     let ghActiveFilter = null;
     function openGithubExportDialog(sessionId, filter = null) {
-      document.getElementById('ghDialogOverlay')?.remove();
+      docById('ghDialogOverlay')?.remove();
       ghActiveFilter = filter;
       const session = allSessions.find(s => s.id === sessionId);
       const totalCount = session ? sessionExportTotal(session, filter) : 0;
@@ -6818,18 +7558,18 @@
           </div>
           <div class="gh-dialog-status" id="ghStatus"></div>
           <div class="gh-dialog-actions">
-            <button class="btn btn-ghost" onclick="closeGithubExportDialog()">Cancel</button>
+            <button class="btn btn-secondary" onclick="closeGithubExportDialog()">Cancel</button>
             <button class="btn btn-primary" id="ghExportGo" onclick="runGithubExport('${sessionId}')">Export</button>
           </div>
         </div>`;
       overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeGithubExportDialog(); });
       document.body.appendChild(overlay);
       requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('in')));
-      document.getElementById(savedRepo && hasToken ? 'ghExportGo' : 'ghRepoInput')?.focus();
+      docById(savedRepo && hasToken ? 'ghExportGo' : 'ghRepoInput')?.focus();
     }
 
     function closeGithubExportDialog() {
-      const overlay = document.getElementById('ghDialogOverlay');
+      const overlay = docById('ghDialogOverlay');
       if (!overlay) return;
       overlay.classList.remove('in');
       overlay.style.pointerEvents = 'none';
@@ -6837,7 +7577,7 @@
     }
 
     function ghSetStatus(msg, isError = false) {
-      const el = document.getElementById('ghStatus');
+      const el = docById('ghStatus');
       if (!el) return;
       el.textContent = msg;
       el.classList.toggle('error', isError);
@@ -6882,11 +7622,11 @@
     async function runGithubExport(sessionId) {
       const session = allSessions.find(s => s.id === sessionId);
       if (!session) return;
-      const repoName = document.getElementById('ghRepoInput')?.value.trim();
+      const repoName = docById('ghRepoInput')?.value.trim();
       if (!/^[\w.-]+$/.test(repoName || '')) return ghSetStatus('Enter a repository name', true);
-      const ownerKey = document.getElementById('ghOwnerBtn')?.dataset.value || 'personal';
+      const ownerKey = docById('ghOwnerBtn')?.dataset.value || 'personal';
       const tokens = ghLoadTokens();
-      let tokenInput = document.getElementById('ghTokenInput')?.value.trim() || '';
+      let tokenInput = docById('ghTokenInput')?.value.trim() || '';
       if (tokenInput === GH_TOKEN_MASK) tokenInput = '';
       const token = tokenInput || tokens[ownerKey]?.token;
       if (!token) return ghSetStatus('Add an access token for this resource owner', true);
@@ -6896,7 +7636,7 @@
       }
       localStorage.setItem(GH_LAST_OWNER_KEY, ownerKey);
 
-      const goBtn = document.getElementById('ghExportGo');
+      const goBtn = docById('ghExportGo');
       if (goBtn) goBtn.disabled = true;
       let repo;
       try {
@@ -7071,7 +7811,7 @@
     async function exportSessionPackage(sessionId, filter = null) {
       const session = allSessions.find(s => s.id === sessionId);
       if (!session) return;
-      const btn = document.getElementById('exportSessionBtn');
+      const btn = docById('exportSessionBtn');
       if (btn) btn.disabled = true;
       try {
         const JSZip = await loadJSZip();
@@ -7177,7 +7917,7 @@
     }
 
     function ensureTopBar() {
-      let bar = document.getElementById('topBar');
+      let bar = docById('topBar');
       if (!bar) {
         bar = document.createElement('div');
         bar.id = 'topBar';
@@ -7206,13 +7946,13 @@
     let protoGearHidden = true;    // hidden by default — ⌘⇧P shows/hides the gear
     let protoReadOnly = false;     // simulated read-only mode, resets on refresh
     function updateProtoSettingsVisibility() {
-      const btn = document.getElementById('protoSettingsBtn');
+      const btn = docById('protoSettingsBtn');
       if (btn) btn.style.display = (currentUser?.email === PROTO_PANEL_USER && !protoGearHidden) ? '' : 'none';
     }
     // Simulate viewing the current canvas as a read-only viewer
     function protoToggleReadOnly() {
       protoReadOnly = !protoReadOnly;
-      const label = document.getElementById('protoReadOnlyBtn');
+      const label = docById('protoReadOnlyBtn');
       if (label) label.textContent = protoReadOnly ? 'Exit read-only mode' : 'Trigger read-only mode';
       toggleProtoPanel(false);
       showToast(protoReadOnly ? 'Read-only mode on (refresh to reset)' : 'Read-only mode off');
@@ -7223,11 +7963,20 @@
       }
     }
     function toggleProtoPanel(force) {
-      const panel = document.getElementById('protoPanel');
+      const panel = docById('protoPanel');
       if (!panel) return;
       const open = typeof force === 'boolean' ? force : !panel.classList.contains('open');
       panel.classList.toggle('open', open);
     }
+    // Esc closes the prototype settings panel
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const panel = document.getElementById('protoPanel');
+      if (panel?.classList.contains('open')) {
+        toggleProtoPanel(false);
+        e.preventDefault();
+      }
+    });
     // Simulate opening a session whose "Visible to all of Shopify" toggle is off
     async function protoTriggerPrivateSession() {
       toggleProtoPanel(false);
@@ -7240,7 +7989,7 @@
     function updateTopBar(session) {
       const bar = ensureTopBar();
       bar.style.display = 'flex';
-      const actions = document.getElementById('topBarActions');
+      const actions = docById('topBarActions');
       const mode = isRecording ? 'recording'
         : session ? (isMySession(session) ? 'session-own' : 'session-shared') : 'home';
 
@@ -7289,7 +8038,7 @@
     }
 
     function renderSelfAvatar() {
-      const container = document.getElementById('presenceAvatars');
+      const container = docById('presenceAvatars');
       if (!container || !currentUser) return;
       let html;
       if (currentUser.slackImageUrl) {
@@ -7368,7 +8117,7 @@
     }
 
     function renderMain() {
-      const main = document.getElementById('mainContent');
+      const main = docById('mainContent');
 
       if (isRecording) {
         main.innerHTML = renderRecordingView();
@@ -7411,7 +8160,7 @@
     const homeDraw = { strokes: [], undo: [] };
 
     function renderHomeDrawSvg() {
-      const svg = document.getElementById('homeDrawSvg');
+      const svg = docById('homeDrawSvg');
       if (!svg) return;
       svg.innerHTML = homeDraw.strokes.map(s =>
         `<path d="${strokePathD(s.points)}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(s)}/>`
@@ -7518,7 +8267,7 @@
       homeOtherGeoms = [...document.querySelectorAll('.home-hidden-note')]
         .filter(el => el !== card)
         .map(el => homeCardGeom(el, homeCardAngle(el)));
-      const root = document.getElementById('emptyState');
+      const root = docById('emptyState');
       if (!root) { homeInvertItems = []; homeSilHosts = []; return; }
 
       // Buttons: wrap each label once so it can host a positioned clone
@@ -7658,10 +8407,11 @@
                 <h3>Notes</h3>
                 <span style="font-size:12px;color:var(--text-dim);" id="noteCountLabel">${currentNotes.length} notes</span>
               </div>
-              <div class="notes-panel-scroll">
-              <div class="note-input-area">
+              <div class="notes-panel-scroll" id="notesPanelScroll">
+              <div class="note-input-area" id="noteComposer">
                 <div class="note-input-wrapper">
                   <div class="screenshot-preview" id="screenshotPreview">
+                    <button type="button" class="screenshot-preview-btn screenshot-pip-btn" id="pipToggleBtn" onclick="toggleComposerPiP()" title="Open picture-in-picture">${icon('pip', 'icon icon-sm')}</button>
                     <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openPendingScreenshotLightbox()">
                     <div class="screenshot-preview-empty">
                       <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
@@ -7717,21 +8467,25 @@
     }
 
     function setupRecordingVideo() {
-      const video = document.getElementById('screenVideo');
+      const video = docById('screenVideo');
       if (video && mediaStream) {
         video.srcObject = mediaStream;
       }
       setupScrubber();
       renderNotesList();
-
-
+      syncComposerPiP();
+      // Header fade/blur only appears once the list is scrolled
+      const scroller = document.querySelector('.notes-panel-scroll');
+      scroller?.addEventListener('scroll', () => {
+        scroller.closest('.notes-panel')?.classList.toggle('scrolled', scroller.scrollTop > 4);
+      }, { passive: true });
     }
 
     function renderNotesList() {
-      const list = document.getElementById('notesList');
+      const list = docById('notesList');
       if (!list) return;
 
-      const label = document.getElementById('noteCountLabel');
+      const label = docById('noteCountLabel');
       if (label) label.textContent = `${currentNotes.length} note${currentNotes.length !== 1 ? 's' : ''}`;
 
       const previousTops = new Map();
@@ -7851,7 +8605,7 @@
               <div class="tb-swap">
                 <div class="tb-group tb-default">
                   <button class="tb-btn" onclick="addTextItem()" title="Add text">${icon('text')} Text</button>
-                  <button class="tb-btn" onclick="document.getElementById('imageUploadInput').click()" title="Add image">${icon('image')} Image</button>
+                  <button class="tb-btn" onclick="docById('imageUploadInput').click()" title="Add image">${icon('image')} Image</button>
                   <input type="file" id="imageUploadInput" accept="image/*" multiple style="display:none;" onchange="onImageUpload(event)">
                   <button class="tb-btn" onclick="startSessionIntoCanvas()" title="Add notes to this canvas from new session" aria-label="Add notes to this canvas from new session">${icon('camcorder')} Session</button>
                   <button class="tb-btn" onclick="autoArrangeCanvas()" title="Auto-arrange screenshots">${icon('arrange')} Arrange</button>
@@ -8195,7 +8949,7 @@
 
     function initCanvas(session) {
       canvasMarkup.active = false;
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       viewport?.classList.toggle('read-only', !canEditSession(session));
       if (!viewport) return;
       canvas.session = session;
@@ -8289,7 +9043,7 @@
         const shot = canvas.items.find(it => it.type === 'screenshot' && it.noteIndex === i);
         if (!shot) continue;
         const img = document.querySelector(`.canvas-item[data-id="${shot.id}"] .ci-screenshot-img-wrap img`);
-        const viewport = document.getElementById('canvasViewport');
+        const viewport = docById('canvasViewport');
         if (!img || !viewport) continue;
         try { if (!img.complete || !img.naturalWidth) await img.decode(); } catch (_) { continue; }
         if (canvas.session !== session || runId !== markupConversionRun) return; // superseded while loading
@@ -8413,7 +9167,7 @@
     }
 
     function renderCanvas() {
-      const world = document.getElementById('canvasWorld');
+      const world = docById('canvasWorld');
       if (!world) return;
       world.style.transform = `translate(${canvas.x}px, ${canvas.y}px) scale(${canvas.scale})`;
 
@@ -8514,12 +9268,12 @@
     }
 
     function updateZoomIndicator() {
-      const el = document.getElementById('zoomIndicator');
+      const el = docById('zoomIndicator');
       if (el) el.textContent = Math.round(canvas.scale * 100) + '%';
     }
 
     function updateCanvasGrid() {
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       if (!viewport) return;
       const base = 32;
       const size = Math.max(8, base * canvas.scale);
@@ -8549,7 +9303,7 @@
       viewport.addEventListener('dragenter', e => {
         e.preventDefault();
         dragDepth++;
-        document.getElementById('dropOverlay')?.classList.add('visible');
+        docById('dropOverlay')?.classList.add('visible');
       });
       viewport.addEventListener('dragover', e => {
         e.preventDefault();
@@ -8557,11 +9311,11 @@
       });
       viewport.addEventListener('dragleave', e => {
         dragDepth = Math.max(0, dragDepth - 1);
-        if (dragDepth === 0) document.getElementById('dropOverlay')?.classList.remove('visible');
+        if (dragDepth === 0) docById('dropOverlay')?.classList.remove('visible');
       });
       viewport.addEventListener('drop', e => {
         dragDepth = 0;
-        document.getElementById('dropOverlay')?.classList.remove('visible');
+        docById('dropOverlay')?.classList.remove('visible');
         onCanvasDrop(e);
       });
 
@@ -8573,7 +9327,7 @@
     }
 
     function onCanvasMouseDown(e) {
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
 
       // Toolbar and overlays handle their own clicks — never start marquee/pan from them
       if (e.target.closest('.canvas-toolbar, .canvas-help, .help-fab, .zoom-indicator')) return;
@@ -8729,7 +9483,7 @@
     }
 
     function updateSelectionRect(x1, y1, x2, y2) {
-      const el = document.getElementById('selectionRect');
+      const el = docById('selectionRect');
       if (!el) return;
       const left = Math.min(x1, x2);
       const top = Math.min(y1, y2);
@@ -8743,7 +9497,7 @@
     }
 
     function clearSelectionRect() {
-      const el = document.getElementById('selectionRect');
+      const el = docById('selectionRect');
       if (el) el.style.display = 'none';
     }
 
@@ -8768,7 +9522,7 @@
     }
 
     function updateGroupSelectionBox() {
-      const box = document.getElementById('groupSelectionBox');
+      const box = docById('groupSelectionBox');
       if (!box) return;
       const bounds = getSelectionBounds();
       if (!bounds) {
@@ -8809,7 +9563,7 @@
           updateGroupSelectionBox();
         }
       } else if (isSelecting) {
-        const viewport = document.getElementById('canvasViewport');
+        const viewport = docById('canvasViewport');
         if (!viewport) return;
         const rect = viewport.getBoundingClientRect();
         const sx = selectionStart.x;
@@ -8861,7 +9615,7 @@
     }
 
     function onWindowMouseUp() {
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       if (viewport) viewport.classList.remove('panning');
       const wasInteracting = isPanning || isDraggingItem || isResizing || isResizingGroup || isSelecting;
       isPanning = isDraggingItem = isResizing = isResizingGroup = isSelecting = false;
@@ -8875,7 +9629,7 @@
 
       if (e.ctrlKey || e.metaKey) {
         // Zoom
-        const viewport = document.getElementById('canvasViewport');
+        const viewport = docById('canvasViewport');
         const rect = viewport.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -9031,7 +9785,7 @@
 
       if (e.code === 'Space') {
         spaceDown = true;
-        document.getElementById('canvasViewport')?.classList.add('space-down');
+        docById('canvasViewport')?.classList.add('space-down');
         e.preventDefault();
       }
 
@@ -9063,17 +9817,17 @@
     function onCanvasKeyUp(e) {
       if (e.code === 'Space') {
         spaceDown = false;
-        document.getElementById('canvasViewport')?.classList.remove('space-down');
+        docById('canvasViewport')?.classList.remove('space-down');
       }
     }
 
     function toggleCanvasHelp(event) {
       event?.stopPropagation();
-      document.getElementById('canvasHelp')?.classList.toggle('visible');
+      docById('canvasHelp')?.classList.toggle('visible');
     }
 
     document.addEventListener('mousedown', (event) => {
-      const help = document.getElementById('canvasHelp');
+      const help = docById('canvasHelp');
       if (!help?.classList.contains('visible')) return;
       if (event.target.closest('.canvas-help') || event.target.closest('.help-fab')) return;
       help.classList.remove('visible');
@@ -9083,7 +9837,7 @@
       if (canvasReadOnly()) return;
       e.preventDefault();
       e.stopPropagation();
-      document.getElementById('dropOverlay')?.classList.remove('visible');
+      docById('dropOverlay')?.classList.remove('visible');
 
       const allFiles = Array.from(e.dataTransfer?.files || []);
       console.log(`[screen-notes] drop received ${allFiles.length} files:`,
@@ -9095,7 +9849,7 @@
         return;
       }
 
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       const rect = viewport.getBoundingClientRect();
       const dropX = (e.clientX - rect.left - canvas.x) / canvas.scale;
       const dropY = (e.clientY - rect.top - canvas.y) / canvas.scale;
@@ -9109,7 +9863,7 @@
 
     async function onImageUpload(e) {
       const files = Array.from(e.target.files || []);
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       const rect = viewport.getBoundingClientRect();
       const cx = (rect.width / 2 - canvas.x) / canvas.scale;
       const cy = (rect.height / 2 - canvas.y) / canvas.scale;
@@ -9162,7 +9916,7 @@
     }
 
     function addTextItem() {
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       const rect = viewport.getBoundingClientRect();
       const cx = (rect.width / 2 - canvas.x) / canvas.scale;
       const cy = (rect.height / 2 - canvas.y) / canvas.scale;
@@ -9185,7 +9939,7 @@
     }
 
     function applyTransform() {
-      const world = document.getElementById('canvasWorld');
+      const world = docById('canvasWorld');
       if (world) world.style.transform = `translate(${canvas.x}px, ${canvas.y}px) scale(${canvas.scale})`;
       updateZoomIndicator();
       updateCanvasGrid();
@@ -9317,8 +10071,8 @@
     }
 
     function updateAlignmentGuides(worldX, worldY) {
-      const vertical = document.getElementById('guideVertical');
-      const horizontal = document.getElementById('guideHorizontal');
+      const vertical = docById('guideVertical');
+      const horizontal = docById('guideHorizontal');
 
       if (vertical) {
         if (worldX == null) {
@@ -9340,8 +10094,8 @@
     }
 
     function clearAlignmentGuides() {
-      const vertical = document.getElementById('guideVertical');
-      const horizontal = document.getElementById('guideHorizontal');
+      const vertical = docById('guideVertical');
+      const horizontal = docById('guideHorizontal');
       if (vertical) vertical.style.display = 'none';
       if (horizontal) horizontal.style.display = 'none';
     }
@@ -9383,7 +10137,7 @@
     function fitToScreen(recordUndo = true) {
       if (recordUndo) pushUndoState();
       if (!canvas.items.length) { resetView(false); return; }
-      const viewport = document.getElementById('canvasViewport');
+      const viewport = docById('canvasViewport');
       if (!viewport) return;
       const rect = viewport.getBoundingClientRect();
       const padding = 60;
@@ -9461,10 +10215,99 @@
     }
 
     // ── Event listeners ──
-    document.getElementById('newSessionBtn').addEventListener('click', openNewMenu);
+    docById('newSessionBtn').addEventListener('click', openNewMenu);
 
     // ── Boot ──
     init();
+  </script>
+  <!-- DialKit island: React root mounted as a sibling (dialkit + motion via ESM CDN) -->
+  <script type="module">
+    // Only for the prototype user — wait for auth to resolve
+    const email = await new Promise((resolve) => {
+      const started = Date.now();
+      const poll = () => {
+        const e = window.currentUserEmail?.();
+        if (e) return resolve(e);
+        if (Date.now() - started > 30000) return resolve(null);
+        setTimeout(poll, 400);
+      };
+      poll();
+    });
+    if (email !== 'ryan.stone@shopify.com') { /* no-op for everyone else */ }
+    else {
+      try {
+        const [React, { createRoot }, { DialRoot, useDialKit }] = await Promise.all([
+          import('https://esm.sh/react@18.3.1'),
+          import('https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1'),
+          import('https://esm.sh/dialkit@1.4.3?deps=react@18.3.1,react-dom@18.3.1'),
+        ]);
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://esm.sh/dialkit@1.4.3/styles.css';
+        document.head.appendChild(css);
+
+        const h = React.createElement;
+        const { useDialKitController } = await import('https://esm.sh/dialkit@1.4.3?deps=react@18.3.1,react-dom@18.3.1');
+
+        function GlassDials() {
+          const d = window.getGlassSettings();
+          const a = window.getPipAnimSettings();
+          const dial = useDialKitController('Prototype settings', {
+            liquidGlass: {
+              tint: [d.alpha, 10, 95, 1],
+              blur: [d.blur, 0, 40, 1],
+              saturation: [d.sat, 100, 250, 1],
+              sheen: [d.sheen, 0, 200, 1],
+              glow: [d.glow, 0, 200, 1],
+              buttonTint: [d.btn, 50, 100, 1],
+              bend: d.bend,
+              bendStrength: [d.bendStrength, 0, 150, 1],
+              resetGlass: { type: 'action', label: 'Reset glass to defaults' },
+            },
+            pipAnimation: {
+              composerScale: [a.composerScale, 1, 2, 0.01],
+              composerDuration: [a.composerDuration, 0, 1500, 10],
+              emptyScale: [a.emptyScale, 0.5, 1, 0.01],
+              emptyDuration: [a.emptyDuration, 0, 1500, 10],
+              blur: a.blur,
+            },
+            privateSession: { type: 'action', label: 'Trigger private session' },
+            readOnly: { type: 'action', label: 'Trigger read-only mode' },
+          }, {
+            id: 'liquid-glass',
+            onAction: (path) => {
+              if (path === 'privateSession') window.protoTriggerPrivateSession?.();
+              else if (path === 'readOnly') window.protoToggleReadOnly?.();
+              else if (path.endsWith('resetGlass')) { window.resetGlassSettings?.(); window.resetPipAnimSettings?.(); dial.resetValues(); }
+            },
+          });
+          const p = dial.values.liquidGlass;
+          const pa = dial.values.pipAnimation;
+          React.useEffect(() => {
+            const map = { alpha: p.tint, blur: p.blur, sat: p.saturation, sheen: p.sheen, glow: p.glow, btn: p.buttonTint, bend: p.bend, bendStrength: p.bendStrength };
+            const cur = window.getGlassSettings();
+            for (const [k, v] of Object.entries(map)) {
+              if (cur[k] !== v) window.setGlassSetting(k, v);
+            }
+            const curA = window.getPipAnimSettings();
+            for (const [k, v] of Object.entries(pa)) {
+              if (curA[k] !== v) window.setPipAnimSetting(k, v);
+            }
+          });
+          return null;
+        }
+
+        // Inline inside the existing Prototype panel — the gear button shows it
+        const host = document.getElementById('dialkitInline');
+        if (host) {
+          createRoot(host).render(h(React.Fragment, null,
+            h(GlassDials),
+            h(DialRoot, { productionEnabled: true, mode: 'inline' })));
+        }
+      } catch (err) {
+        console.warn('[screen-notes] dialkit failed to load', err);
+      }
+    }
   </script>
 </body>
 </html>
