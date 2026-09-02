@@ -1279,6 +1279,11 @@
       transition: opacity 300ms var(--ease-out);
     }
     .notes-panel.scrolled .notes-panel-header::before { opacity: 1; }
+    /* Dark mode: match the panel's effective surface (glass tint over dark bg),
+       the raw glass tint alone reads too light */
+    html.dark .notes-panel-header::before {
+      background: linear-gradient(to bottom, rgba(35, 34, 32, 0.92), transparent);
+    }
     .notes-panel-header h3 {
       font-family: var(--font-serif);
       font-size: 24px;
@@ -1597,7 +1602,48 @@
       overflow-y: auto;
     }
     .pip-body .note-input-area { padding: 0 12px 12px; }
-    .pip-body .notes-list { padding: 0 12px 12px; }
+    .pip-body .notes-list { padding: 0 12px 76px; } /* room for the End session button */
+    .pip-end-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      box-shadow: var(--shadow-pop);
+    }
+    .pip-end-scrim {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 72px;
+      z-index: 99;
+      pointer-events: none;
+      /* Matches the PiP body background exactly in both themes; eased stops */
+      background: linear-gradient(to top,
+        var(--vellum-white) 0%,
+        color-mix(in srgb, var(--vellum-white) 70%, transparent) 35%,
+        color-mix(in srgb, var(--vellum-white) 35%, transparent) 60%,
+        color-mix(in srgb, var(--vellum-white) 12%, transparent) 80%,
+        transparent 100%);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      /* eased ramp — holds briefly at the bottom, then dissolves softly */
+      -webkit-mask-image: linear-gradient(to top,
+        black 0%, black 18%,
+        rgba(0, 0, 0, 0.85) 35%,
+        rgba(0, 0, 0, 0.55) 55%,
+        rgba(0, 0, 0, 0.28) 75%,
+        rgba(0, 0, 0, 0.1) 88%,
+        transparent 100%);
+      mask-image: linear-gradient(to top,
+        black 0%, black 18%,
+        rgba(0, 0, 0, 0.85) 35%,
+        rgba(0, 0, 0, 0.55) 55%,
+        rgba(0, 0, 0, 0.28) 75%,
+        rgba(0, 0, 0, 0.1) 88%,
+        transparent 100%);
+    }
     .pip-body .screenshot-preview { height: 180px; flex-shrink: 0; }
     .pip-body .markup-lightbox img { max-height: 70vh; }
     .pip-body .lb-top-actions { top: 8px; right: 8px; }
@@ -2671,28 +2717,33 @@
       border-radius: 999px;
       box-shadow: var(--shadow-pop);
     }
-    /* Apply/Discard slide out from behind the toolbar when crop mode is on */
+    /* Cancel/Done rise up centered from behind the toolbar when crop mode is on */
     .lb-crop-actions {
       position: absolute;
-      left: calc(100% + 8px);
-      top: 0;
-      bottom: 0;
+      bottom: calc(100% + 8px);
+      left: 50%;
       z-index: 1;
       display: flex;
       align-items: stretch;
       gap: 8px;
-      transform: translateX(-72px);
+      transform: translate(-50%, 72px);
       opacity: 0;
       pointer-events: none;
       transition: transform 400ms var(--ease-out), opacity 400ms var(--ease-out);
     }
     .lb-crop-actions.visible {
-      transform: translateX(0);
+      transform: translate(-50%, 0);
       opacity: 1;
       pointer-events: auto;
     }
-    .lb-crop-actions .btn { height: 100%; }
-    .lb-crop-actions.wiggle { animation: lb-wiggle 400ms ease; }
+    @keyframes lb-wiggle-centered {
+      0%, 100% { transform: translate(-50%, 0); }
+      20% { transform: translate(calc(-50% - 6px), 0); }
+      40% { transform: translate(calc(-50% + 6px), 0); }
+      60% { transform: translate(calc(-50% - 4px), 0); }
+      80% { transform: translate(calc(-50% + 4px), 0); }
+    }
+    .lb-crop-actions.wiggle { animation: lb-wiggle-centered 400ms ease; }
     /* Lightbox toolbar always uses the light look, in both themes */
     .markup-toolbar .tb-btn { color: #3d3d3a; }
     .markup-toolbar .tb-btn:hover { background: rgba(31, 30, 29, 0.06); color: #141413; }
@@ -3723,6 +3774,16 @@
       }
       composer.style.cssText = '';
       pip.document.body.appendChild(composer);
+      // Floating End session button pinned to the bottom of the frame,
+      // over a gradient-blur scrim matching the notes panel header fade
+      const endScrim = pip.document.createElement('div');
+      endScrim.className = 'pip-end-scrim';
+      pip.document.body.appendChild(endScrim);
+      const endBtn = pip.document.createElement('button');
+      endBtn.className = 'btn end-session-btn pip-end-btn';
+      endBtn.textContent = 'End session';
+      endBtn.onclick = () => stopRecording();
+      pip.document.body.appendChild(endBtn);
       bindPipGlobals(pip);
       updatePipToggleBtn();
       pip.addEventListener('pagehide', () => closeComposerPiP(true));
@@ -5226,6 +5287,7 @@
         let session = allSessions.find(s => s.id === stoppedSessionId);
         if (session) {
           const intoCanvas = recordingIntoCanvas;
+          const baseNoteCount = recordingBaseNotes.length;
           session.duration = recordingBaseDuration + (Date.now() - recordingStartTime);
           session.notes = composedSessionNotes();
           session.recording = false;
@@ -5236,7 +5298,9 @@
           await bakeNoteMarkupsIntoImages(session);
           // If the canvas had not yet been created, create it now so stop lands
           // directly on a populated canvas without requiring refresh/navigation.
-          if (!session.canvas || !session.canvas.items || session.canvas.items.length === 0) {
+          // An existing-but-empty items array means the user deleted the layers —
+          // treat it as materialized and only append this recording's notes.
+          if (!session.canvas || !Array.isArray(session.canvas.items)) {
             session.canvas = {
               viewport: { x: 0, y: 0, scale: 1 },
               items: generateInitialLayout(session.notes),
@@ -5251,7 +5315,10 @@
             const covered = new Set(existing
               .filter(it => it.noteIndex != null)
               .map(it => it.noteIndex));
-            const missing = session.notes.map((_, i) => i).filter(i => !covered.has(i));
+            // Only materialize notes from THIS recording — older uncovered notes
+            // mean the user deleted those layers on purpose
+            const missing = session.notes.map((_, i) => i)
+              .filter(i => i >= baseNoteCount && !covered.has(i));
             if (missing.length) {
               const offsetX = existing.length
                 ? Math.max(...existing.map(it => it.x + (it.w || 0))) + 128 : 0;
@@ -6561,8 +6628,13 @@
 
     function openMarkupSession({ mode, noteIndex = null, src, strokes, cropBase = null, cropRect = null }) {
       docById('markupLightbox')?.remove();
-      // Composer lightbox opens wherever the composer lives (tab or PiP window)
-      markupWin = (mode === 'composer' && pipOpen()) ? pipWindow : window;
+      // Lightbox opens wherever the notes live (tab or PiP window) — composer
+      // and saved-note screenshots both live in the PiP frame when it's open
+      let inPip = false;
+      if (pipOpen()) {
+        try { inPip = !!pipWindow.document.getElementById('notesPanelScroll'); } catch (_) {}
+      }
+      markupWin = inPip ? pipWindow : window;
       noteMarkup = {
         mode, noteIndex, src,
         strokes: JSON.parse(JSON.stringify(strokes || [])),
@@ -8481,6 +8553,8 @@
         previousTops.set(card.dataset.noteKey, card.getBoundingClientRect().top);
       });
 
+      // Fresh inline handlers in the PiP window need its globals re-bound after render
+      const listInPip = pipOpen() && list.ownerDocument !== document;
       list.innerHTML = [...currentNotes].reverse().map((note, i) => {
         const realIndex = currentNotes.length - 1 - i;
         const imgSrc = note._mkPreview || note.screenshotUrl || note.screenshot;
@@ -8556,6 +8630,7 @@
         });
       }
 
+      if (listInPip) bindPipGlobals(pipWindow);
     }
 
     function renderReviewView(session) {
@@ -8945,8 +9020,10 @@
       // Presence: broadcast cursor on mousemove
       viewport.addEventListener('mousemove', broadcastCursorPosition);
 
-      // Load existing canvas state OR auto-generate from notes
-      if (session.canvas && session.canvas.items && session.canvas.items.length) {
+      // Load existing canvas state OR auto-generate from notes.
+      // An empty items array is a deliberate state (user deleted the layers) —
+      // only generate when the canvas has never been materialized.
+      if (session.canvas && Array.isArray(session.canvas.items)) {
         canvas.items = JSON.parse(JSON.stringify(session.canvas.items)).map(item => {
           if (item.type === 'screenshot') {
             const note = (session.notes || [])[item.noteIndex];
@@ -9797,7 +9874,7 @@
         canvas.selectedId = null;
         canvas.selectedIds = [];
         renderCanvas();
-        saveCanvasDebounced();
+        saveCanvasNow(); // destructive — persist immediately, not debounced
         e.preventDefault();
       }
     }
@@ -10174,17 +10251,30 @@
       saveCanvasDebounced();
     }
 
+    async function saveCanvasNow() {
+      clearTimeout(canvas.saveTimer);
+      canvas.saveTimer = null;
+      if (!canvas.session || !canEditSession(canvas.session)) return;
+      canvas.session.canvas = {
+        viewport: { x: canvas.x, y: canvas.y, scale: canvas.scale },
+        items: canvas.items,
+      };
+      await saveSession(canvas.session);
+    }
+
     function saveCanvasDebounced() {
       clearTimeout(canvas.saveTimer);
-      canvas.saveTimer = setTimeout(async () => {
-        if (!canvas.session || !canEditSession(canvas.session)) return;
-        canvas.session.canvas = {
-          viewport: { x: canvas.x, y: canvas.y, scale: canvas.scale },
-          items: canvas.items,
-        };
-        await saveSession(canvas.session);
-      }, 500);
+      canvas.saveTimer = setTimeout(saveCanvasNow, 500);
     }
+
+    // A refresh/close during the debounce window would lose the last edit —
+    // flush any pending canvas save immediately
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && canvas.saveTimer) saveCanvasNow();
+    });
+    window.addEventListener('pagehide', () => {
+      if (canvas.saveTimer) saveCanvasNow();
+    });
 
     // ── Utilities ──
     function formatDuration(ms) {
