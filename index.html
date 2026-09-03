@@ -1690,6 +1690,10 @@
       z-index: 100;
       box-shadow: var(--shadow-pop);
     }
+    /* Pressed state must keep the horizontal centering */
+    .end-session-btn.pip-end-btn:active {
+      transform: translate(-50%, 1px) scale(0.985);
+    }
     .pip-end-scrim {
       position: fixed;
       left: 0;
