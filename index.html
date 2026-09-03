@@ -1462,7 +1462,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: top center;
+      object-position: center;
       transform-origin: center center;
     }
     .screenshot-preview.has-image img { display: block; cursor: zoom-in; }
@@ -10025,26 +10025,30 @@
     }
 
     function generateInitialLayout(notes) {
-      // Masonry-arrange screenshots from the start so auto-height note sections
-      // don't overlap when the session first opens after recording stops.
+      // Shelf layout: cards flow left to right in rows, wrapping when a row is
+      // full. Widths are estimated per note (multi-image cards are ultra-wide),
+      // so nothing overlaps even before real sizes are measured.
       const items = [];
       const cardW = 960, cardH = 640, gap = 64;
-      const cols = Math.max(1, Math.ceil(Math.sqrt(notes.length || 1)));
-      const colHeights = Array(cols).fill(0);
+      const maxRowW = Math.max(1, Math.ceil(Math.sqrt(notes.length || 1))) * (cardW + gap);
+      let x = 0, y = 0, rowH = 0;
 
       notes.forEach((note, i) => {
-        let col = 0;
-        for (let c = 1; c < cols; c++) {
-          if (colHeights[c] < colHeights[col]) col = c;
-        }
-
-        const x = col * (cardW + gap);
-        const y = colHeights[col];
         const shotCount = noteShots(note)?.length || ((note.screenshotUrl || note.screenshot) ? 1 : 0);
         const hasScreenshot = shotCount > 0;
+        // Estimated footprint (multi-image rows: n images at ~16:10 in cardH height)
+        const estW = hasScreenshot
+          ? (shotCount > 1 ? shotCount * Math.round(cardH * 1.6) + (shotCount - 1) * 16 : cardW)
+          : estimateTextNoteWidth(note.text || '');
+        const estH = hasScreenshot ? estimateScreenshotCardHeight(note, cardW, cardH) : 60;
+
+        if (x > 0 && x + estW > maxRowW) {
+          x = 0;
+          y += rowH + gap;
+          rowH = 0;
+        }
 
         if (hasScreenshot) {
-          const estimatedH = estimateScreenshotCardHeight(note, cardW, cardH);
           items.push({
             id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
             type: 'screenshot',
@@ -10054,11 +10058,7 @@
             w: cardW,
             h: cardH,
           });
-          colHeights[col] += estimatedH + gap;
         } else {
-          // Text-only note → standalone text box on canvas
-          const textW = estimateTextNoteWidth(note.text || '');
-          const textH = 60;
           items.push({
             id: 'note-' + i + '-' + Math.random().toString(36).slice(2, 7),
             type: 'text',
@@ -10067,11 +10067,12 @@
             noteIndex: i,
             x,
             y,
-            w: textW,
-            h: textH,
+            w: estW,
+            h: estH,
           });
-          colHeights[col] += textH + gap;
         }
+        x += estW + gap;
+        rowH = Math.max(rowH, estH);
       });
       return items;
     }
@@ -11121,7 +11122,7 @@
     }
 
     // Resolves when every canvas image has loaded (or errored), capped at maxMs
-    function waitForCanvasImages(maxMs = 3000) {
+    function waitForCanvasImages(maxMs = 8000) {
       const world = docById('canvasWorld');
       if (!world) return Promise.resolve();
       const pending = [...world.querySelectorAll('img')]
@@ -11148,21 +11149,26 @@
 
       const items = canvas.items;
       const measured = new Map(items.map(item => [item.id, getRenderedItemSize(item)]));
-      const maxItemW = Math.max(...items.map(item => measured.get(item.id).w || item.w || 960));
-      const cols = Math.max(1, Math.ceil(Math.sqrt(items.length)));
-      const colW = maxItemW + gap;
-      const colHeights = Array(cols).fill(0);
+      // Shelf layout on real rendered sizes — handles ultra-wide multi-image
+      // cards without overlapping neighbours
+      const totalW = items.reduce((s, item) => s + (measured.get(item.id).w || item.w || 960) + gap, 0);
+      const widest = Math.max(...items.map(item => measured.get(item.id).w || item.w || 960));
+      const maxRowW = Math.max(widest, Math.ceil(Math.sqrt(totalW * 700)));
+      let x = 0, y = 0, rowH = 0;
 
       items.forEach(item => {
         const size = measured.get(item.id) || { w: item.w, h: item.h };
-        let col = 0;
-        for (let i = 1; i < cols; i++) {
-          if (colHeights[i] < colHeights[col]) col = i;
+        const w = size.w || item.w || 960;
+        const h = size.h || item.h || 640;
+        if (x > 0 && x + w > maxRowW) {
+          x = 0;
+          y += rowH + gap;
+          rowH = 0;
         }
-
-        item.x = col * colW;
-        item.y = colHeights[col];
-        colHeights[col] += size.h + gap;
+        item.x = x;
+        item.y = y;
+        x += w + gap;
+        rowH = Math.max(rowH, h);
       });
 
       renderCanvas();
