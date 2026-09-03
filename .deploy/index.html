@@ -1562,6 +1562,82 @@
       left: 8px;
       z-index: 3;
     }
+    /* ── Multi-screenshot carousel ── */
+    .shot-layer { position: absolute; inset: 0; background: var(--surface-sunken); }
+    .shot-ghost { background: var(--surface-sunken); }
+    .screenshot-preview .screenshot-preview-actions { z-index: 3; }
+    /* Pressed state must keep the vertical centering — without this the
+       generic :active transform yanks the chevrons to the top */
+    .screenshot-preview-btn.shot-nav-btn:active {
+      transform: translateY(calc(-50% + 1px));
+    }
+    .shot-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 3;
+    }
+    .shot-nav-prev { left: 8px; }
+    .shot-nav-next { right: 8px; }
+    .shot-chevron-left { transform: rotate(90deg); }
+    .shot-chevron-right { transform: rotate(-90deg); }
+    /* Dots live in a floating glass pill; max 5 visible with iOS-style
+       mini edge dots + sliding row when there are more images */
+    .shot-dots {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      overflow: hidden;
+      box-sizing: content-box;
+      background: var(--glass-bg-strong);
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+      border-radius: 999px;
+      padding: 5px 6px;
+    }
+    .shot-dots-row {
+      display: flex;
+      gap: 5px;
+      transition: transform 300ms cubic-bezier(0.2, 0.8, 0, 1);
+    }
+    .shot-dot {
+      flex: 0 0 auto;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      background: color-mix(in srgb, var(--ink-black) 30%, transparent);
+      cursor: pointer;
+      transition: transform 300ms cubic-bezier(0.2, 0.8, 0, 1),
+                  width 300ms cubic-bezier(0.2, 0.8, 0, 1),
+                  margin 300ms cubic-bezier(0.2, 0.8, 0, 1),
+                  background 160ms ease;
+    }
+    .shot-dots-row { transition: transform 300ms cubic-bezier(0.2, 0.8, 0, 1), width 300ms cubic-bezier(0.2, 0.8, 0, 1); }
+    .shot-dots { transition: width 300ms cubic-bezier(0.2, 0.8, 0, 1); }
+    .shot-dot.active { background: var(--ink-black); }
+    .screenshot-preview.saving-out .shot-nav-btn,
+    .screenshot-preview.saving-out .shot-dots { display: none; }
+    /* Saved note cards: carousel controls appear on hover */
+    /* Floating controls always paint above the sliding images */
+    .note-card-screenshot-actions { z-index: 3; }
+    .note-card .note-shot-nav,
+    .note-card .note-shot-dots {
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+    .note-card:hover .note-shot-nav,
+    .note-card:hover .note-shot-dots,
+    .note-card:focus-within .note-shot-nav,
+    .note-card:focus-within .note-shot-dots { opacity: 1; }
+    .note-card .shot-dots { bottom: 10px; }
     .screenshot-preview.saving-out .screenshot-pip-btn { display: none; }
     /* The PiP frame has a native close button — hide ours there */
     .pip-body .screenshot-pip-btn { display: none; }
@@ -1647,7 +1723,7 @@
         rgba(0, 0, 0, 0.1) 88%,
         transparent 100%);
     }
-    .pip-body .screenshot-preview { height: 180px; flex-shrink: 0; }
+    .pip-body .screenshot-preview { height: 220px; flex-shrink: 0; } /* same as the tab */
     .pip-body .markup-lightbox img { max-height: 70vh; }
     .pip-body .lb-top-actions { top: 8px; right: 8px; }
     .pip-body .lb-close-btn { top: 8px; left: 8px; }
@@ -1691,18 +1767,26 @@
       gap: 5px;
       padding: 5px 8px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.86);
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      /* Same glass material as the floating icon buttons */
+      background: var(--glass-bg-strong);
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
       color: var(--ink-black);
       font-size: 12px;
       line-height: 1;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.12);
       pointer-events: none;
+      z-index: 3;
     }
     .screenshot-preview.has-image .screenshot-preview-timestamp { display: inline-flex; }
-    html.dark .screenshot-preview-timestamp { color: #1f1e1d; }
+    /* Saved note thumbnails carry the same timestamp pill */
+    .note-card-screenshot-wrap .screenshot-preview-timestamp { display: inline-flex; }
+    /* Timestamps are hidden unless enabled in prototype settings */
+    html:not(.show-timestamps) .screenshot-preview-timestamp,
+    html:not(.show-timestamps) .ci-note-time { display: none !important; }
     .screenshot-preview.has-image.saving-out .screenshot-preview-actions,
     .screenshot-preview.has-image.saving-out .screenshot-preview-timestamp { display: none; }
 
@@ -1732,6 +1816,7 @@
     .note-card-screenshot-wrap {
       position: relative;
       border-bottom: 1px solid var(--border-soft);
+      overflow: hidden; /* clips the carousel push animation */
     }
     .note-card-screenshot {
       width: 100%;
@@ -1799,6 +1884,8 @@
       color: var(--dusty-gray);
     }
     .note-card-actions { display: flex; gap: 4px; }
+    /* Delete note sits on the left now that the timestamp lives on the thumbnail */
+    .note-card-meta { justify-content: flex-start; }
     .note-delete-link {
       background: transparent;
       border: none;
@@ -2003,6 +2090,13 @@
     }
 
     .canvas-item { position: absolute; cursor: pointer; box-sizing: border-box; }
+    /* Multi-image note cards: images side by side, note spans below */
+    .ci-shot-row { display: flex; gap: 16px; align-items: flex-start; }
+    .ci-screenshot-multi { width: max-content; }
+    .ci-screenshot-multi .ci-screenshot-img-wrap.shot-selected {
+      outline: 2px solid var(--terra-cotta);
+      outline-offset: -2px;
+    }
     .canvas-item.selected {
       outline: 2px solid var(--terra-cotta);
       outline-offset: 0;
@@ -3539,6 +3633,7 @@
         cursor: '<path d="M5.5 3.5l14.2 6.6-6.3 1.7-2.7 6L5.5 3.5z"/>',
         crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
         pip: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12.5" width="6.5" height="4.5" rx="1" class="icon-filled"/>',
+        plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
         pipexit: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M14.5 9.5L9 15"/><path d="M9 11.2V15h3.8"/>',
         camcorder: '<rect x="3" y="7" width="12.5" height="10" rx="2.5"/><path d="M15.5 10.8l4.2-2.3a.6.6 0 0 1 .9.5v6a.6.6 0 0 1-.9.5l-4.2-2.3"/>',
         gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
@@ -3623,6 +3718,33 @@
       pipAnimSettings = { ...PIPANIM_DEFAULTS };
       try { localStorage.removeItem('sn-pipanim'); } catch (_) {}
     }
+
+    // ── Display settings ──
+    const DISPLAY_DEFAULTS = { showTimestamps: false };
+    let displaySettings = (() => {
+      try { return { ...DISPLAY_DEFAULTS, ...JSON.parse(localStorage.getItem('sn-display') || '{}') }; }
+      catch (_) { return { ...DISPLAY_DEFAULTS }; }
+    })();
+    function getDisplaySettings() { return { ...displaySettings }; }
+    function applyDisplaySettings() {
+      document.documentElement.classList.toggle('show-timestamps', !!displaySettings.showTimestamps);
+      try {
+        if (pipWindow && !pipWindow.closed) {
+          pipWindow.document.documentElement.classList.toggle('show-timestamps', !!displaySettings.showTimestamps);
+        }
+      } catch (_) {}
+    }
+    function setDisplaySetting(key, value) {
+      displaySettings[key] = value;
+      try { localStorage.setItem('sn-display', JSON.stringify(displaySettings)); } catch (_) {}
+      applyDisplaySettings();
+    }
+    function resetDisplaySettings() {
+      displaySettings = { ...DISPLAY_DEFAULTS };
+      try { localStorage.removeItem('sn-display'); } catch (_) {}
+      applyDisplaySettings();
+    }
+    applyDisplaySettings();
 
     function initGlassControls() {
       for (const [k, v] of Object.entries(glassSettings)) {
@@ -3867,6 +3989,32 @@
       ph?.remove();
       if (!alreadyClosing) { try { pip.close(); } catch (_) {} }
       updatePipToggleBtn();
+      // Chromium quirk: nodes adopted back from a closed PiP document can lose
+      // their animation/transition ability — swap in a fresh clone once the
+      // pop-in animation has finished
+      setTimeout(refreshComposerDom, 500);
+    }
+
+    function refreshComposerDom() {
+      if (pipOpen()) return;
+      const scroller = document.getElementById('notesPanelScroll');
+      if (!scroller) return;
+      const input = scroller.querySelector('#noteInput');
+      const val = input?.value;
+      const scrollTop = scroller.scrollTop;
+      const fresh = scroller.cloneNode(true);
+      scroller.replaceWith(fresh);
+      rebindInlineHandlers(fresh);
+      const ni = fresh.querySelector('#noteInput');
+      if (ni != null && val != null) ni.value = val;
+      fresh.scrollTop = scrollTop;
+      // Reattach programmatic listeners lost in the clone
+      fresh.addEventListener('scroll', () => {
+        fresh.closest('.notes-panel')?.classList.toggle('scrolled', fresh.scrollTop > 4);
+      }, { passive: true });
+      updateShotControls();
+      renderComposerShot();
+      renderNotesList(); // rebuilds dot pills + their click handlers
     }
 
     function toggleComposerPiP() {
@@ -4361,6 +4509,14 @@
           }
           // Display-only markup composite is a data URL — never persist it
           delete n._mkPreview;
+          if (Array.isArray(n.screenshots)) {
+            n.screenshots.forEach(s => {
+              delete s._mkPreview;
+              if (typeof s.url === 'string' && s.url.startsWith('data:')) s.url = null;
+            });
+            n.screenshots = n.screenshots.filter(s => s.url);
+            if (!n.screenshots.length) delete n.screenshots;
+          }
         });
       }
       if (clone.canvas && Array.isArray(clone.canvas.items)) {
@@ -5208,6 +5364,8 @@
       screenshotCaptured = null;
       // Stale composer state from a previous recording blocks the first
       // auto-capture (beginNoteScreenshotCapture guards on these)
+      composerShots = [];
+      composerShotIndex = 0;
       pendingScreenshot = null;
       screenshotRemoved = false;
 
@@ -5884,12 +6042,39 @@
     // When user focuses the note box we IMMEDIATELY grab a high-res blob and
     // start uploading it. The upload promise is stored on `screenshotCaptured`
     // so by the time they click Save Note the URL is usually already ready.
-    let pendingScreenshot = null; // { blob, previewDataUrl, uploadPromise }
+    // ── Composer screenshot carousel ──
+    // Multiple screenshots per note. Each slot is either { empty: true, userAdded? }
+    // or a filled shot { previewDataUrl, uploadPromise, capturedTimestampMs, markup… }.
+    // `pendingScreenshot` stays as an alias for the FOCUSED filled slot so all the
+    // existing capture/markup/crop code keeps working against the active image.
+    let pendingScreenshot = null;
+    let composerShots = [];
+    let composerShotIndex = 0;
+
+    function activeComposerSlot() { return composerShots[composerShotIndex] || null; }
+    function composerImageCount() { return composerShots.filter(s => s && !s.empty).length; }
+    function syncComposerAlias() {
+      const s = activeComposerSlot();
+      pendingScreenshot = s && !s.empty ? s : null;
+    }
+    function ensureActiveComposerSlot() {
+      if (!composerShots.length) { composerShots = [{ empty: true }]; composerShotIndex = 0; }
+      return composerShots[composerShotIndex];
+    }
+    function resetComposerShots() {
+      composerShots = [];
+      composerShotIndex = 0;
+      pendingScreenshot = null;
+      updateShotControls();
+    }
     let screenshotRemoved = false; // user explicitly removed pending screenshot
     let enteringNoteCreatedAt = null;
 
     async function beginNoteScreenshotCapture() {
       if (!isRecording || pendingScreenshot || screenshotRemoved) return pendingScreenshot;
+      // A deliberately added empty slot only fills via its Take screenshot button
+      const autoSlot = activeComposerSlot();
+      if (autoSlot?.empty && autoSlot.userAdded) return null;
       // Quick preview for indicator (not persisted)
       const preview = captureScreenshotPreview();
       if (!preview) return null;
@@ -5943,7 +6128,11 @@
         }
       })();
 
-      pendingScreenshot = { previewDataUrl: preview, uploadPromise, capturedTimestampMs: currentCaptureTimestampMs() };
+      const slot = ensureActiveComposerSlot();
+      for (const k of Object.keys(slot)) delete slot[k];
+      Object.assign(slot, { previewDataUrl: preview, uploadPromise, capturedTimestampMs: currentCaptureTimestampMs() });
+      syncComposerAlias();
+      updateShotControls();
       updateSaveNoteButtonState();
 
       uploadPromise.then(() => {});
@@ -5956,11 +6145,14 @@
       const button = docById('saveNoteBtn');
       if (!button) return;
       const hasText = !!input?.value.trim();
-      const hasScreenshot = !!pendingScreenshot && !screenshotRemoved;
+      const hasScreenshot = composerImageCount() > 0 && !screenshotRemoved;
       button.disabled = !(hasText || hasScreenshot);
     }
 
     async function retakeScreenshot(focusNoteInput = true) {
+      const slot = ensureActiveComposerSlot();
+      for (const k of Object.keys(slot)) delete slot[k];
+      slot.empty = true;
       pendingScreenshot = null;
       screenshotRemoved = false;
       updateSaveNoteButtonState();
@@ -5977,7 +6169,16 @@
     }
 
     function removeScreenshot() {
-      pendingScreenshot = null;
+      // With multiple slots, trash deletes the focused one; the next takes its place
+      if (composerShots.length > 1) {
+        composerShots.splice(composerShotIndex, 1);
+        composerShotIndex = Math.min(composerShotIndex, composerShots.length - 1);
+        syncComposerAlias();
+        renderComposerShot('prev');
+        updateSaveNoteButtonState();
+        return;
+      }
+      resetComposerShots();
       screenshotRemoved = true;
       const indicator = docById('screenshotIndicator');
       if (indicator) {
@@ -5991,6 +6192,200 @@
       if (previewImg) previewImg.src = '';
       if (previewTimestamp) previewTimestamp.innerHTML = '';
       updateSaveNoteButtonState();
+    }
+
+    // ── Carousel controls ──
+    // Plus takes a fresh screenshot immediately and appends it — no empty states
+    function addComposerShot() {
+      if (!pendingScreenshot) return;
+      const preview = captureScreenshotPreview();
+      if (!preview) return;
+      const blobPromise = captureScreenshotBlob();
+      const slot = {
+        previewDataUrl: preview,
+        capturedTimestampMs: currentCaptureTimestampMs(),
+        uploadPromise: (async () => {
+          try {
+            const blob = await blobPromise;
+            if (!blob) return null;
+            const file = new File([blob], `screenshot-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            const r = await quick.fs.uploadFile(file);
+            const f = r?.files?.[0] || r?.[0] || r?.file || null;
+            return f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+          } catch (err) {
+            console.error('[screen-notes] shot upload failed', err);
+            return null;
+          }
+        })(),
+      };
+      composerShots.splice(composerShotIndex + 1, 0, slot);
+      composerShotIndex += 1;
+      screenshotRemoved = false;
+      syncComposerAlias();
+      renderComposerShot('new');
+      updateSaveNoteButtonState();
+    }
+
+    function navigateComposerShot(delta) {
+      const n = composerShots.length;
+      if (n < 2) return;
+      const next = Math.min(n - 1, Math.max(0, composerShotIndex + delta));
+      if (next === composerShotIndex) return;
+      composerShotIndex = next;
+      syncComposerAlias();
+      renderComposerShot(delta > 0 ? 'next' : 'prev');
+    }
+
+    function focusComposerShot(i) {
+      if (i === composerShotIndex || !composerShots[i]) return;
+      const dir = i > composerShotIndex ? 'next' : 'prev';
+      composerShotIndex = i;
+      syncComposerAlias();
+      renderComposerShot(dir);
+    }
+
+    function composerShotSrc(slot) {
+      return slot && !slot.empty ? (slot._mkPreview || slot.previewDataUrl || '') : '';
+    }
+
+    // Update the preview area to show the focused slot; `direction` animates:
+    // 'new' = old slides out left while new scales in; 'next'/'prev' = slide.
+    function renderComposerShot(direction = null) {
+      const previewEl = docById('screenshotPreview');
+      const layer = previewEl?.querySelector('.shot-layer');
+      if (!previewEl || !layer) return;
+      const slot = activeComposerSlot();
+      const hasImg = !!(slot && !slot.empty);
+      let ghost = null;
+      if (direction) {
+        // Rapid navigation: clear any in-flight ghosts so layers never stack/flicker
+        previewEl.querySelectorAll('.shot-ghost').forEach(g => g.remove());
+        ghost = layer.cloneNode(true);
+        ghost.classList.add('shot-ghost');
+        const wasImg = previewEl.classList.contains('has-image');
+        const gi = ghost.querySelector('img');
+        const ge = ghost.querySelector('.screenshot-preview-empty');
+        const gt = ghost.querySelector('.screenshot-preview-timestamp');
+        if (gi) gi.style.display = wasImg ? 'block' : 'none';
+        if (ge) ge.style.display = wasImg ? 'none' : 'flex';
+        if (gt) gt.style.display = wasImg ? 'inline-flex' : 'none';
+        ghost.removeAttribute('id');
+        ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        ghost.style.position = 'absolute';
+        ghost.style.inset = '0';
+        ghost.style.zIndex = '2';
+        ghost.style.pointerEvents = 'none';
+        previewEl.appendChild(ghost);
+      }
+      previewEl.classList.toggle('has-image', hasImg);
+      previewEl.classList.remove('saving-out', 'capturing-image');
+      const img = layer.querySelector('img');
+      if (img) img.src = composerShotSrc(slot);
+      const ts = layer.querySelector('.screenshot-preview-timestamp');
+      if (ts) ts.innerHTML = hasImg ? `<span>${escapeHtml(formatDuration(slot.capturedTimestampMs || 0))}</span>` : '';
+      updateShotControls();
+      if (direction && ghost) {
+        // Push: outgoing and incoming share edges (±100%, same curve/timing),
+        // so they shove each other rather than overlap. 'new' pushes in from
+        // the right, like navigating forward.
+        const easeOut = 'cubic-bezier(0.2, 0.8, 0, 1)';
+        const d = direction === 'prev' ? -1 : 1;
+        try {
+          // fill: 'forwards' — without it the ghost snaps back over the new
+          // image between animation end and removal (the "old image flash")
+          ghost.animate(
+            [{ transform: 'translateX(0)' }, { transform: `translateX(${-d * 100}%)` }],
+            { duration: 400, easing: easeOut, fill: 'forwards' }
+          );
+          layer.animate(
+            [{ transform: `translateX(${d * 100}%)` }, { transform: 'translateX(0)' }],
+            { duration: 400, easing: easeOut }
+          );
+        } catch (_) {}
+        setTimeout(() => ghost.remove(), 450);
+      }
+    }
+
+    function updateShotControls() {
+      const n = composerShots.length;
+      const previewEl = docById('screenshotPreview');
+      if (!previewEl) return;
+      const prev = previewEl.querySelector('.shot-nav-prev');
+      const next = previewEl.querySelector('.shot-nav-next');
+      const dots = previewEl.querySelector('.shot-dots');
+      previewEl.classList.toggle('has-multi', n > 1);
+      if (prev) prev.style.display = n > 1 && composerShotIndex > 0 ? '' : 'none';
+      if (next) next.style.display = n > 1 && composerShotIndex < n - 1 ? '' : 'none';
+      if (dots) buildShotDots(dots, n, composerShotIndex, focusComposerShot);
+    }
+
+    // Shared dot builder: max 5 visible, sliding row, 0.5x edge dots.
+    // Adding a dot scales it up from 0 in place; removing collapses it away.
+    function buildShotDots(container, n, active, onClick) {
+      const DOT = 7, GAP = 5, STEP = DOT + GAP, MAX = 5;
+      container._onDotClick = onClick;
+      if (n < 2) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+      container.style.display = '';
+      const doc = container.ownerDocument;
+      let row = container.querySelector('.shot-dots-row');
+      const makeDot = () => {
+        const d = doc.createElement('button');
+        d.type = 'button';
+        d.className = 'shot-dot';
+        d.onclick = (ev) => {
+          ev.stopPropagation();
+          const idx = [...d.parentElement.children].filter(c => !c.dataset.dying).indexOf(d);
+          container._onDotClick?.(idx);
+        };
+        return d;
+      };
+      if (!row) {
+        row = doc.createElement('div');
+        row.className = 'shot-dots-row';
+        for (let i = 0; i < n; i++) row.appendChild(makeDot());
+        container.appendChild(row);
+      } else {
+        const live = [...row.children].filter(c => !c.dataset.dying);
+        if (n === live.length + 1) {
+          // One added — scale it up from 0 at its position (the focused index)
+          const d = makeDot();
+          d.style.transform = 'scale(0)';
+          row.insertBefore(d, live[active] || null);
+          void d.offsetWidth; // commit initial scale so the transition runs
+        } else if (n === live.length - 1) {
+          // One removed — collapse the dot at the focused position away
+          const victim = live[Math.min(active, live.length - 1)] || live[live.length - 1];
+          if (victim) {
+            victim.dataset.dying = '1';
+            victim.style.transform = 'scale(0)';
+            victim.style.width = '0px';
+            victim.style.marginRight = `-${GAP}px`;
+            setTimeout(() => victim.remove(), 320);
+          }
+        } else if (n !== live.length) {
+          row.innerHTML = '';
+          for (let i = 0; i < n; i++) row.appendChild(makeDot());
+        }
+      }
+      const dots = [...row.children].filter(c => !c.dataset.dying);
+      const start = Math.max(0, Math.min(active - Math.floor(MAX / 2), n - MAX));
+      const visible = Math.min(n, MAX);
+      container.style.width = `${visible * STEP - GAP}px`;
+      row.style.transform = `translateX(${-start * STEP}px)`;
+      dots.forEach((d, i) => {
+        d.classList.toggle('active', i === active);
+        let s = 1;
+        if (n > MAX) {
+          if (i < start || i > start + MAX - 1) s = 0.3;
+          else if (i === start && start > 0) s = 0.5;
+          else if (i === start + MAX - 1 && start + MAX < n) s = 0.5;
+        }
+        d.style.transform = `scale(${s})`;
+      });
     }
 
     function onNoteFocus() {
@@ -6027,19 +6422,23 @@
       const input = docById('noteInput');
       const text = input.value.trim();
 
-      let url = null;
+      // Resolve every filled slot's upload (multi-image notes)
+      const filledShots = [];
       if (!screenshotRemoved) {
-        if (!pendingScreenshot) {
+        if (!composerImageCount()) {
           await beginNoteScreenshotCapture();
         }
-        if (pendingScreenshot) {
-          url = await pendingScreenshot.uploadPromise;
-          if (!url) {
+        for (const slot of composerShots) {
+          if (!slot || slot.empty) continue;
+          const u = await slot.uploadPromise;
+          if (!u) {
             alert('Screenshot upload failed — please try the note again.');
             return;
           }
+          filledShots.push({ slot, url: u });
         }
       }
+      const url = filledShots[0]?.url || null;
 
       // Allow image-only or text-only notes, but don't save a completely empty note.
       if (!text && !url) return;
@@ -6047,27 +6446,32 @@
       const note = {
         text,
         screenshotUrl: url,    // null = text-only note (no screenshot)
-        timestamp: pendingScreenshot?.capturedTimestampMs ?? currentCaptureTimestampMs(),
+        timestamp: filledShots[0]?.slot.capturedTimestampMs ?? currentCaptureTimestampMs(),
         createdAt: new Date().toISOString(),
       };
-      // Carry crop provenance so the saved note can be re-cropped/reverted
-      if (url && pendingScreenshot?.cropBase) {
-        note.cropBaseUrl = pendingScreenshot.cropBase.src;
-        note.cropBaseW = pendingScreenshot.cropBase.w;
-        note.cropBaseH = pendingScreenshot.cropBase.h;
-        note.cropRect = pendingScreenshot.cropRect;
-      }
-      // Carry composer markup over so the saved note stays re-editable
-      if (url && pendingScreenshot?.markupStrokes) {
-        note.markupStrokes = pendingScreenshot.markupStrokes;
-        note.markupNatW = pendingScreenshot.markupNatW;
-        note.markupNatH = pendingScreenshot.markupNatH;
-        note._mkPreview = pendingScreenshot._mkPreview;
+      if (filledShots.length) {
+        note.screenshots = filledShots.map(({ slot, url: u }) => {
+          const s = { url: u, timestamp: slot.capturedTimestampMs ?? note.timestamp };
+          if (slot.markupStrokes) {
+            s.markupStrokes = slot.markupStrokes;
+            s.markupNatW = slot.markupNatW;
+            s.markupNatH = slot.markupNatH;
+            s._mkPreview = slot._mkPreview;
+          }
+          if (slot.cropBase) {
+            s.cropBaseUrl = slot.cropBase.src;
+            s.cropBaseW = slot.cropBase.w;
+            s.cropBaseH = slot.cropBase.h;
+            s.cropRect = slot.cropRect;
+          }
+          return s;
+        });
       }
 
       const saveButton = docById('saveNoteBtn');
       if (saveButton) saveButton.disabled = true;
       if (url) await animateScreenshotPreviewOut();
+      resetComposerShots();
 
       currentNotes.push(note);
       enteringNoteCreatedAt = note.createdAt;
@@ -6146,6 +6550,29 @@
 
     async function removeRecordingNoteScreenshot(index) {
       if (!currentNotes[index]) return;
+      const note = currentNotes[index];
+      const shots = noteShots(note);
+      if (shots && shots.length > 1) {
+        // Delete only the focused screenshot; the next one takes its place
+        const si = focusedShotIndex(note, index);
+        shots.splice(si, 1);
+        const newFocus = Math.min(si, shots.length - 1);
+        syncNoteShotMirror(note);
+        if (shots.length >= 2) {
+          // In place: next image pushes in + the dead dot collapses away
+          setNoteShotFocusIdx(index, newFocus, 1);
+        } else {
+          noteShotFocus[noteKeyFor(note, index)] = 0;
+          renderNotesList();
+        }
+        const session = allSessions.find(s => s.id === activeSessionId);
+        if (session) {
+          session.notes = composedSessionNotes();
+          await saveSession(session);
+        }
+        return;
+      }
+      delete note.screenshots;
       currentNotes[index].screenshotUrl = null;
       delete currentNotes[index].screenshot;
       const session = allSessions.find(s => s.id === activeSessionId);
@@ -6156,8 +6583,184 @@
       renderNotesList();
     }
 
+    // ── Saved-note screenshot carousel ──
+    // Notes may hold multiple screenshots (note.screenshots). Legacy notes keep
+    // their single-image fields and behave as before.
+    const noteShotFocus = {}; // noteKey → focused shot index (transient)
+
+    function noteShots(note) {
+      return Array.isArray(note?.screenshots) && note.screenshots.length ? note.screenshots : null;
+    }
+
+    function noteKeyFor(note, index) {
+      return note?.createdAt || `note-${index}`;
+    }
+
+    function focusedShotIndex(note, index) {
+      const shots = noteShots(note);
+      if (!shots) return 0;
+      return Math.min(noteShotFocus[noteKeyFor(note, index)] || 0, shots.length - 1);
+    }
+
+    // Keep the legacy single-image mirror (canvas + old readers) in sync with shot 0
+    function syncNoteShotMirror(note) {
+      const shots = noteShots(note);
+      if (!shots) return;
+      note.screenshotUrl = shots[0].url;
+      note.timestamp = shots[0].timestamp ?? note.timestamp;
+    }
+
+    function setNoteShotFocusIdx(index, next, delta) {
+      const note = currentNotes[index];
+      const shots = noteShots(note);
+      if (!shots) return;
+      const key = noteKeyFor(note, index);
+      noteShotFocus[key] = next;
+      // Update the card in place — a full list re-render flickers the images
+      const card = docById('notesList')?.querySelector(`.note-card[data-note-key="${CSS.escape(key)}"]`);
+      if (!card) { renderNotesList(); return; }
+      const img = card.querySelector('.note-card-screenshot');
+      const wrap = card.querySelector('.note-card-screenshot-wrap');
+      const shot = shots[next];
+      if (img && shot) {
+        // Decode the incoming image first — swapping src mid-animation briefly
+        // keeps showing the old bitmap, which looked like a glitch
+        const newSrc = shot._mkPreview || shot.url;
+        const d = delta > 0 ? 1 : -1;
+        const doPush = () => {
+          if (wrap) {
+            wrap.querySelectorAll('.note-shot-ghost').forEach(g => g.remove());
+            const ghost = img.cloneNode();
+            ghost.className = 'note-shot-ghost';
+            ghost.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0;';
+            wrap.appendChild(ghost);
+            try {
+              ghost.animate(
+                [{ transform: 'translateX(0)' }, { transform: `translateX(${-d * 100}%)` }],
+                { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0, 1)', fill: 'forwards' }
+              );
+            } catch (_) {}
+            setTimeout(() => ghost.remove(), 450);
+          }
+          img.src = newSrc;
+          try {
+            img.animate(
+              [{ transform: `translateX(${d * 100}%)` }, { transform: 'translateX(0)' }],
+              { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0, 1)' }
+            );
+          } catch (_) {}
+        };
+        let started = false;
+        const start = () => { if (started) return; started = true; doPush(); };
+        const pre = new Image();
+        pre.src = newSrc;
+        if (pre.complete) start();
+        else {
+          pre.decode?.().then(start, start);
+          pre.onload = start;
+          pre.onerror = start;
+          setTimeout(start, 350); // don't stall on slow loads
+        }
+      }
+      const tsEl = card.querySelector('.note-shot-timestamp span');
+      if (tsEl && shot) tsEl.textContent = formatDuration(shot.timestamp || 0);
+      const dotsEl = card.querySelector('.note-shot-dots');
+      if (dotsEl) buildShotDots(dotsEl, shots.length, next, (di) => focusNoteShot(index, di));
+      const prevBtn = card.querySelector('.shot-nav-prev');
+      const nextBtn = card.querySelector('.shot-nav-next');
+      if (prevBtn) prevBtn.style.display = next === 0 ? 'none' : '';
+      if (nextBtn) nextBtn.style.display = next === shots.length - 1 ? 'none' : '';
+    }
+
+    function navigateNoteShot(index, delta) {
+      const note = currentNotes[index];
+      const shots = noteShots(note);
+      if (!shots) return;
+      const cur = focusedShotIndex(note, index);
+      const next = Math.min(shots.length - 1, Math.max(0, cur + delta));
+      if (next !== cur) setNoteShotFocusIdx(index, next, delta);
+    }
+
+    function focusNoteShot(index, di) {
+      const note = currentNotes[index];
+      const shots = noteShots(note);
+      if (!shots || !shots[di]) return;
+      const cur = focusedShotIndex(note, index);
+      if (di !== cur) setNoteShotFocusIdx(index, di, di > cur ? 1 : -1);
+    }
+
+    // Migrate a legacy single-image note to the screenshots array
+    function ensureNoteShotArray(note) {
+      if (noteShots(note)) return note.screenshots;
+      const src = note.screenshotUrl || note.screenshot;
+      note.screenshots = src ? [{
+        url: src,
+        timestamp: note.timestamp,
+        ...(note.markupStrokes ? { markupStrokes: note.markupStrokes, markupNatW: note.markupNatW, markupNatH: note.markupNatH, _mkPreview: note._mkPreview } : {}),
+        ...(note.cropBaseUrl ? { cropBaseUrl: note.cropBaseUrl, cropBaseW: note.cropBaseW, cropBaseH: note.cropBaseH, cropRect: note.cropRect } : {}),
+        ...(note.markupOriginalUrl ? { markupOriginalUrl: note.markupOriginalUrl } : {}),
+      }] : [];
+      delete note.markupStrokes;
+      delete note.markupNatW;
+      delete note.markupNatH;
+      delete note._mkPreview;
+      delete note.cropBaseUrl;
+      delete note.cropBaseW;
+      delete note.cropBaseH;
+      delete note.cropRect;
+      delete note.markupOriginalUrl;
+      return note.screenshots;
+    }
+
+    // Plus on a saved note: capture the current frame and append to its carousel
+    async function addNoteShot(index) {
+      const note = currentNotes[index];
+      if (!note) return;
+      try {
+        const url = await uploadCurrentFrameScreenshot();
+        const shots = ensureNoteShotArray(note);
+        const hadCarousel = shots.length >= 2;
+        const insertAt = shots.length ? focusedShotIndex(note, index) + 1 : 0;
+        shots.splice(insertAt, 0, { url, timestamp: currentCaptureTimestampMs() });
+        syncNoteShotMirror(note);
+        if (hadCarousel) {
+          // In place: push the new image in + dot scales up from 0
+          setNoteShotFocusIdx(index, insertAt, 1);
+        } else {
+          noteShotFocus[noteKeyFor(note, index)] = insertAt;
+          renderNotesList();
+        }
+        const session = allSessions.find(s => s.id === activeSessionId);
+        if (session) {
+          session.notes = composedSessionNotes();
+          await saveSession(session);
+        }
+      } catch (err) {
+        alert(err?.message || 'Screenshot capture failed — please try again.');
+      }
+    }
+
     async function retakeRecordingNoteScreenshot(index) {
       if (!currentNotes[index]) return;
+      const multiNote = currentNotes[index];
+      const multiShots = noteShots(multiNote);
+      if (multiShots) {
+        try {
+          const url = await uploadCurrentFrameScreenshot();
+          const si = focusedShotIndex(multiNote, index);
+          multiShots[si] = { url, timestamp: currentCaptureTimestampMs() };
+          syncNoteShotMirror(multiNote);
+          const session = allSessions.find(s => s.id === activeSessionId);
+          if (session) {
+            session.notes = composedSessionNotes();
+            await saveSession(session);
+          }
+          renderNotesList();
+        } catch (err) {
+          alert(err?.message || 'Screenshot capture failed — please try again.');
+        }
+        return;
+      }
       try {
         const url = await uploadCurrentFrameScreenshot();
         currentNotes[index].screenshotUrl = url;
@@ -6613,6 +7216,20 @@
     // ── Note markup lightbox (recording rail) ──
     function openMarkupLightbox(noteIndex) {
       const note = currentNotes[noteIndex];
+      const shots = noteShots(note);
+      if (shots) {
+        const si = focusedShotIndex(note, noteIndex);
+        const shot = shots[si];
+        if (!shot?.url) return;
+        openMarkupSession({
+          mode: 'note', noteIndex, shotIndex: si,
+          src: shot.markupOriginalUrl || shot.url,
+          strokes: shot.markupStrokes || [],
+          cropBase: shot.cropBaseUrl ? { src: shot.cropBaseUrl, w: shot.cropBaseW, h: shot.cropBaseH } : null,
+          cropRect: shot.cropRect || null,
+        });
+        return;
+      }
       const src = note && (note.markupOriginalUrl || note.screenshotUrl || note.screenshot);
       if (!src) return;
       openMarkupSession({
@@ -6635,7 +7252,7 @@
       });
     }
 
-    function openMarkupSession({ mode, noteIndex = null, src, strokes, cropBase = null, cropRect = null }) {
+    function openMarkupSession({ mode, noteIndex = null, shotIndex = null, src, strokes, cropBase = null, cropRect = null }) {
       docById('markupLightbox')?.remove();
       // Lightbox opens wherever the notes live (tab or PiP window) — composer
       // and saved-note screenshots both live in the PiP frame when it's open
@@ -6645,7 +7262,7 @@
       }
       markupWin = inPip ? pipWindow : window;
       noteMarkup = {
-        mode, noteIndex, src,
+        mode, noteIndex, shotIndex, src,
         strokes: JSON.parse(JSON.stringify(strokes || [])),
         natW: 0, natH: 0, tool: 'draw', selectedIds: [], marquee: null, dirty: false,
         crop: null, cropBase, cropRect, _cropBaseView: false, _displaySrc: null,
@@ -6689,6 +7306,7 @@
         if (tools) tools.style.maxWidth = noteMarkup.tool !== 'draw' ? '0px' : `${tools.scrollWidth}px`;
       };
       if (img.complete && img.naturalWidth) ready(); else img.onload = ready;
+      updateLightboxTopButtons();
       lb.addEventListener('mousedown', (e) => {
         if (e.target !== lb) return;
         if (noteMarkup?.tool === 'crop') wiggleCropActions();
@@ -6696,6 +7314,14 @@
       });
       markupWin.document.addEventListener('keydown', onMarkupKeydown);
       requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('show', 'in')));
+    }
+
+    // Undo stack for lightbox markup (draw / delete / move / resize strokes)
+    function markupPushUndo() {
+      if (!noteMarkup) return;
+      noteMarkup.undo = noteMarkup.undo || [];
+      noteMarkup.undo.push(JSON.parse(JSON.stringify(noteMarkup.strokes)));
+      if (noteMarkup.undo.length > 60) noteMarkup.undo.shift();
     }
 
     // Auto-save: every change persists after a short debounce
@@ -6732,7 +7358,8 @@
       const save = docById('lbSaveBtn');
       const closeBtn = docById('lbCloseBtn');
       const cropActions = docById('lbCropActions');
-      if (save) save.style.display = cropping ? 'none' : '';
+      // Already-saved notes have no composer note to save — hide Save note
+      if (save) save.style.display = (cropping || noteMarkup?.mode === 'note') ? 'none' : '';
       if (closeBtn) closeBtn.style.display = cropping ? 'none' : '';
       if (cropActions) {
         cropActions.classList.toggle('visible', cropping);
@@ -6969,20 +7596,27 @@
         } else {
           const note = currentNotes[state.noteIndex];
           if (note) {
-            note.screenshotUrl = url;
-            delete note.screenshot;
-            delete note.markupOriginalUrl;
-            if (isFull) {
-              delete note.cropBaseUrl;
-              delete note.cropBaseW;
-              delete note.cropBaseH;
-              delete note.cropRect;
+            const shots = noteShots(note);
+            const target = (shots && state.shotIndex != null && shots[state.shotIndex]) ? shots[state.shotIndex] : note;
+            if (target === note) {
+              note.screenshotUrl = url;
+              delete note.screenshot;
             } else {
-              note.cropBaseUrl = base.src;
-              note.cropBaseW = base.w;
-              note.cropBaseH = base.h;
-              note.cropRect = { ...nat };
+              target.url = url;
             }
+            delete target.markupOriginalUrl;
+            if (isFull) {
+              delete target.cropBaseUrl;
+              delete target.cropBaseW;
+              delete target.cropBaseH;
+              delete target.cropRect;
+            } else {
+              target.cropBaseUrl = base.src;
+              target.cropBaseW = base.w;
+              target.cropBaseH = base.h;
+              target.cropRect = { ...nat };
+            }
+            if (target !== note) syncNoteShotMirror(note);
           }
         }
         markupChanged();
@@ -7002,6 +7636,19 @@
         e.preventDefault();
         return;
       }
+      // ⌘Z — undo the last stroke change (draw, delete, move, resize)
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z'
+          && !e.target.matches?.('input, textarea, select, [contenteditable="true"]')) {
+        const prevStrokes = noteMarkup.undo?.pop();
+        if (prevStrokes) {
+          noteMarkup.strokes = prevStrokes;
+          noteMarkup.selectedIds = [];
+          renderNoteMarkupSvg();
+          markupChanged();
+        }
+        e.preventDefault();
+        return;
+      }
       // ⌘+Enter — save the note from the lightbox
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         if (noteMarkup.tool !== 'crop') lightboxSaveNote();
@@ -7018,6 +7665,7 @@
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && noteMarkup.selectedIds.length
           && !e.target.matches?.('input, textarea, select, [contenteditable="true"]')) {
+        markupPushUndo();
         noteMarkup.strokes = noteMarkup.strokes.filter(s => !noteMarkup.selectedIds.includes(s.id));
         noteMarkup.selectedIds = [];
         renderNoteMarkupSvg();
@@ -7116,6 +7764,7 @@
           if (e.target.dataset?.mkHandle) {
             const sel = markupSelectedStrokes();
             if (!sel.length) return;
+            markupPushUndo();
             const bb = markupUnionBBox(sel);
             const start = toNatural(e);
             const snapshots = sel.map(s => ({ s, pts: s.points.map(p => [...p]) }));
@@ -7145,6 +7794,7 @@
           if (e.target.dataset?.mkMove || hitId) {
             if (hitId && !noteMarkup.selectedIds.includes(hitId)) noteMarkup.selectedIds = [hitId];
             renderNoteMarkupSvg();
+            markupPushUndo();
             const sel = markupSelectedStrokes();
             let last = toNatural(e);
             const onMove = ev => {
@@ -7200,6 +7850,7 @@
           return;
         }
         // Width slider is in screen px; store in image px so it bakes 1:1
+        markupPushUndo();
         const scale = noteMarkup.natW / svg.getBoundingClientRect().width;
         const stroke = {
           id: `mk-${Math.random().toString(36).slice(2, 9)}`,
@@ -7266,27 +7917,27 @@
         } else {
           const note = currentNotes[state.noteIndex];
           if (!note) return;
+          // Multi-image notes: markup lives on the individual shot
+          const shots = noteShots(note);
+          const target = (shots && state.shotIndex != null && shots[state.shotIndex]) ? shots[state.shotIndex] : note;
           // Migrate legacy baked markup back to the original image
-          if (note.markupOriginalUrl) {
-            note.screenshotUrl = note.markupOriginalUrl;
-            delete note.markupOriginalUrl;
+          if (target.markupOriginalUrl) {
+            if (target === note) note.screenshotUrl = note.markupOriginalUrl;
+            else target.url = target.markupOriginalUrl;
+            delete target.markupOriginalUrl;
           }
           if (!strokes.length) {
-            delete note.markupStrokes;
-            delete note.markupNatW;
-            delete note.markupNatH;
-            delete note._mkPreview;
+            delete target.markupStrokes;
+            delete target.markupNatW;
+            delete target.markupNatH;
+            delete target._mkPreview;
           } else {
-            note.markupStrokes = strokes;
-            note.markupNatW = state.natW;
-            note.markupNatH = state.natH;
-            note._mkPreview = await bakeMarkupDataUrl(state.src, strokes);
-            console.log('[screen-notes] markup persist', {
-              natW: state.natW, natH: state.natH,
-              maxX: Math.max(...strokes.flatMap(s => s.points.map(p => p[0]))),
-              maxY: Math.max(...strokes.flatMap(s => s.points.map(p => p[1]))),
-            });
+            target.markupStrokes = strokes;
+            target.markupNatW = state.natW;
+            target.markupNatH = state.natH;
+            target._mkPreview = await bakeMarkupDataUrl(state.src, strokes);
           }
+          if (target !== note) syncNoteShotMirror(note);
           const session = allSessions.find(s => s.id === activeSessionId);
           if (session) {
             session.notes = composedSessionNotes();
@@ -7765,12 +8416,18 @@
           ghSetStatus(`Creating issue ${++issueNum} of ${total}…`);
           try {
             let imageMarkdown = '';
-            const src = note.screenshotUrl || note.screenshot;
-            if (src) {
+            // Multi-image notes: every screenshot goes into this ONE issue
+            const ghSrcs = noteShots(note)
+              ? noteShots(note).map(s => ({ src: s.url, strokes: s.markupStrokes }))
+              : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
+            for (let si = 0; si < ghSrcs.length; si++) {
+              const entry = ghSrcs[si];
               try {
-                const blob = await bakeCanvasStrokesIntoNoteBlob(session, i, await bakeNoteMarkupIntoBlob(note, await (await fetch(src)).blob()));
+                let blob = await bakeNoteMarkupIntoBlob({ markupStrokes: entry.strokes }, await (await fetch(entry.src)).blob());
+                if (entry.canvasBake) blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
                 const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type] || 'png';
-                const path = `.screen-notes/${sessionSlug}-${stamp}/${String(i + 1).padStart(2, '0')}-${slugifyForFile(note.text)}.${typeExt}`;
+                const suffix = ghSrcs.length > 1 ? `-${si + 1}` : '';
+                const path = `.screen-notes/${sessionSlug}-${stamp}/${String(i + 1).padStart(2, '0')}${suffix}-${slugifyForFile(note.text)}.${typeExt}`;
                 await ghApi(`/repos/${repo}/contents/${path}`, token, {
                   method: 'PUT',
                   body: JSON.stringify({
@@ -7779,9 +8436,9 @@
                     branch,
                   }),
                 });
-                imageMarkdown = `\n\n<img src="https://github.com/${repo}/blob/${branch}/${path}?raw=true" width="600">`;
+                imageMarkdown += `\n\n<img src="https://github.com/${repo}/blob/${branch}/${path}?raw=true" width="600">`;
               } catch (imgErr) {
-                imageMarkdown = `\n\n_(screenshot upload failed: ${imgErr.message})_`;
+                imageMarkdown += `\n\n_(screenshot upload failed: ${imgErr.message})_`;
               }
             }
             const firstLine = (note.text || '').split('\n')[0].trim();
@@ -7930,15 +8587,19 @@
           const note = notes[i];
           lines.push(`## Note ${++noteNum} — ${formatDuration(note.timestamp || 0)}`, '');
           if (note.text) lines.push(note.text, '');
-          const src = note.screenshotUrl || note.screenshot;
-          if (src) {
+          // All of a note's screenshots export under the same note section
+          const noteSrcs = noteShots(note)
+            ? noteShots(note).map(s => ({ src: s.url, strokes: s.markupStrokes }))
+            : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
+          for (const entry of noteSrcs) {
             try {
-              const resp = await fetch(src);
+              const resp = await fetch(entry.src);
               if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-              const blob = await bakeCanvasStrokesIntoNoteBlob(session, i, await bakeNoteMarkupIntoBlob(note, await resp.blob()));
+              let blob = await bakeNoteMarkupIntoBlob({ markupStrokes: entry.strokes }, await resp.blob());
+              if (entry.canvasBake) blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
               shotNum++;
               const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type];
-              const ext = typeExt || (src.match(/\.(png|jpe?g|webp|gif)(\?|$)/i)?.[1] || 'png').replace(/jpeg/i, 'jpg');
+              const ext = typeExt || (entry.src.match(/\.(png|jpe?g|webp|gif)(\?|$)/i)?.[1] || 'png').replace(/jpeg/i, 'jpg');
               const name = `${String(shotNum).padStart(2, '0')}-${slugifyForFile(note.text)}.${ext}`;
               shots.file(name, blob);
               lines.push(`![screenshot](screenshots/${name})`, '');
@@ -8481,15 +9142,21 @@
                 <div class="note-input-wrapper">
                   <div class="screenshot-preview" id="screenshotPreview">
                     <button type="button" class="screenshot-preview-btn screenshot-pip-btn" id="pipToggleBtn" onclick="toggleComposerPiP()" title="Open picture-in-picture">${icon('pip', 'icon icon-sm')}</button>
-                    <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openPendingScreenshotLightbox()">
-                    <div class="screenshot-preview-empty">
-                      <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
+                    <div class="shot-layer" id="shotLayer">
+                      <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openPendingScreenshotLightbox()">
+                      <div class="screenshot-preview-empty">
+                        <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
+                      </div>
+                      <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
                     </div>
                     <div class="screenshot-preview-actions">
+                      <button type="button" class="screenshot-preview-btn" id="shotAddBtn" onclick="addComposerShot()" title="Add another screenshot">${icon('plus', 'icon icon-sm')}</button>
                       <button type="button" class="screenshot-preview-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
                       <button type="button" class="screenshot-preview-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
                     </div>
-                    <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
+                    <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-prev" id="shotPrevBtn" onclick="navigateComposerShot(-1)" style="display:none" title="Previous screenshot">${icon('chevron', 'icon icon-sm shot-chevron-left')}</button>
+                    <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-next" id="shotNextBtn" onclick="navigateComposerShot(1)" style="display:none" title="Next screenshot">${icon('chevron', 'icon icon-sm shot-chevron-right')}</button>
+                    <div class="shot-dots" id="shotDots" style="display:none"></div>
                   </div>
                   <textarea
                     id="noteInput"
@@ -8566,9 +9233,18 @@
       const listInPip = pipOpen() && list.ownerDocument !== document;
       list.innerHTML = [...currentNotes].reverse().map((note, i) => {
         const realIndex = currentNotes.length - 1 - i;
-        const imgSrc = note._mkPreview || note.screenshotUrl || note.screenshot;
+        const shots = noteShots(note);
+        const fIdx = focusedShotIndex(note, realIndex);
+        const focusedShot = shots ? shots[fIdx] : null;
+        const imgSrc = focusedShot
+          ? (focusedShot._mkPreview || focusedShot.url)
+          : (note._mkPreview || note.screenshotUrl || note.screenshot);
         const enterClass = note.createdAt && note.createdAt === enteringNoteCreatedAt ? ' note-card-entering' : '';
         const noteKey = note.createdAt || `note-${realIndex}`;
+        const carousel = shots && shots.length > 1 ? `
+              <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-prev note-shot-nav" onclick="event.stopPropagation(); navigateNoteShot(${realIndex}, -1)"${fIdx === 0 ? ' style="display:none"' : ''} title="Previous screenshot">${icon('chevron', 'icon icon-sm shot-chevron-left')}</button>
+              <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-next note-shot-nav" onclick="event.stopPropagation(); navigateNoteShot(${realIndex}, 1)"${fIdx === shots.length - 1 ? ' style="display:none"' : ''} title="Next screenshot">${icon('chevron', 'icon icon-sm shot-chevron-right')}</button>
+              <div class="shot-dots note-shot-dots"></div>` : '';
         return `
           <div class="note-card${imgSrc ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
             ${imgSrc ? `<div class="note-card-screenshot-wrap">
@@ -8577,7 +9253,10 @@
                    alt="Screenshot"
                    onclick="openMarkupLightbox(${realIndex})"
                    loading="lazy">
+              <div class="screenshot-preview-timestamp note-shot-timestamp"><span>${escapeHtml(formatDuration((focusedShot ? focusedShot.timestamp : note.timestamp) || 0))}</span></div>
+              ${carousel}
               <div class="note-card-screenshot-actions">
+                ${isRecording ? `<button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); addNoteShot(${realIndex})" title="Add another screenshot to this note">${icon('plus', 'icon icon-sm')}</button>` : ''}
                 <button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); retakeRecordingNoteScreenshot(${realIndex})" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
                 <button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); removeRecordingNoteScreenshot(${realIndex})" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
               </div>
@@ -8589,7 +9268,6 @@
                         onfocus="autoGrowTextarea(this)"
                         onblur="updateRecordingNote(${realIndex}, this.value)">${escapeHtml(note.text)}</textarea>
               <div class="note-card-meta">
-                <span>${formatDuration(note.timestamp)}</span>
                 <div class="note-card-actions">
                   <button class="note-delete-link" onclick="deleteNote(${realIndex})" title="Delete note">Delete note</button>
                 </div>
@@ -8641,6 +9319,15 @@
           });
         });
       }
+
+      // Populate carousel dot pills (built via DOM so the sliding row works)
+      currentNotes.forEach((note, idx) => {
+        const shots = noteShots(note);
+        if (!shots || shots.length < 2) return;
+        const card = list.querySelector(`.note-card[data-note-key="${CSS.escape(noteKeyFor(note, idx))}"]`);
+        const dotsEl = card?.querySelector('.note-shot-dots');
+        if (dotsEl) buildShotDots(dotsEl, shots.length, focusedShotIndex(note, idx), (di) => focusNoteShot(idx, di));
+      });
 
       if (listInPip) bindPipGlobals(pipWindow);
     }
@@ -8749,6 +9436,7 @@
       saveTimer: null,
       undoStack: [],
       clipboardItems: [],
+      shotSel: null,      // { itemId, shotIndex } — image sub-selection in multi cards
     };
 
     function newCanvasItemId(type) {
@@ -8761,6 +9449,9 @@
         y: canvas.y,
         scale: canvas.scale,
         items: JSON.parse(JSON.stringify(canvas.items)),
+        // Notes carry per-image data (multi-image cards) — snapshot so ⌘Z can
+        // undo deleting an image inside a group
+        notes: canvas.session ? JSON.parse(JSON.stringify(canvas.session.notes || [])) : null,
       };
     }
 
@@ -8778,6 +9469,12 @@
       canvas.items = JSON.parse(JSON.stringify(prev.items));
       canvas.selectedId = null;
       canvas.selectedIds = [];
+      canvas.shotSel = null;
+      if (prev.notes && canvas.session) {
+        canvas.session.notes = JSON.parse(JSON.stringify(prev.notes));
+        if (activeSessionId === canvas.session.id) currentNotes = canvas.session.notes;
+        saveSession(canvas.session);
+      }
       renderCanvas();
       saveCanvasDebounced();
     }
@@ -8787,7 +9484,15 @@
       const selectedSet = new Set(canvas.selectedIds);
       canvas.clipboardItems = canvas.items
         .filter(item => selectedSet.has(item.id))
-        .map(item => JSON.parse(JSON.stringify(item)));
+        .map(item => {
+          const clone = JSON.parse(JSON.stringify(item));
+          // Note-backed items reference notes by index — embed the actual note
+          // so pasting into ANOTHER session doesn't resolve against its notes
+          if (Number.isInteger(clone.noteIndex) && canvas.session?.notes?.[clone.noteIndex]) {
+            clone._noteData = JSON.parse(JSON.stringify(canvas.session.notes[clone.noteIndex]));
+          }
+          return clone;
+        });
       if (canvas.clipboardItems.length) writeCanvasItemsToSystemClipboard(canvas.clipboardItems);
       return canvas.clipboardItems.length > 0;
     }
@@ -8965,7 +9670,32 @@
         if (item.type === 'screenshot') {
           const note = (canvas.session?.notes || [])[item.noteIndex];
           if (!note) continue;
-          const href = await imageUrlToClipboardHref(note.screenshotUrl || note.screenshot);
+          const shots = noteShots(note);
+          const timestamp = formatDuration(note.timestamp);
+          if (shots && shots.length > 1) {
+            // Multi-image note: one group, each image its own element so Figma
+            // pastes them as individually selectable layers inside the group
+            const gap = 16;
+            const imgW = (w - gap * (shots.length - 1)) / shots.length;
+            let imagesSvg = '';
+            for (let si = 0; si < shots.length; si++) {
+              const href = await imageUrlToClipboardHref(shots[si].url);
+              imagesSvg += await svgContainImage(href, x + si * (imgW + gap), y, imgW, item.h, {
+                clipId: svgSafeId(`clip-${item.id}-${si}`),
+                clipX: x + si * (imgW + gap),
+                clipY: y,
+                clipW: imgW,
+                clipH: item.h,
+                clipRx: 12,
+              });
+            }
+            const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20, C.text) : '';
+            const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
+            const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imagesSvg}${noteText}<text x="${x + 14}" y="${timeY + 16}" fill="${C.badgeText}" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
+            parts.push(namedSvgGroup(item, content));
+            continue;
+          }
+          const href = await imageUrlToClipboardHref((shots && shots[0].url) || note.screenshotUrl || note.screenshot);
           const imageSvg = await svgContainImage(href, x, y, w, item.h, {
             clipId: svgSafeId(`clip-${item.id}`),
             clipX: x,
@@ -8974,7 +9704,6 @@
             clipH: h,
             clipRx: 12,
           });
-          const timestamp = formatDuration(note.timestamp);
           const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20, C.text) : '';
           const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
           const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imageSvg}${noteText}<text x="${x + 14}" y="${timeY + 16}" fill="${C.badgeText}" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
@@ -9003,17 +9732,50 @@
       }
     }
 
+    function updateShotSelHighlights() {
+      document.querySelectorAll('.ci-screenshot-img-wrap.shot-selected').forEach(el => el.classList.remove('shot-selected'));
+      if (!canvas.shotSel) return;
+      const el = document.querySelector(`.canvas-item[data-id="${canvas.shotSel.itemId}"]`);
+      el?.querySelectorAll('.ci-screenshot-img-wrap').forEach(w => {
+        if ((canvas.shotSel.shotIndexes || []).includes(parseInt(w.dataset.shotIndex, 10))) {
+          w.classList.add('shot-selected');
+        }
+      });
+    }
+
     function pasteCanvasItems() {
       if (!canvas.clipboardItems.length) return false;
       pushUndoState();
       const offset = 32;
+      let notesChanged = false;
       const pasted = canvas.clipboardItems.map(item => {
         const clone = JSON.parse(JSON.stringify(item));
         clone.id = newCanvasItemId(clone.type);
         clone.x = (clone.x || 0) + offset;
         clone.y = (clone.y || 0) + offset;
+        // Note-backed items fork their note into THIS session so copies are
+        // independent — and cross-session pastes bring their own note along
+        if (Number.isInteger(clone.noteIndex) && canvas.session) {
+          const source = clone._noteData || canvas.session.notes?.[clone.noteIndex];
+          delete clone._noteData;
+          if (source) {
+            const noteCopy = JSON.parse(JSON.stringify(source));
+            noteCopy.createdAt = new Date().toISOString();
+            canvas.session.notes = canvas.session.notes || [];
+            canvas.session.notes.push(noteCopy);
+            clone.noteIndex = canvas.session.notes.length - 1;
+            notesChanged = true;
+          } else {
+            // Nothing to resolve against — degrade to a plain text box
+            clone.noteIndex = null;
+          }
+        }
         return clone;
       });
+      if (notesChanged) {
+        if (activeSessionId === canvas.session.id) currentNotes = canvas.session.notes;
+        saveSession(canvas.session);
+      }
       canvas.items.push(...pasted);
       canvas.clipboardItems = pasted.map(item => JSON.parse(JSON.stringify(item)));
       renderCanvas();
@@ -9039,7 +9801,7 @@
         canvas.items = JSON.parse(JSON.stringify(session.canvas.items)).map(item => {
           if (item.type === 'screenshot') {
             const note = (session.notes || [])[item.noteIndex];
-            const hasScreenshot = !!(note?.screenshotUrl || note?.screenshot);
+            const hasScreenshot = !!(note?.screenshotUrl || note?.screenshot || noteShots(note));
             if (!hasScreenshot) {
               return {
                 ...item,
@@ -9071,26 +9833,49 @@
     }
 
     // Bake each note's lightbox squiggles into its screenshot (called at session end)
+    async function bakeMarkupIntoUploadedImage(src, strokes) {
+      const img = await loadMarkupImage(src);
+      const cnv = document.createElement('canvas');
+      cnv.width = img.naturalWidth;
+      cnv.height = img.naturalHeight;
+      const ctx = cnv.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      drawStrokesOnContext(ctx, strokes);
+      const blob = await new Promise(res => cnv.toBlob(res, 'image/jpeg', 0.92));
+      if (!blob) return null;
+      const file = new File([blob], `markup-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const r = await quick.fs.uploadFile(file);
+      const f = r?.files?.[0] || r?.[0] || r?.file || null;
+      return f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+    }
+
     async function bakeNoteMarkupsIntoImages(session) {
       const notes = session?.notes || [];
       for (const note of notes) {
+        const shots = noteShots(note);
+        if (shots) {
+          for (const shot of shots) {
+            if (!shot.markupStrokes?.length || shot.markupOriginalUrl || !shot.url) continue;
+            try {
+              const url = await bakeMarkupIntoUploadedImage(shot.url, shot.markupStrokes);
+              if (!url) continue;
+              shot.url = url;
+              delete shot.markupStrokes;
+              delete shot.markupNatW;
+              delete shot.markupNatH;
+              delete shot._mkPreview;
+            } catch (err) {
+              console.warn('[screen-notes] markup bake failed for a shot, keeping original', err);
+            }
+          }
+          syncNoteShotMirror(note);
+          continue;
+        }
         if (!note.markupStrokes?.length || note.markupOriginalUrl) continue;
         const src = note.screenshotUrl || note.screenshot;
         if (!src) continue;
         try {
-          const img = await loadMarkupImage(src);
-          const cnv = document.createElement('canvas');
-          cnv.width = img.naturalWidth;
-          cnv.height = img.naturalHeight;
-          const ctx = cnv.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          drawStrokesOnContext(ctx, note.markupStrokes);
-          const blob = await new Promise(res => cnv.toBlob(res, 'image/jpeg', 0.92));
-          if (!blob) continue;
-          const file = new File([blob], `markup-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          const r = await quick.fs.uploadFile(file);
-          const f = r?.files?.[0] || r?.[0] || r?.file || null;
-          const url = f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+          const url = await bakeMarkupIntoUploadedImage(src, note.markupStrokes);
           if (!url) continue;
           note.screenshotUrl = url;
           delete note.markupStrokes;
@@ -9208,7 +9993,8 @@
 
         const x = col * (cardW + gap);
         const y = colHeights[col];
-        const hasScreenshot = !!(note.screenshotUrl || note.screenshot);
+        const shotCount = noteShots(note)?.length || ((note.screenshotUrl || note.screenshot) ? 1 : 0);
+        const hasScreenshot = shotCount > 0;
 
         if (hasScreenshot) {
           const estimatedH = estimateScreenshotCardHeight(note, cardW, cardH);
@@ -9264,7 +10050,27 @@
       if (item.type === 'screenshot') {
         const note = (canvas.session?.notes || [])[item.noteIndex];
         if (!note) return '';
-        const src = note.screenshotUrl || note.screenshot;
+        const shots = noteShots(note);
+        if (shots && shots.length > 1) {
+          // Multi-image note: one ultra-wide card, each image grouped inside.
+          // Images are individually selectable (click) for per-image deletion.
+          const shotSelIdxs = canvas.shotSel && canvas.shotSel.itemId === item.id ? (canvas.shotSel.shotIndexes || []) : [];
+          const imgs = shots.map((s, si) =>
+            `<div class="ci-screenshot-img-wrap${shotSelIdxs.includes(si) ? ' shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;"><img src="${s._mkPreview || s.url}" alt="" draggable="false" style="max-height:${item.h}px;"></div>`
+          ).join('');
+          const cardStyle = `left:${item.x}px;top:${item.y}px;`;
+          return `
+            <div class="canvas-item ci-screenshot ci-screenshot-multi ${sel}" data-id="${item.id}" style="${cardStyle}">
+              <div class="ci-shot-row">${imgs}</div>
+              <div class="ci-note">
+                <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
+                <div class="ci-note-time">${shots.map(s => formatDuration(s.timestamp || 0)).join(' · ')}</div>
+              </div>
+              ${handle}
+            </div>
+          `;
+        }
+        const src = (shots && (shots[0]._mkPreview || shots[0].url)) || note.screenshotUrl || note.screenshot;
         if (!src) {
           // Notes with no screenshot should behave like plain text boxes on canvas,
           // not like empty screenshot cards.
@@ -9468,9 +10274,11 @@
         if (item) {
           pushUndoState();
           isResizing = true;
+          const rendered = getRenderedItemSize(item);
           dragStart = {
             x: e.clientX, y: e.clientY,
             itemW: item.w, itemH: item.h, itemId: id,
+            renderedW: rendered.w || item.w, renderedH: rendered.h || item.h,
           };
           e.preventDefault();
           return;
@@ -9483,6 +10291,27 @@
         const id = itemEl.dataset.id;
         const item = canvas.items.find(i => i.id === id);
         if (!item) return;
+
+        // Clicking an image inside a multi-image card sub-selects it (Delete
+        // then removes only the selected images). Shift-click multi-selects.
+        const shotWrap = e.target.closest('.ci-screenshot-multi .ci-screenshot-img-wrap');
+        if (shotWrap) {
+          const si = parseInt(shotWrap.dataset.shotIndex, 10);
+          if (e.shiftKey) {
+            const set = new Set(canvas.shotSel?.itemId === id ? canvas.shotSel.shotIndexes : []);
+            if (set.has(si)) set.delete(si); else set.add(si);
+            canvas.shotSel = set.size ? { itemId: id, shotIndexes: [...set] } : null;
+            setSelectedItems([id]);
+            updateShotSelHighlights();
+            e.preventDefault();
+            return; // don't fall through to item shift-toggle / drag
+          }
+          canvas.shotSel = { itemId: id, shotIndexes: [si] };
+          updateShotSelHighlights();
+        } else if (canvas.shotSel) {
+          canvas.shotSel = null;
+          updateShotSelHighlights();
+        }
 
         // Shift-click toggles layers into/out of the current selection.
         if (e.shiftKey) {
@@ -9684,8 +10513,23 @@
       } else if (isResizing) {
         const item = canvas.items.find(i => i.id === dragStart.itemId);
         if (item) {
-          item.w = Math.max(60, dragStart.itemW + (e.clientX - dragStart.x) / canvas.scale);
-          item.h = Math.max(40, dragStart.itemH + (e.clientY - dragStart.y) / canvas.scale);
+          const dx = (e.clientX - dragStart.x) / canvas.scale;
+          const dy = (e.clientY - dragStart.y) / canvas.scale;
+          const multiNote = item.type === 'screenshot'
+            ? (canvas.session?.notes || [])[item.noteIndex] : null;
+          if (multiNote && (noteShots(multiNote)?.length || 0) > 1) {
+            // Multi-image cards scale as one group: proportional from the
+            // rendered size, driven by whichever axis moved further
+            const s = Math.max(
+              (dragStart.renderedW + dx) / dragStart.renderedW,
+              (dragStart.renderedH + dy) / dragStart.renderedH
+            );
+            item.w = Math.max(120, dragStart.itemW * s);
+            item.h = Math.max(80, dragStart.itemH * s);
+          } else {
+            item.w = Math.max(60, dragStart.itemW + dx);
+            item.h = Math.max(40, dragStart.itemH + dy);
+          }
           updateItemSize(item);
         }
       }
@@ -9880,6 +10724,37 @@
       }
 
       if ((e.key === 'Delete' || e.key === 'Backspace') && canvas.selectedIds.length && !canvasReadOnly()) {
+        // Sub-selected images inside a multi-image card delete just those images
+        if (canvas.shotSel && canvas.selectedIds.length === 1 && canvas.selectedIds[0] === canvas.shotSel.itemId) {
+          const item = canvas.items.find(i => i.id === canvas.shotSel.itemId);
+          const note = item ? (canvas.session?.notes || [])[item.noteIndex] : null;
+          const shots = note ? noteShots(note) : null;
+          const idxs = [...(canvas.shotSel.shotIndexes || [])].sort((a, b) => b - a);
+          if (item && shots && idxs.length && idxs.every(si => shots[si])) {
+            pushUndoState();
+            idxs.forEach(si => shots.splice(si, 1));
+            if (!shots.length) {
+              delete note.screenshots;
+              note.screenshotUrl = null;
+              delete note.screenshot;
+              // No images left and no text — remove the whole card
+              if (!(note.text || '').trim()) {
+                canvas.items = canvas.items.filter(i => i.id !== item.id);
+                canvas.selectedIds = [];
+                canvas.selectedId = null;
+              }
+            } else {
+              syncNoteShotMirror(note);
+            }
+            canvas.shotSel = null;
+            renderCanvas();
+            if (canvas.session) saveSession(canvas.session);
+            saveCanvasNow();
+            e.preventDefault();
+            return;
+          }
+          canvas.shotSel = null;
+        }
         pushUndoState();
         const toDelete = new Set(canvas.selectedIds);
         canvas.items = canvas.items.filter(i => !toDelete.has(i.id));
@@ -10034,6 +10909,21 @@
       if (!el) return;
       el.style.width = item.w + 'px';
       if (item.type === 'screenshot') {
+        if (el.classList.contains('ci-screenshot-multi')) {
+          // Multi-image cards: every image shares the same height bound;
+          // the card hugs the whole row (no max-width clamp)
+          el.style.width = '';
+          el.style.maxWidth = '';
+          el.style.height = '';
+          el.querySelectorAll('.ci-screenshot-img-wrap').forEach(wrap => {
+            wrap.style.maxHeight = item.h + 'px';
+            wrap.style.height = '';
+          });
+          el.querySelectorAll('.ci-screenshot-img-wrap img').forEach(img => {
+            img.style.maxHeight = item.h + 'px';
+          });
+          return;
+        }
         // For screenshot cards, item.w/item.h bound the image; card width hugs the image.
         el.style.width = '';
         el.style.maxWidth = item.w + 'px';
@@ -10377,6 +11267,9 @@
               emptyDuration: [a.emptyDuration, 0, 1500, 10],
               blur: a.blur,
             },
+            display: {
+              showTimestamps: window.getDisplaySettings().showTimestamps,
+            },
             privateSession: { type: 'action', label: 'Trigger private session' },
             readOnly: { type: 'action', label: 'Trigger read-only mode' },
           }, {
@@ -10384,7 +11277,7 @@
             onAction: (path) => {
               if (path === 'privateSession') window.protoTriggerPrivateSession?.();
               else if (path === 'readOnly') window.protoToggleReadOnly?.();
-              else if (path.endsWith('resetGlass')) { window.resetGlassSettings?.(); window.resetPipAnimSettings?.(); dial.resetValues(); }
+              else if (path.endsWith('resetGlass')) { window.resetGlassSettings?.(); window.resetPipAnimSettings?.(); window.resetDisplaySettings?.(); dial.resetValues(); }
             },
           });
           const p = dial.values.liquidGlass;
@@ -10398,6 +11291,10 @@
             const curA = window.getPipAnimSettings();
             for (const [k, v] of Object.entries(pa)) {
               if (curA[k] !== v) window.setPipAnimSetting(k, v);
+            }
+            const disp = dial.values.display;
+            if (disp && window.getDisplaySettings().showTimestamps !== disp.showTimestamps) {
+              window.setDisplaySetting('showTimestamps', disp.showTimestamps);
             }
           });
           return null;
