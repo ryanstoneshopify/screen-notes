@@ -8448,7 +8448,7 @@
             const body = [
               note.text || '',
               imageMarkdown,
-              `\n\n---\nFrom [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled session'}” at ${formatDuration(note.timestamp || 0)}.`,
+              `\n\n---\nFrom [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled session'}”.`,
             ].join('');
             await ghApi(`/repos/${repo}/issues`, token, {
               method: 'POST',
