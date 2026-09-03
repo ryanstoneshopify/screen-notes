@@ -8575,8 +8575,7 @@
           `Notes: ${sessionExportTotal(session, filter)}`,
           '',
           'Notes captured during a live screen-share session in Screen Notes.',
-          'Timestamps are elapsed recording time. Each screenshot shows what was',
-          'on screen at the moment the note was taken.',
+          'Each screenshot shows what was on screen at the moment the note was taken.',
           '',
         ];
 
@@ -8585,7 +8584,7 @@
         for (let i = 0; i < notes.length; i++) {
           if (filter && !filter.noteIndexes.has(i)) continue;
           const note = notes[i];
-          lines.push(`## Note ${++noteNum} — ${formatDuration(note.timestamp || 0)}`, '');
+          lines.push(`## Note ${++noteNum}`, '');
           if (note.text) lines.push(note.text, '');
           // All of a note's screenshots export under the same note section
           const noteSrcs = noteShots(note)
