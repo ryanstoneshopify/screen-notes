@@ -10372,6 +10372,12 @@
       canvas.selectedIds = uniqueIds;
       canvas.selectedId = uniqueIds[0] || null;
 
+      // Image sub-selection only lives while its card stays selected
+      if (canvas.shotSel && !uniqueIds.includes(canvas.shotSel.itemId)) {
+        canvas.shotSel = null;
+        updateShotSelHighlights();
+      }
+
       document.querySelectorAll('.canvas-item').forEach(el => {
         const id = el.dataset.id;
         const selected = uniqueIds.includes(id);
