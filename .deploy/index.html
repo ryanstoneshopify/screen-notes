@@ -8115,6 +8115,34 @@
       });
     }
 
+    async function blobImageSize(blob) {
+      const u = URL.createObjectURL(blob);
+      try {
+        const im = await loadMarkupImage(u);
+        return { w: im.naturalWidth, h: im.naturalHeight };
+      } finally {
+        URL.revokeObjectURL(u);
+      }
+    }
+
+    // Bake canvas strokes into one image of a multi-image note card.
+    // Returns { blob, advance } where advance = rendered width + row gap,
+    // so callers can walk the row left to right.
+    async function bakeCanvasStrokesIntoGroupShotBlob(session, noteIndex, offsetX, blob) {
+      const card = (session.canvas?.items || []).find(i => i.type === 'screenshot' && i.noteIndex === noteIndex);
+      if (!card) { console.log('[screen-notes] group bake: no card for note', noteIndex); return { blob, advance: 0 }; }
+      const dims = await blobImageSize(blob).catch(() => null);
+      if (!dims) { console.log('[screen-notes] group bake: no dims'); return { blob, advance: 0 }; }
+      // Row layout: each image max-height card.h, natural aspect, 16px gaps
+      const h = Math.min(card.h, dims.h);
+      const w = dims.w * (h / dims.h);
+      const rect = { x: card.x + offsetX, y: card.y, w, h };
+      const strokes = (session.canvas?.items || []).filter(i => i.type === 'stroke');
+      console.log('[screen-notes] group bake', { noteIndex, offsetX, rect, card: { x: card.x, y: card.y, w: card.w, h: card.h }, dims, strokeBoxes: strokes.map(s => ({ x: s.x, y: s.y, w: s.w, h: s.h })) });
+      const baked = await bakeStrokesForRect(session, blob, () => rect);
+      return { blob: baked, advance: w + 16 };
+    }
+
     function bakeCanvasStrokesIntoImageItemBlob(session, item, blob) {
       return bakeStrokesForRect(session, blob, img => {
         // Dropped images contain-fit (centered) inside the item box
@@ -8417,14 +8445,22 @@
           try {
             let imageMarkdown = '';
             // Multi-image notes: every screenshot goes into this ONE issue
-            const ghSrcs = noteShots(note)
-              ? noteShots(note).map(s => ({ src: s.url, strokes: s.markupStrokes }))
+            const ghShots = noteShots(note);
+            const ghSrcs = ghShots
+              ? ghShots.map(s => ({ src: s.url, strokes: s.markupStrokes }))
               : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
+            let ghOffsetX = 0;
             for (let si = 0; si < ghSrcs.length; si++) {
               const entry = ghSrcs[si];
               try {
                 let blob = await bakeNoteMarkupIntoBlob({ markupStrokes: entry.strokes }, await (await fetch(entry.src)).blob());
-                if (entry.canvasBake) blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
+                if (entry.canvasBake || (ghShots && ghShots.length === 1)) {
+                  blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
+                } else if (ghShots) {
+                  const r = await bakeCanvasStrokesIntoGroupShotBlob(session, i, ghOffsetX, blob);
+                  blob = r.blob;
+                  ghOffsetX += r.advance;
+                }
                 const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type] || 'png';
                 const suffix = ghSrcs.length > 1 ? `-${si + 1}` : '';
                 const path = `.screen-notes/${sessionSlug}-${stamp}/${String(i + 1).padStart(2, '0')}${suffix}-${slugifyForFile(note.text)}.${typeExt}`;
@@ -8448,7 +8484,7 @@
             const body = [
               note.text || '',
               imageMarkdown,
-              `\n\n---\nFrom [Screen Notes session](${sessionUrl}) “${session.title || 'Untitled session'}”.`,
+              `\n\n---\nFrom [${session.title || 'Untitled session'}](${sessionUrl}) in Screen Notes.`,
             ].join('');
             await ghApi(`/repos/${repo}/issues`, token, {
               method: 'POST',
@@ -8587,15 +8623,23 @@
           lines.push(`## Note ${++noteNum}`, '');
           if (note.text) lines.push(note.text, '');
           // All of a note's screenshots export under the same note section
-          const noteSrcs = noteShots(note)
-            ? noteShots(note).map(s => ({ src: s.url, strokes: s.markupStrokes }))
+          const zipShots = noteShots(note);
+          const noteSrcs = zipShots
+            ? zipShots.map(s => ({ src: s.url, strokes: s.markupStrokes }))
             : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
+          let zipOffsetX = 0;
           for (const entry of noteSrcs) {
             try {
               const resp = await fetch(entry.src);
               if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
               let blob = await bakeNoteMarkupIntoBlob({ markupStrokes: entry.strokes }, await resp.blob());
-              if (entry.canvasBake) blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
+              if (entry.canvasBake || (zipShots && zipShots.length === 1)) {
+                blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
+              } else if (zipShots) {
+                const r = await bakeCanvasStrokesIntoGroupShotBlob(session, i, zipOffsetX, blob);
+                blob = r.blob;
+                zipOffsetX += r.advance;
+              }
               shotNum++;
               const typeExt = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[blob.type];
               const ext = typeExt || (entry.src.match(/\.(png|jpe?g|webp|gif)(\?|$)/i)?.[1] || 'png').replace(/jpeg/i, 'jpg');
