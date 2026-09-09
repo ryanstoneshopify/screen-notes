@@ -3661,6 +3661,7 @@
       pointer-events: none;
       background: #000;
     }
+    /* Canvas movie controls: the exact lightbox video toolbar, hover-revealed */
     .ci-video-controls {
       position: absolute;
       left: 50%;
@@ -3668,47 +3669,19 @@
       transform: translateX(-50%);
       z-index: 3;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      padding: 6px 12px 6px 8px;
-      border-radius: 999px;
-      background: rgba(28, 28, 26, 0.82);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      -webkit-backdrop-filter: blur(12px) saturate(1.4);
-      backdrop-filter: blur(12px) saturate(1.4);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 1px 4px rgba(0, 0, 0, 0.25);
       opacity: 0;
       pointer-events: none;
       transition: opacity 180ms ease;
     }
-    .canvas-item:hover .ci-video-controls {
+    .canvas-item:hover .ci-video-controls,
+    .ci-video-controls.trimming {
       opacity: 1;
       pointer-events: auto;
     }
-    .ci-video-play {
-      border: none;
-      background: none;
-      padding: 0;
-      width: 20px;
-      height: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #faf9f5;
-      cursor: pointer;
-      flex: 0 0 auto;
-    }
-    .ci-video-play .icon { width: 15px; height: 15px; }
-    .ci-video-controls .scrub-track {
-      flex: 0 0 auto;
-      width: 110px;
-      margin-right: 4px;
-      background: rgba(255, 255, 255, 0.22);
-    }
-    .ci-video-controls .scrub-fill { width: 0%; }
-    .ci-video-controls .scrub-handle { width: 12px; height: 12px; }
+    .ci-video-controls .lb-crop-actions { cursor: default; }
+    .ci-video-toolbar { cursor: default; }
   </style>
 </head>
 <body>
@@ -6712,6 +6685,7 @@
             if (slot.durationMs) s.durationMs = slot.durationMs;
             if (slot.trimStartMs) s.trimStartMs = slot.trimStartMs;
             if (slot.trimEndMs) s.trimEndMs = slot.trimEndMs;
+            if (slot.vw && slot.vh) { s.vw = slot.vw; s.vh = slot.vh; }
             if (slot._localUrl) s._localUrl = slot._localUrl;
           }
           if (slot.markupStrokes) {
@@ -7075,8 +7049,16 @@
       rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
       rec.onerror = (e) => console.warn('[screen-notes] movie recorder error', e?.error || e);
       rec.start(500);
+      // Capture the source resolution so players can size themselves before
+      // the webm's (late) metadata arrives — grouped canvas cards especially
+      let vw = 0, vh = 0;
+      try {
+        const st = mediaStream.getVideoTracks()[0]?.getSettings?.() || {};
+        vw = st.width || 0;
+        vh = st.height || 0;
+      } catch (_) {}
       videoCapture = {
-        ...target, rec, chunks, mime,
+        ...target, rec, chunks, mime, vw, vh,
         startedAt: Date.now(),
         capturedTimestampMs: currentCaptureTimestampMs(),
         timer: setInterval(updateVideoCaptureTimer, 250),
@@ -7178,6 +7160,7 @@
           uploadPromise,
           capturedTimestampMs: vc.capturedTimestampMs,
           durationMs,
+          ...(vc.vw && vc.vh ? { vw: vc.vw, vh: vc.vh } : {}),
         });
         syncComposerAlias();
         const previewEl = docById('screenshotPreview');
@@ -7202,6 +7185,7 @@
         _localUrl: localUrl,
         timestamp: vc.capturedTimestampMs,
         durationMs,
+        ...(vc.vw && vc.vh ? { vw: vc.vw, vh: vc.vh } : {}),
       });
       renderNotesList();
       updateSaveNoteButtonState();
@@ -7692,14 +7676,45 @@
     }
 
     // ── Canvas movie playback ──
-    // Movies never autoplay on canvas; hovering the card reveals a floating
-    // play/pause + scrubber pill overlaying the bottom of the movie.
+    // Movies never autoplay on canvas. Hovering reveals the same dark video
+    // toolbar as the lightbox — play/pause, timestamp, scrubber, and a trim
+    // button that morphs the bar into the timeline editor with Done/Cancel.
+    function ciVideoSizeStyle(s, maxH) {
+      // Known capture dimensions let the element size itself before the webm's
+      // metadata arrives, so grouped cards count movies in their layout
+      if (s.vw && s.vh) {
+        return `height:${Math.round(Math.min(maxH, s.vh))}px;aspect-ratio:${s.vw} / ${s.vh};`;
+      }
+      return `max-height:${maxH}px;`;
+    }
+
     function ciVideoControlsHTML() {
+      const ro = canvasReadOnly();
       return `<div class="ci-video-controls" onmousedown="event.stopPropagation()" ondblclick="event.stopPropagation()">
-        <button type="button" class="ci-video-play" onclick="ciVideoToggle(this)" title="Play / pause">${icon('play', 'icon icon-sm')}</button>
-        <div class="scrub-track ci-video-track" onmousedown="ciVideoScrubDown(event)">
-          <div class="scrub-fill" style="width:0%"></div>
-          <div class="scrub-handle" style="left:0%"></div>
+        <div class="lb-crop-actions ci-trim-actions">
+          <button class="btn lb-discard-btn" onclick="ciTrimCancel(this)">Cancel</button>
+          <button class="btn lb-save-btn" onclick="ciTrimApply(this)">Done</button>
+        </div>
+        <div class="markup-toolbar video-toolbar ci-video-toolbar">
+          <div class="video-playbar">
+            <button class="tb-btn tb-markup-toggle ci-video-play" onclick="ciVideoToggle(this)" title="Play / pause">${icon('play')}</button>
+            <span class="video-time ci-video-time">00:00</span>
+            <div class="scrub-track ci-video-track" onmousedown="ciVideoScrubDown(event)">
+              <div class="scrub-fill" style="width:0%"></div>
+              <div class="scrub-handle" style="left:0%"></div>
+            </div>
+            ${ro ? '' : `<div class="tb-divider"></div>
+            <button class="tb-btn tb-markup-toggle ci-trim-btn" onclick="ciTrimStart(this)" title="Trim movie">${icon('crop')}</button>`}
+          </div>
+          <div class="video-trimbar">
+            <div class="video-trim-track" onmousedown="ciTrimDown(event)">
+              <div class="video-trim-playhead" style="left:0%"></div>
+              <div class="video-trim-region">
+                <div class="video-trim-handle left" data-h="l"></div>
+                <div class="video-trim-handle right" data-h="r"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>`;
     }
@@ -7708,6 +7723,12 @@
       return parseFloat(el.dataset.trimEnd)
         || parseFloat(el.dataset.duration)
         || (isFinite(el.duration) && el.duration ? el.duration * 1000 : 0);
+    }
+
+    function ciVideoDurationMs(el) {
+      return parseFloat(el.dataset.duration)
+        || (isFinite(el.duration) && el.duration ? el.duration * 1000 : 0)
+        || 1;
     }
 
     function ciVideoInit(el) {
@@ -7734,31 +7755,168 @@
       if (video.paused) {
         if (endMs && video.currentTime * 1000 >= endMs - 60) video.currentTime = start;
         video.play().catch(() => {});
-        btn.innerHTML = icon('pause', 'icon icon-sm');
+        btn.innerHTML = icon('pause');
       } else {
         video.pause();
-        btn.innerHTML = icon('play', 'icon icon-sm');
+        btn.innerHTML = icon('play');
       }
     }
 
     function ciVideoTime(el) {
       const wrap = el.closest('.ci-video-wrap');
+      const controls = wrap?.querySelector('.ci-video-controls');
       const start = parseFloat(el.dataset.trimStart) || 0;
       const end = ciVideoEndMs(el);
       const t = el.currentTime * 1000;
       if (end && t >= end - 30 && !el.paused) {
         el.pause();
         el.currentTime = start / 1000;
-        const btn = wrap?.querySelector('.ci-video-play');
-        if (btn) btn.innerHTML = icon('play', 'icon icon-sm');
+        const btn = controls?.querySelector('.ci-video-play');
+        if (btn) btn.innerHTML = icon('play');
       }
-      const fill = wrap?.querySelector('.ci-video-track .scrub-fill');
-      const knob = wrap?.querySelector('.ci-video-track .scrub-handle');
+      const fill = controls?.querySelector('.ci-video-track .scrub-fill');
+      const knob = controls?.querySelector('.ci-video-track .scrub-handle');
+      const time = controls?.querySelector('.ci-video-time');
       if (end > start) {
         const pct = `${Math.min(100, Math.max(0, (t - start) / (end - start) * 100))}%`;
         if (fill) fill.style.width = pct;
         if (knob) knob.style.left = pct;
       }
+      if (time) time.textContent = formatDuration(Math.min(Math.max(0, t - start), Math.max(0, end - start)));
+      if (controls?.querySelector('.ci-video-toolbar')?.classList.contains('trim-mode')) {
+        const dur = ciVideoDurationMs(el);
+        const ph = controls.querySelector('.video-trim-playhead');
+        if (ph) ph.style.left = `${Math.min(100, Math.max(0, t / dur * 100))}%`;
+      }
+    }
+
+    // ── Canvas trim mode (same morph + Done/Cancel as the lightbox) ──
+    function ciTrimLayout(controls, video) {
+      const region = controls.querySelector('.video-trim-region');
+      if (!region) return;
+      const dur = ciVideoDurationMs(video);
+      const ps = parseFloat(controls.dataset.pendStart) || 0;
+      const pe = parseFloat(controls.dataset.pendEnd) || dur;
+      region.style.left = `${Math.max(0, ps / dur * 100)}%`;
+      region.style.width = `${Math.max(0, (pe - ps) / dur * 100)}%`;
+    }
+
+    function ciTrimStart(btn) {
+      const controls = btn.closest('.ci-video-controls');
+      const video = controls?.closest('.ci-video-wrap')?.querySelector('video');
+      if (!controls || !video) return;
+      video.pause();
+      const playBtn = controls.querySelector('.ci-video-play');
+      if (playBtn) playBtn.innerHTML = icon('play');
+      const dur = ciVideoDurationMs(video);
+      controls.dataset.pendStart = parseFloat(video.dataset.trimStart) || 0;
+      controls.dataset.pendEnd = parseFloat(video.dataset.trimEnd) || dur;
+      const playbar = controls.querySelector('.video-playbar');
+      const trimbar = controls.querySelector('.video-trimbar');
+      if (playbar) {
+        controls.dataset.playbarW = playbar.scrollWidth;
+        playbar.style.maxWidth = `${playbar.scrollWidth}px`;
+        void playbar.offsetWidth; // commit before collapsing so the morph animates
+        playbar.style.maxWidth = '0px';
+      }
+      if (trimbar) trimbar.style.maxWidth = `${trimbar.scrollWidth}px`;
+      controls.querySelector('.ci-video-toolbar')?.classList.add('trim-mode');
+      controls.querySelector('.ci-trim-actions')?.classList.add('visible');
+      controls.classList.add('trimming');
+      ciTrimLayout(controls, video);
+      ciVideoTime(video);
+    }
+
+    function ciTrimEnd(controls, video) {
+      const playbar = controls.querySelector('.video-playbar');
+      const trimbar = controls.querySelector('.video-trimbar');
+      if (trimbar) trimbar.style.maxWidth = '0px';
+      if (playbar) playbar.style.maxWidth = `${controls.dataset.playbarW || playbar.scrollWidth}px`;
+      controls.querySelector('.ci-video-toolbar')?.classList.remove('trim-mode');
+      controls.querySelector('.ci-trim-actions')?.classList.remove('visible');
+      controls.classList.remove('trimming');
+      video.currentTime = (parseFloat(video.dataset.trimStart) || 0) / 1000;
+      ciVideoTime(video);
+    }
+
+    function ciTrimDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const track = e.currentTarget;
+      const controls = track.closest('.ci-video-controls');
+      const video = controls?.closest('.ci-video-wrap')?.querySelector('video');
+      if (!controls || !video) return;
+      const doc = track.ownerDocument;
+      const dur = ciVideoDurationMs(video);
+      const MIN_MS = 300;
+      const h = e.target.dataset?.h || null;
+      const seekTo = (ms) => {
+        video.currentTime = Math.max(0, Math.min(dur, ms)) / 1000;
+        ciVideoTime(video);
+      };
+      const apply = (clientX) => {
+        const r = track.getBoundingClientRect();
+        const ms = Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * dur;
+        let ps = parseFloat(controls.dataset.pendStart) || 0;
+        let pe = parseFloat(controls.dataset.pendEnd) || dur;
+        if (h === 'l') {
+          ps = Math.max(0, Math.min(ms, pe - MIN_MS));
+          controls.dataset.pendStart = ps;
+          seekTo(ps);
+        } else if (h === 'r') {
+          pe = Math.min(dur, Math.max(ms, ps + MIN_MS));
+          controls.dataset.pendEnd = pe;
+          seekTo(pe);
+        } else {
+          seekTo(ms);
+        }
+        ciTrimLayout(controls, video);
+      };
+      apply(e.clientX);
+      const onMove = (ev) => apply(ev.clientX);
+      const onUp = () => {
+        doc.removeEventListener('mousemove', onMove);
+        doc.removeEventListener('mouseup', onUp);
+      };
+      doc.addEventListener('mousemove', onMove);
+      doc.addEventListener('mouseup', onUp);
+    }
+
+    function ciTrimCancel(btn) {
+      const controls = btn.closest('.ci-video-controls');
+      const video = controls?.closest('.ci-video-wrap')?.querySelector('video');
+      if (controls && video) ciTrimEnd(controls, video);
+    }
+
+    function ciTrimApply(btn) {
+      const controls = btn.closest('.ci-video-controls');
+      const wrap = controls?.closest('.ci-video-wrap');
+      const video = wrap?.querySelector('video');
+      if (!controls || !wrap || !video) return;
+      const dur = ciVideoDurationMs(video);
+      const ps = parseFloat(controls.dataset.pendStart) || 0;
+      const pe = parseFloat(controls.dataset.pendEnd) || dur;
+      const isFull = ps <= 20 && pe >= dur - 20;
+      // Persist the trim onto the note's shot (non-destructive, like the lightbox)
+      const itemEl = controls.closest('.canvas-item');
+      const item = canvas.items.find(i => i.id === itemEl?.dataset.id);
+      const note = item ? (canvas.session?.notes || [])[item.noteIndex] : null;
+      const shots = note ? noteShots(note) : null;
+      const si = parseInt(wrap.dataset.shotIndex || '0', 10) || 0;
+      const shot = shots ? shots[si] : null;
+      if (shot) {
+        if (isFull) {
+          delete shot.trimStartMs;
+          delete shot.trimEndMs;
+        } else {
+          shot.trimStartMs = Math.round(ps);
+          shot.trimEndMs = Math.round(pe);
+        }
+        if (canvas.session && !canvasReadOnly()) saveSession(canvas.session);
+      }
+      video.dataset.trimStart = isFull ? 0 : Math.round(ps);
+      video.dataset.trimEnd = isFull ? '' : Math.round(pe);
+      ciTrimEnd(controls, video);
     }
 
     function ciVideoScrubDown(e) {
@@ -11172,7 +11330,7 @@
           const shotSelIdxs = canvas.shotSel && canvas.shotSel.itemId === item.id ? (canvas.shotSel.shotIndexes || []) : [];
           const imgs = shots.map((s, si) => {
             const inner = s.kind === 'video'
-              ? `<video src="${s._localUrl || s.url}" muted playsinline preload="metadata" style="max-height:${item.h}px;" data-trim-start="${s.trimStartMs || 0}" data-trim-end="${s.trimEndMs || ''}" data-duration="${s.durationMs || 0}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>${ciVideoControlsHTML()}`
+              ? `<video src="${s._localUrl || s.url}" muted playsinline preload="metadata" style="${ciVideoSizeStyle(s, item.h)}" data-trim-start="${s.trimStartMs || 0}" data-trim-end="${s.trimEndMs || ''}" data-duration="${s.durationMs || 0}" data-vw="${s.vw || ''}" data-vh="${s.vh || ''}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>${ciVideoControlsHTML()}`
               : `<img src="${s._mkPreview || s.url}" alt="" draggable="false" style="max-height:${item.h}px;">`;
             return `<div class="ci-screenshot-img-wrap${s.kind === 'video' ? ' ci-video-wrap' : ''}${shotSelIdxs.includes(si) ? ' shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;">${inner}</div>`;
           }).join('');
@@ -11195,7 +11353,7 @@
           return `
             <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
               <div class="ci-screenshot-img-wrap ci-video-wrap" style="max-width:${item.w}px;max-height:${item.h}px;">
-                <video src="${shot0._localUrl || shot0.url}" muted playsinline preload="metadata" style="max-width:${item.w}px;max-height:${item.h}px;" data-trim-start="${shot0.trimStartMs || 0}" data-trim-end="${shot0.trimEndMs || ''}" data-duration="${shot0.durationMs || 0}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>
+                <video src="${shot0._localUrl || shot0.url}" muted playsinline preload="metadata" style="${ciVideoSizeStyle(shot0, item.h)}max-width:${item.w}px;" data-trim-start="${shot0.trimStartMs || 0}" data-trim-end="${shot0.trimEndMs || ''}" data-duration="${shot0.durationMs || 0}" data-vw="${shot0.vw || ''}" data-vh="${shot0.vh || ''}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>
                 ${ciVideoControlsHTML()}
               </div>
               <div class="ci-note">
@@ -12062,7 +12220,12 @@
             wrap.style.height = '';
           });
           el.querySelectorAll('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video').forEach(media => {
-            media.style.maxHeight = item.h + 'px';
+            // Dimension-aware videos use an explicit height + aspect-ratio
+            if (media.tagName === 'VIDEO' && media.dataset.vh) {
+              media.style.height = Math.min(item.h, parseFloat(media.dataset.vh)) + 'px';
+            } else {
+              media.style.maxHeight = item.h + 'px';
+            }
           });
           return;
         }
@@ -12078,7 +12241,11 @@
         const media = el.querySelector('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video');
         if (media) {
           media.style.maxWidth = item.w + 'px';
-          media.style.maxHeight = item.h + 'px';
+          if (media.tagName === 'VIDEO' && media.dataset.vh) {
+            media.style.height = Math.min(item.h, parseFloat(media.dataset.vh)) + 'px';
+          } else {
+            media.style.maxHeight = item.h + 'px';
+          }
         }
         el.style.height = '';
       } else if (item.type === 'image') {
