@@ -1062,7 +1062,8 @@
       transition: background 120ms ease;
     }
     .scrub-play-btn:hover { background: var(--surface-hover-strong); }
-    .scrub-play-btn .icon { width: 15px; height: 15px; }
+    /* The icon is swapped while playing — clicks must always target the button */
+    .scrub-play-btn .icon { width: 15px; height: 15px; pointer-events: none; }
     /* The pill itself crops the sliding labels during the live↔past swap */
     .scrub-bar { overflow: hidden; }
     .scrub-time {
@@ -3536,6 +3537,15 @@
       background: #000;
       transform-origin: center center;
     }
+    /* The global video rule (recording feed) adds rounded corners + border —
+       inline previews and cards are clipped by their containers instead */
+    .screenshot-preview video,
+    video.note-card-screenshot,
+    .ci-screenshot .ci-screenshot-img-wrap video {
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+    }
     .screenshot-preview.has-video video { display: block; cursor: zoom-in; }
     .screenshot-preview.has-video img { display: none !important; }
     .screenshot-preview.capturing-image video { animation: screenshotCaptureIn 300ms cubic-bezier(0.2, 0.8, 0.3, 1.15); }
@@ -5441,9 +5451,13 @@
     function updateScrubPlayBtn() {
       const btn = docById('scrubPlayBtn');
       if (!btn) return;
-      const playing = !scrubActive || scrubPlaying;
-      btn.innerHTML = icon(playing ? 'pause' : 'play', 'icon icon-sm');
-      btn.title = playing ? 'Pause feed' : 'Play feed';
+      const state = (!scrubActive || scrubPlaying) ? 'pause' : 'play';
+      // Only touch the DOM on state changes — this runs every playback frame,
+      // and constantly replacing the icon swallowed most clicks
+      if (btn.dataset.state === state) return;
+      btn.dataset.state = state;
+      btn.innerHTML = icon(state, 'icon icon-sm');
+      btn.title = state === 'pause' ? 'Pause feed' : 'Play feed';
     }
 
     async function toggleFeedPlayback() {
