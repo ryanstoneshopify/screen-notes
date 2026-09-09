@@ -7157,18 +7157,33 @@
       let rec;
       // Record what's showing on the recording screen: the scrubbed playback
       // when reviewing the past, the live share otherwise — movies of past
-      // time, exactly like screenshots
+      // time, exactly like screenshots.
+      // NOTE: never use playbackVideo.captureStream() — the scrub buffer swaps
+      // the element's src when it refreshes, which ends the captured tracks
+      // and the recorder produces nothing. Instead we pump the playback frames
+      // onto a hidden canvas and record the canvas stream.
       let srcStream = mediaStream;
       let fromScrub = false;
+      let pumpCanvas = null;
+      let pumpCtx = null;
       const pv = docById('playbackVideo');
-      if (scrubActive && pv && pv.readyState >= 2 && pv.captureStream) {
+      if (scrubActive) {
+        if (!pv || pv.readyState < 2 || !pv.videoWidth) {
+          showToast('The scrubbed footage is still loading — try again in a moment');
+          return false;
+        }
         try {
-          srcStream = pv.captureStream();
+          pumpCanvas = document.createElement('canvas');
+          pumpCanvas.width = pv.videoWidth;
+          pumpCanvas.height = pv.videoHeight;
+          pumpCtx = pumpCanvas.getContext('2d');
+          pumpCtx.drawImage(pv, 0, 0);
+          srcStream = pumpCanvas.captureStream(30);
           fromScrub = true;
         } catch (e) {
-          console.warn('[screen-notes] captureStream failed — recording live instead', e);
-          srcStream = mediaStream;
-          fromScrub = false;
+          console.warn('[screen-notes] canvas capture failed', e);
+          showToast('Could not capture the scrubbed feed');
+          return false;
         }
       }
       try {
@@ -7201,8 +7216,18 @@
         capturedTimestampMs: currentCaptureTimestampMs(),
         timer: setInterval(updateVideoCaptureTimer, 250),
       };
-      // Frames only advance if the scrubbed feed is actually playing
-      if (fromScrub && !scrubPlaying) startScrubPlayback();
+      if (fromScrub) {
+        // Pump playback frames into the recorded canvas. setInterval (not rAF)
+        // so the capture survives the tab being backgrounded, albeit throttled.
+        videoCapture.pump = setInterval(() => {
+          const v = docById('playbackVideo');
+          if (v && v.readyState >= 2 && v.videoWidth) {
+            try { pumpCtx.drawImage(v, 0, 0, pumpCanvas.width, pumpCanvas.height); } catch (_) {}
+          }
+        }, 33);
+        // Frames only advance if the scrubbed feed is actually playing
+        if (!scrubPlaying) startScrubPlayback();
+      }
       updateVideoCaptureTimer();
       updateSaveNoteButtonState();
       return true;
@@ -7269,6 +7294,7 @@
       });
       try { vc.rec.stop(); } catch (_) {}
       await stopped;
+      if (vc.pump) clearInterval(vc.pump);
       // Past-time captures drove the scrubbed playback — leave it paused where it ended
       if (vc.fromScrub) pauseScrubPlayback();
       const durationMs = Date.now() - vc.startedAt;
@@ -7381,6 +7407,7 @@
       if (!vc) return;
       videoCapture = null;
       clearInterval(vc.timer);
+      if (vc.pump) clearInterval(vc.pump);
       try { vc.rec.stop(); } catch (_) {}
       removeVideoCapturePlaceholder(vc);
       updateSaveNoteButtonState();
