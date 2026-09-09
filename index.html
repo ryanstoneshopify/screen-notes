@@ -3487,6 +3487,226 @@
     html.glass-bend .markup-toolbar {
       backdrop-filter: url(#glassBend) var(--glass-frost);
     }
+    /* ── Movie capture & playback ── */
+    .capture-circle-row { display: flex; gap: 12px; }
+    .capture-circle-btn { width: 40px; height: 40px; border-radius: 50%; }
+    .capture-circle-btn .icon { width: 18px; height: 18px; }
+    .video-stop-btn { display: none; align-items: center; gap: 8px; color: #d0453c; }
+    .video-stop-btn:hover { color: #b93a32; }
+    .video-stop-btn .icon { width: 15px; height: 15px; color: currentColor; flex: 0 0 auto; }
+    .video-stop-timer { font-variant-numeric: tabular-nums; color: currentColor; min-width: 40px; text-align: left; }
+    .screenshot-preview.video-recording .capture-circle-row { display: none; }
+    .screenshot-preview.video-recording .video-stop-btn,
+    .note-shot-recording .video-stop-btn { display: inline-flex; }
+
+    .screenshot-preview video {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      background: #000;
+      transform-origin: center center;
+    }
+    .screenshot-preview.has-video video { display: block; cursor: zoom-in; }
+    .screenshot-preview.has-video img { display: none !important; }
+    .screenshot-preview.capturing-image video { animation: screenshotCaptureIn 300ms cubic-bezier(0.2, 0.8, 0.3, 1.15); }
+    .screenshot-preview.saving-out video {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      animation: screenshotSaveOut 250ms cubic-bezier(0.17, 0.84, 0.44, 1) forwards;
+    }
+
+    /* Overlay buttons scale out while a movie records, back in when it stops */
+    .screenshot-preview .screenshot-pip-btn,
+    .screenshot-preview .screenshot-preview-actions,
+    .screenshot-preview .shot-dots {
+      transition: transform 240ms cubic-bezier(0.2, 0.8, 0.3, 1.15), opacity 180ms ease;
+    }
+    .screenshot-preview.video-recording .screenshot-pip-btn,
+    .screenshot-preview.video-recording .screenshot-preview-actions,
+    .screenshot-preview.video-recording .screenshot-preview-timestamp,
+    .screenshot-preview.video-recording .shot-dots {
+      transform: scale(0);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .screenshot-preview .shot-nav-btn { transition: transform 240ms cubic-bezier(0.2, 0.8, 0.3, 1.15), opacity 180ms ease; }
+    .screenshot-preview.video-recording .shot-nav-btn {
+      transform: translateY(-50%) scale(0);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Saved note cards */
+    video.note-card-screenshot { cursor: zoom-in; }
+    .note-card-video-enter { animation: screenshotCaptureIn 300ms cubic-bezier(0.2, 0.8, 0.3, 1.15); }
+    .note-shot-recording {
+      width: 100%;
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-sunken);
+    }
+    .note-card-screenshot-wrap .note-card-screenshot-actions,
+    .note-card-screenshot-wrap .note-shot-dots,
+    .note-card-screenshot-wrap .note-shot-nav {
+      transition: opacity 180ms ease, transform 240ms cubic-bezier(0.2, 0.8, 0.3, 1.15);
+    }
+    .note-card-screenshot-wrap.video-recording .note-card-screenshot-actions,
+    .note-card-screenshot-wrap.video-recording .note-shot-dots,
+    .note-card-screenshot-wrap.video-recording .screenshot-preview-timestamp {
+      transform: scale(0) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    .note-card-screenshot-wrap.video-recording .note-shot-nav {
+      transform: translateY(-50%) scale(0) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* ── Video lightbox ── */
+    .video-lightbox #lbVideo {
+      max-width: 88vw;
+      max-height: 82vh;
+      display: block;
+      border-radius: 16px;
+      background: #000;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+    }
+    .video-playbar,
+    .video-trimbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: max-width 400ms var(--ease-out), opacity 400ms var(--ease-out);
+    }
+    .video-trimbar { max-width: 0; opacity: 0; }
+    .video-toolbar.trim-mode .video-playbar { opacity: 0; }
+    .video-toolbar.trim-mode .video-trimbar { opacity: 1; }
+    .video-toolbar .scrub-track { width: 240px; flex: 0 0 auto; margin: 0 6px; }
+    .video-time {
+      font-size: 12px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #3d3d3a;
+      min-width: 40px;
+      text-align: center;
+      flex: 0 0 auto;
+    }
+    .video-trim-track {
+      position: relative;
+      width: 320px;
+      height: 28px;
+      margin: 0 6px;
+      border-radius: 8px;
+      background: rgba(31, 30, 29, 0.12);
+      flex: 0 0 auto;
+      cursor: pointer;
+      overflow: visible;
+    }
+    .video-trim-region {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      box-sizing: border-box;
+      border: 2px solid var(--terra-cotta);
+      border-left: none;
+      border-right: none;
+      background: color-mix(in srgb, var(--terra-cotta) 22%, transparent);
+    }
+    .video-trim-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 12px;
+      background: var(--terra-cotta);
+      cursor: ew-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-trim-handle::after {
+      content: '';
+      width: 2px;
+      height: 10px;
+      border-radius: 2px;
+      background: #fff;
+    }
+    .video-trim-handle.left { left: -12px; border-radius: 8px 0 0 8px; }
+    .video-trim-handle.right { right: -12px; border-radius: 0 8px 8px 0; }
+    .video-trim-playhead {
+      position: absolute;
+      top: -3px;
+      bottom: -3px;
+      width: 2px;
+      border-radius: 2px;
+      background: #141413;
+      pointer-events: none;
+    }
+
+    /* ── Canvas video ── */
+    .ci-video-wrap { position: relative; }
+    .ci-screenshot .ci-screenshot-img-wrap video {
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      background: #000;
+    }
+    .ci-video-controls {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 8px;
+      border-radius: 999px;
+      background: var(--glass-bg-strong);
+      border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+    .canvas-item:hover .ci-video-controls {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .ci-video-play {
+      border: none;
+      background: none;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-black);
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+    .ci-video-play .icon { width: 15px; height: 15px; }
+    .ci-video-controls .scrub-track {
+      flex: 0 0 auto;
+      width: 110px;
+      margin-right: 0;
+    }
+    .ci-video-controls .scrub-fill { width: 0%; }
   </style>
 </head>
 <body>
@@ -3638,6 +3858,9 @@
         crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
         pip: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12.5" width="6.5" height="4.5" rx="1" class="icon-filled"/>',
         plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+        movie: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M10.5 9.3l4.6 2.7-4.6 2.7z" class="icon-filled"/>',
+        play: '<path d="M8 5.5l11 6.5-11 6.5z" class="icon-filled"/>',
+        pause: '<rect x="7" y="5.5" width="3.4" height="13" rx="1.2" class="icon-filled"/><rect x="13.6" y="5.5" width="3.4" height="13" rx="1.2" class="icon-filled"/>',
         pipexit: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M14.5 9.5L9 15"/><path d="M9 11.2V15h3.8"/>',
         camcorder: '<rect x="3" y="7" width="12.5" height="10" rx="2.5"/><path d="M15.5 10.8l4.2-2.3a.6.6 0 0 1 .9.5v6a.6.6 0 0 1-.9.5l-4.2-2.3"/>',
         gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
@@ -4516,7 +4739,9 @@
           if (Array.isArray(n.screenshots)) {
             n.screenshots.forEach(s => {
               delete s._mkPreview;
-              if (typeof s.url === 'string' && s.url.startsWith('data:')) s.url = null;
+              delete s._localUrl; // transient blob: URL for freshly captured movies
+              delete s.recordingVideo; // in-flight movie placeholder
+              if (typeof s.url === 'string' && (s.url.startsWith('data:') || s.url.startsWith('blob:'))) s.url = null;
             });
             n.screenshots = n.screenshots.filter(s => s.url);
             if (!n.screenshots.length) delete n.screenshots;
@@ -5438,6 +5663,10 @@
     }
 
     async function stopRecording() {
+      // Abandon any in-flight movie capture and its UI
+      cancelVideoCapture();
+      closeMediaMenu();
+      closeVideoLightbox();
       closeComposerPiP();
       const stoppedSessionId = activeSessionId;
       isRecording = false;
@@ -6076,8 +6305,11 @@
 
     async function beginNoteScreenshotCapture() {
       if (!isRecording || pendingScreenshot || screenshotRemoved) return pendingScreenshot;
+      // Never capture over a movie that is recording or already captured
+      if (videoCapture) return null;
       // A deliberately added empty slot only fills via its Take screenshot button
       const autoSlot = activeComposerSlot();
+      if (autoSlot?.recordingVideo || (autoSlot && !autoSlot.empty)) return null;
       if (autoSlot?.empty && autoSlot.userAdded) return null;
       // Quick preview for indicator (not persisted)
       const preview = captureScreenshotPreview();
@@ -6090,7 +6322,7 @@
       const previewTimestamp = docById('screenshotPreviewTimestamp');
       if (previewEl && previewImg) {
         previewImg.src = preview;
-        previewEl.classList.remove('capturing-image');
+        previewEl.classList.remove('capturing-image', 'has-video');
         previewEl.classList.add('has-image');
         // Restart the subtle scale-in every time a new screenshot is captured.
         void previewEl.offsetWidth;
@@ -6150,7 +6382,7 @@
       if (!button) return;
       const hasText = !!input?.value.trim();
       const hasScreenshot = composerImageCount() > 0 && !screenshotRemoved;
-      button.disabled = !(hasText || hasScreenshot);
+      button.disabled = !!videoCapture || !(hasText || hasScreenshot);
     }
 
     async function retakeScreenshot(focusNoteInput = true) {
@@ -6164,7 +6396,7 @@
       if (indicator) indicator.innerHTML = '';
       const previewEl = docById('screenshotPreview');
       const previewTimestamp = docById('screenshotPreviewTimestamp');
-      if (previewEl) previewEl.classList.remove('has-image', 'saving-out', 'capturing-image');
+      if (previewEl) previewEl.classList.remove('has-image', 'has-video', 'saving-out', 'capturing-image');
       if (previewTimestamp) previewTimestamp.innerHTML = '';
       await beginNoteScreenshotCapture();
       updateSaveNoteButtonState();
@@ -6192,7 +6424,7 @@
       const previewEl = docById('screenshotPreview');
       const previewImg = docById('screenshotPreviewImg');
       const previewTimestamp = docById('screenshotPreviewTimestamp');
-      if (previewEl) previewEl.classList.remove('has-image', 'saving-out', 'capturing-image');
+      if (previewEl) previewEl.classList.remove('has-image', 'has-video', 'saving-out', 'capturing-image');
       if (previewImg) previewImg.src = '';
       if (previewTimestamp) previewTimestamp.innerHTML = '';
       updateSaveNoteButtonState();
@@ -6260,6 +6492,7 @@
       if (!previewEl || !layer) return;
       const slot = activeComposerSlot();
       const hasImg = !!(slot && !slot.empty);
+      const isVideo = !!(hasImg && slot.kind === 'video');
       let ghost = null;
       if (direction) {
         // Rapid navigation: clear any in-flight ghosts so layers never stack/flicker
@@ -6267,10 +6500,13 @@
         ghost = layer.cloneNode(true);
         ghost.classList.add('shot-ghost');
         const wasImg = previewEl.classList.contains('has-image');
+        const wasVideo = previewEl.classList.contains('has-video');
         const gi = ghost.querySelector('img');
+        const gv = ghost.querySelector('video');
         const ge = ghost.querySelector('.screenshot-preview-empty');
         const gt = ghost.querySelector('.screenshot-preview-timestamp');
-        if (gi) gi.style.display = wasImg ? 'block' : 'none';
+        if (gv) gv.style.display = wasImg && wasVideo ? 'block' : 'none';
+        if (gi) gi.style.display = wasImg && !wasVideo ? 'block' : 'none';
         if (ge) ge.style.display = wasImg ? 'none' : 'flex';
         if (gt) gt.style.display = wasImg ? 'inline-flex' : 'none';
         ghost.removeAttribute('id');
@@ -6282,9 +6518,21 @@
         previewEl.appendChild(ghost);
       }
       previewEl.classList.toggle('has-image', hasImg);
+      previewEl.classList.toggle('has-video', isVideo);
       previewEl.classList.remove('saving-out', 'capturing-image');
       const img = layer.querySelector('img');
-      if (img) img.src = composerShotSrc(slot);
+      if (img) img.src = isVideo ? '' : composerShotSrc(slot);
+      const vid = layer.querySelector('video');
+      if (vid) {
+        const vsrc = isVideo ? (slot._localUrl || slot.url || '') : '';
+        vid.dataset.trimStart = isVideo ? (slot.trimStartMs || 0) : 0;
+        vid.dataset.trimEnd = isVideo && slot.trimEndMs ? slot.trimEndMs : '';
+        if ((vid.getAttribute('src') || '') !== vsrc) {
+          if (vsrc) vid.setAttribute('src', vsrc);
+          else { vid.removeAttribute('src'); try { vid.load(); } catch (_) {} }
+        }
+        if (isVideo) vid.play?.().catch(() => {});
+      }
       const ts = layer.querySelector('.screenshot-preview-timestamp');
       if (ts) ts.innerHTML = hasImg ? `<span>${escapeHtml(formatDuration(slot.capturedTimestampMs || 0))}</span>` : '';
       updateShotControls();
@@ -6423,6 +6671,7 @@
     }
 
     async function addNote() {
+      if (videoCapture) return; // finish the movie first
       const input = docById('noteInput');
       const text = input.value.trim();
 
@@ -6433,10 +6682,10 @@
           await beginNoteScreenshotCapture();
         }
         for (const slot of composerShots) {
-          if (!slot || slot.empty) continue;
+          if (!slot || slot.empty || slot.recordingVideo) continue;
           const u = await slot.uploadPromise;
           if (!u) {
-            alert('Screenshot upload failed — please try the note again.');
+            alert(`${slot.kind === 'video' ? 'Movie' : 'Screenshot'} upload failed — please try the note again.`);
             return;
           }
           filledShots.push({ slot, url: u });
@@ -6456,6 +6705,13 @@
       if (filledShots.length) {
         note.screenshots = filledShots.map(({ slot, url: u }) => {
           const s = { url: u, timestamp: slot.capturedTimestampMs ?? note.timestamp };
+          if (slot.kind === 'video') {
+            s.kind = 'video';
+            if (slot.durationMs) s.durationMs = slot.durationMs;
+            if (slot.trimStartMs) s.trimStartMs = slot.trimStartMs;
+            if (slot.trimEndMs) s.trimEndMs = slot.trimEndMs;
+            if (slot._localUrl) s._localUrl = slot._localUrl;
+          }
           if (slot.markupStrokes) {
             s.markupStrokes = slot.markupStrokes;
             s.markupNatW = slot.markupNatW;
@@ -6495,7 +6751,7 @@
       const previewEl = docById('screenshotPreview');
       const previewImg = docById('screenshotPreviewImg');
       const previewTimestamp = docById('screenshotPreviewTimestamp');
-      if (previewEl) previewEl.classList.remove('has-image', 'saving-out', 'capturing-image');
+      if (previewEl) previewEl.classList.remove('has-image', 'has-video', 'saving-out', 'capturing-image');
       if (previewImg) previewImg.src = '';
       if (previewTimestamp) previewTimestamp.innerHTML = '';
       updateSaveNoteButtonState();
@@ -6619,6 +6875,15 @@
       const shots = noteShots(note);
       if (!shots) return;
       const key = noteKeyFor(note, index);
+      // Movies (and in-flight recordings) don't do the in-place img push —
+      // fall back to a full re-render, which swaps the media element type.
+      const cur = focusedShotIndex(note, index);
+      const involvesVideo = [shots[cur], shots[next]].some(s => s && (s.kind === 'video' || s.recordingVideo));
+      if (involvesVideo) {
+        noteShotFocus[key] = next;
+        renderNotesList();
+        return;
+      }
       noteShotFocus[key] = next;
       // Update the card in place — a full list re-render flickers the images
       const card = docById('notesList')?.querySelector(`.note-card[data-note-key="${CSS.escape(key)}"]`);
@@ -6779,6 +7044,741 @@
       } catch (err) {
         alert(err?.message || 'Screenshot capture failed — please try again.');
       }
+    }
+
+    // ── Movie capture ──
+    // A second MediaRecorder (independent from the scrubber buffer) captures a
+    // clip from the live share. The clip is uploaded as webm; trims are stored
+    // as non-destructive metadata ({ trimStartMs, trimEndMs }) respected by all
+    // players (composer, saved notes, lightbox, canvas).
+    let videoCapture = null; // { mode:'composer'|'note', slot|shot, note, rec, chunks, startedAt, ... }
+
+    function slotIsVideo(s) { return !!(s && s.kind === 'video'); }
+
+    function beginVideoCapture(target) {
+      if (!mediaStream || videoCapture) return false;
+      const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+      const mime = window.MediaRecorder
+        ? candidates.find(t => MediaRecorder.isTypeSupported(t)) || '' : '';
+      if (!mime) { showToast('Movie capture is not supported in this browser'); return false; }
+      let rec;
+      try {
+        rec = new MediaRecorder(mediaStream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
+      } catch (e) {
+        console.warn('[screen-notes] movie recorder unavailable', e);
+        showToast('Could not start movie capture');
+        return false;
+      }
+      const chunks = [];
+      rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
+      rec.onerror = (e) => console.warn('[screen-notes] movie recorder error', e?.error || e);
+      rec.start(500);
+      videoCapture = {
+        ...target, rec, chunks, mime,
+        startedAt: Date.now(),
+        capturedTimestampMs: currentCaptureTimestampMs(),
+        timer: setInterval(updateVideoCaptureTimer, 250),
+      };
+      updateVideoCaptureTimer();
+      updateSaveNoteButtonState();
+      return true;
+    }
+
+    function updateVideoCaptureTimer() {
+      if (!videoCapture) return;
+      const t = formatDuration(Date.now() - videoCapture.startedAt);
+      const docs = [document];
+      if (pipOpen()) { try { docs.push(pipWindow.document); } catch (_) {} }
+      docs.forEach(d => d.querySelectorAll('.video-stop-timer').forEach(el => { el.textContent = t; }));
+    }
+
+    // Movie circle button (empty state) and the composer plus-menu both land here
+    function startComposerVideoCapture(fromPlus = false) {
+      if (!isRecording || videoCapture) return;
+      let slot;
+      if (fromPlus) {
+        slot = { empty: true, userAdded: true, recordingVideo: true };
+      } else {
+        slot = ensureActiveComposerSlot();
+        if (!slot.empty) return;
+      }
+      if (!beginVideoCapture({ mode: 'composer', slot })) return;
+      if (fromPlus) {
+        // The recording slot pushes into the carousel like a new image would
+        composerShots.splice(composerShotIndex + 1, 0, slot);
+        composerShotIndex += 1;
+      } else {
+        for (const k of Object.keys(slot)) delete slot[k];
+        slot.empty = true;
+        slot.recordingVideo = true;
+      }
+      screenshotRemoved = false;
+      syncComposerAlias();
+      docById('screenshotPreview')?.classList.add('video-recording');
+      renderComposerShot(fromPlus ? 'new' : null);
+      updateVideoCaptureTimer();
+    }
+
+    // Plus-menu → Movie on a saved note card
+    function startNoteVideoCapture(index) {
+      if (!isRecording || videoCapture) return;
+      const note = currentNotes[index];
+      if (!note) return;
+      const shots = ensureNoteShotArray(note);
+      const shot = { recordingVideo: true };
+      const insertAt = shots.length ? focusedShotIndex(note, index) + 1 : 0;
+      if (!beginVideoCapture({ mode: 'note', note, shot })) return;
+      shots.splice(insertAt, 0, shot);
+      noteShotFocus[noteKeyFor(note, index)] = insertAt;
+      renderNotesList();
+      updateVideoCaptureTimer();
+    }
+
+    async function stopVideoCapture() {
+      const vc = videoCapture;
+      if (!vc) return;
+      videoCapture = null;
+      clearInterval(vc.timer);
+      const stopped = new Promise(res => {
+        vc.rec.onstop = res;
+        setTimeout(res, 3000);
+      });
+      try { vc.rec.stop(); } catch (_) {}
+      await stopped;
+      const durationMs = Date.now() - vc.startedAt;
+      const blob = new Blob(vc.chunks, { type: vc.mime });
+      if (!blob.size) {
+        removeVideoCapturePlaceholder(vc);
+        showToast('Movie capture failed — nothing was recorded');
+        updateSaveNoteButtonState();
+        return;
+      }
+      const localUrl = URL.createObjectURL(blob);
+      const file = new File([blob], `movie-${Date.now()}.webm`, { type: 'video/webm' });
+      console.log(`[screen-notes] captured movie ${(blob.size / 1024).toFixed(1)} KB, ${formatDuration(durationMs)}`);
+      const uploadPromise = (async () => {
+        try {
+          const r = await quick.fs.uploadFile(file);
+          const f = r?.files?.[0] || r?.[0] || r?.file || null;
+          return f?.fullUrl || f?.url || r?.url || r?.fullUrl || null;
+        } catch (err) {
+          console.error('[screen-notes] movie upload failed', err);
+          return null;
+        }
+      })();
+
+      if (vc.mode === 'composer') {
+        const slot = vc.slot;
+        for (const k of Object.keys(slot)) delete slot[k];
+        Object.assign(slot, {
+          kind: 'video',
+          _localUrl: localUrl,
+          uploadPromise,
+          capturedTimestampMs: vc.capturedTimestampMs,
+          durationMs,
+        });
+        syncComposerAlias();
+        const previewEl = docById('screenshotPreview');
+        previewEl?.classList.remove('video-recording');
+        renderComposerShot();
+        if (previewEl) {
+          // Same scale-up entrance as the first screenshot capture
+          previewEl.classList.remove('capturing-image');
+          void previewEl.offsetWidth;
+          previewEl.classList.add('capturing-image');
+          window.setTimeout(() => previewEl.classList.remove('capturing-image'), 320);
+        }
+        updateSaveNoteButtonState();
+        return;
+      }
+
+      // Saved-note movie: fill the placeholder shot, then persist once uploaded
+      const shot = vc.shot;
+      delete shot.recordingVideo;
+      Object.assign(shot, {
+        kind: 'video',
+        _localUrl: localUrl,
+        timestamp: vc.capturedTimestampMs,
+        durationMs,
+      });
+      renderNotesList();
+      updateSaveNoteButtonState();
+      const idx = currentNotes.indexOf(vc.note);
+      if (idx >= 0) {
+        const card = docById('notesList')?.querySelector(`.note-card[data-note-key="${CSS.escape(noteKeyFor(vc.note, idx))}"]`);
+        const vidEl = card?.querySelector('video.note-card-screenshot');
+        if (vidEl) {
+          vidEl.classList.add('note-card-video-enter');
+          window.setTimeout(() => vidEl.classList.remove('note-card-video-enter'), 340);
+        }
+      }
+      const url = await uploadPromise;
+      if (!url) {
+        showToast('Movie upload failed — this movie won\u2019t be saved');
+        return;
+      }
+      shot.url = url;
+      syncNoteShotMirror(vc.note);
+      const session = allSessions.find(s => s.id === activeSessionId);
+      if (session) {
+        session.notes = composedSessionNotes();
+        await saveSession(session);
+      }
+    }
+
+    function removeVideoCapturePlaceholder(vc) {
+      if (vc.mode === 'composer') {
+        const i = composerShots.indexOf(vc.slot);
+        if (i >= 0 && composerShots.length > 1) {
+          composerShots.splice(i, 1);
+          composerShotIndex = Math.max(0, Math.min(composerShotIndex, composerShots.length - 1));
+        } else if (i >= 0) {
+          for (const k of Object.keys(vc.slot)) delete vc.slot[k];
+          vc.slot.empty = true;
+        }
+        syncComposerAlias();
+        docById('screenshotPreview')?.classList.remove('video-recording');
+        renderComposerShot();
+      } else {
+        const shots = noteShots(vc.note);
+        const i = shots ? shots.indexOf(vc.shot) : -1;
+        if (i >= 0) shots.splice(i, 1);
+        renderNotesList();
+      }
+    }
+
+    // Discard an in-flight capture (session ended, etc.)
+    function cancelVideoCapture() {
+      const vc = videoCapture;
+      if (!vc) return;
+      videoCapture = null;
+      clearInterval(vc.timer);
+      try { vc.rec.stop(); } catch (_) {}
+      removeVideoCapturePlaceholder(vc);
+      updateSaveNoteButtonState();
+    }
+
+    // ── Movie/Image plus-button popover ──
+    let mediaMenuEl = null;
+    let mediaMenuDoc = null;
+    function closeMediaMenu() {
+      mediaMenuEl?.remove();
+      mediaMenuEl = null;
+      try { mediaMenuDoc?.removeEventListener('mousedown', onMediaMenuOutside, true); } catch (_) {}
+      mediaMenuDoc = null;
+    }
+    function onMediaMenuOutside(e) {
+      if (mediaMenuEl && !mediaMenuEl.contains(e.target)) closeMediaMenu();
+    }
+    function openMediaMenu(event, onMovie, onImage) {
+      event.stopPropagation();
+      if (mediaMenuEl) { closeMediaMenu(); return; }
+      const btn = event.currentTarget;
+      const doc = btn.ownerDocument;
+      const win = doc.defaultView || window;
+      const menu = doc.createElement('div');
+      menu.className = 'session-menu-popover';
+      menu.innerHTML = `
+        <button class="session-menu-item" data-act="movie">${icon('movie')} Movie</button>
+        <button class="session-menu-item" data-act="image">${icon('image')} Image</button>
+      `;
+      menu.querySelector('[data-act="movie"]').onclick = () => { closeMediaMenu(); onMovie(); };
+      menu.querySelector('[data-act="image"]').onclick = () => { closeMediaMenu(); onImage(); };
+      doc.body.appendChild(menu);
+      const r = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let left = r.right - mw;
+      let top = r.bottom + 6;
+      if (top + mh > win.innerHeight - 8) top = r.top - mh - 6;
+      if (left < 8) left = 8;
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      mediaMenuEl = menu;
+      mediaMenuDoc = doc;
+      doc.addEventListener('mousedown', onMediaMenuOutside, true);
+    }
+    function openComposerAddMenu(event) {
+      openMediaMenu(event, () => startComposerVideoCapture(true), () => addComposerShot());
+    }
+    function openNoteShotMenu(event, index) {
+      openMediaMenu(event, () => startNoteVideoCapture(index), () => addNoteShot(index));
+    }
+
+    // ── Inline movie playback (composer preview + saved-note thumbnails) ──
+    // Autoplaying loops respect the non-destructive trim window.
+    function snVideoLoop(el) {
+      const start = (parseFloat(el.dataset.trimStart) || 0) / 1000;
+      const endMs = parseFloat(el.dataset.trimEnd) || 0;
+      if (endMs && el.currentTime >= endMs / 1000) el.currentTime = start;
+      else if (start && el.currentTime < start - 0.08) el.currentTime = start;
+    }
+
+    // ── Video lightbox ──
+    let videoLB = null;
+
+    function openComposerVideoLightbox(e) {
+      e?.stopPropagation();
+      const slot = activeComposerSlot();
+      if (!slotIsVideo(slot)) return;
+      openVideoLightbox({ mode: 'composer', shot: slot });
+    }
+
+    function openVideoLightbox({ mode, noteIndex = null, shot, note = null }) {
+      docById('videoLightbox')?.remove();
+      const src = shot._localUrl || shot.url;
+      if (!src) return;
+      let inPip = false;
+      if (pipOpen()) {
+        try { inPip = !!pipWindow.document.getElementById('notesPanelScroll'); } catch (_) {}
+      }
+      const win = inPip ? pipWindow : window;
+      const durationMs = shot.durationMs || 0;
+      videoLB = {
+        mode, noteIndex, shot, note, win,
+        durationMs,
+        trimStart: shot.trimStartMs || 0,
+        trimEnd: shot.trimEndMs || durationMs,
+        pendStart: 0, pendEnd: 0,
+        trimMode: false, raf: null,
+      };
+      const lb = win.document.createElement('div');
+      lb.className = 'lightbox markup-lightbox video-lightbox';
+      lb.id = 'videoLightbox';
+      lb.innerHTML = `
+        <div class="markup-stage">
+          <video id="lbVideo" src="${src}" playsinline></video>
+          <div class="markup-bottom">
+            <div class="markup-toolbar video-toolbar" id="videoToolbar">
+              <div class="video-playbar" id="videoPlaybar">
+                <button class="tb-btn tb-markup-toggle" id="lbPlayBtn" onclick="videoLbTogglePlay()" title="Play / pause (space)">${icon('play')}</button>
+                <span class="video-time" id="lbVideoTime">00:00</span>
+                <div class="scrub-track" id="lbVideoTrack" onmousedown="videoLbScrubDown(event)">
+                  <div class="scrub-fill" id="lbVideoFill" style="width:0%"></div>
+                  <div class="scrub-handle" id="lbVideoHandle" style="left:0%"></div>
+                </div>
+                <div class="tb-divider"></div>
+                <button class="tb-btn tb-markup-toggle" id="lbTrimBtn" onclick="startVideoTrim()" title="Trim movie">${icon('crop')}</button>
+              </div>
+              <div class="video-trimbar" id="videoTrimbar">
+                <div class="video-trim-track" id="lbTrimTrack" onmousedown="videoTrimDown(event)">
+                  <div class="video-trim-playhead" id="lbTrimPlayhead" style="left:0%"></div>
+                  <div class="video-trim-region" id="lbTrimRegion">
+                    <div class="video-trim-handle left" data-h="l"></div>
+                    <div class="video-trim-handle right" data-h="r"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="lb-crop-actions" id="videoTrimActions">
+              <button class="btn lb-discard-btn" onclick="cancelVideoTrim()">Cancel</button>
+              <button class="btn lb-save-btn" onclick="applyVideoTrim()">Done</button>
+            </div>
+          </div>
+          <button class="lb-close-btn" id="lbVideoCloseBtn" onclick="closeVideoLightbox()" title="Close" aria-label="Close">${icon('close')}</button>
+          ${mode === 'composer' ? `<div class="lb-top-actions" id="lbVideoTopActions"><button class="btn lb-save-btn" onclick="videoLbSaveNote()" title="Save note (\u2318\u21a9)">Save note</button></div>` : ''}
+        </div>`;
+      win.document.body.appendChild(lb);
+      if (win !== window) bindPipGlobals(win);
+      videoLB.el = lb;
+      const video = lb.querySelector('#lbVideo');
+      videoLB.video = video;
+      video.addEventListener('loadedmetadata', () => {
+        const v = videoLB;
+        if (!v || v.video !== video) return;
+        if (!isFinite(video.duration) || !video.duration) {
+          // MediaRecorder webm carries no duration header — force the browser
+          // to compute it so seeking works, then land on the trim start.
+          const done = () => {
+            video.removeEventListener('seeked', done);
+            const vv = videoLB;
+            if (!vv || vv.video !== video) return;
+            if (!vv.durationMs && isFinite(video.duration) && video.duration) {
+              vv.durationMs = video.duration * 1000;
+              if (!vv.trimEnd) vv.trimEnd = vv.durationMs;
+            }
+            video.currentTime = (vv.trimStart || 0) / 1000;
+            videoLbUpdate();
+          };
+          video.addEventListener('seeked', done);
+          setTimeout(done, 2500);
+          try { video.currentTime = 1e10; } catch (_) { done(); }
+        } else {
+          if (!v.durationMs) {
+            v.durationMs = video.duration * 1000;
+            if (!v.trimEnd) v.trimEnd = v.durationMs;
+          }
+          video.currentTime = (v.trimStart || 0) / 1000;
+          videoLbUpdate();
+        }
+      });
+      video.addEventListener('play', () => { videoLbSetPlayIcon(true); });
+      video.addEventListener('pause', () => { videoLbSetPlayIcon(false); });
+      lb.addEventListener('mousedown', (e) => {
+        if (e.target !== lb) return;
+        if (videoLB?.trimMode) wiggleVideoTrimActions();
+        else closeVideoLightbox();
+      });
+      win.document.addEventListener('keydown', onVideoLbKeydown);
+      // Measured max-width so the playbar ↔ trimbar morph animates symmetrically
+      requestAnimationFrame(() => {
+        const playbar = lb.querySelector('#videoPlaybar');
+        const trimbar = lb.querySelector('#videoTrimbar');
+        if (playbar) playbar.style.maxWidth = `${playbar.scrollWidth}px`;
+        if (trimbar) trimbar.style.maxWidth = '0px';
+        requestAnimationFrame(() => lb.classList.add('show', 'in'));
+      });
+      const tick = () => {
+        if (!videoLB || videoLB.el !== lb) return;
+        videoLbUpdate();
+        videoLB.raf = requestAnimationFrame(tick);
+      };
+      tick();
+    }
+
+    function videoLbDurationMs() {
+      const v = videoLB;
+      if (!v) return 1;
+      return v.durationMs
+        || (isFinite(v.video?.duration) && v.video.duration ? v.video.duration * 1000 : 0)
+        || 1;
+    }
+
+    function videoLbSetPlayIcon(playing) {
+      const btn = videoLB?.el?.querySelector('#lbPlayBtn');
+      if (btn) btn.innerHTML = icon(playing ? 'pause' : 'play');
+    }
+
+    function videoLbUpdate() {
+      const v = videoLB;
+      if (!v || !v.video) return;
+      const dur = videoLbDurationMs();
+      const start = v.trimMode ? 0 : (v.trimStart || 0);
+      const end = v.trimMode ? dur : (v.trimEnd || dur);
+      let t = v.video.currentTime * 1000;
+      if (!v.video.paused && !v.trimMode && t >= end - 30) {
+        v.video.pause();
+        v.video.currentTime = start / 1000;
+        t = start;
+      }
+      const frac = Math.min(1, Math.max(0, (t - start) / Math.max(1, end - start)));
+      const fill = v.el.querySelector('#lbVideoFill');
+      const handle = v.el.querySelector('#lbVideoHandle');
+      const time = v.el.querySelector('#lbVideoTime');
+      if (fill) fill.style.width = `${frac * 100}%`;
+      if (handle) handle.style.left = `${frac * 100}%`;
+      if (time) time.textContent = formatDuration(Math.max(0, t - start));
+      if (v.trimMode) {
+        const ph = v.el.querySelector('#lbTrimPlayhead');
+        if (ph) ph.style.left = `${Math.min(100, Math.max(0, t / dur * 100))}%`;
+      }
+    }
+
+    function videoLbTogglePlay() {
+      const v = videoLB;
+      if (!v || !v.video) return;
+      if (v.video.paused) {
+        const dur = videoLbDurationMs();
+        const start = v.trimMode ? 0 : (v.trimStart || 0);
+        const end = v.trimMode ? dur : (v.trimEnd || dur);
+        if (v.video.currentTime * 1000 >= end - 60 || v.video.currentTime * 1000 < start) {
+          v.video.currentTime = start / 1000;
+        }
+        v.video.play().catch(() => {});
+      } else {
+        v.video.pause();
+      }
+    }
+
+    function videoLbScrubDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const v = videoLB;
+      if (!v) return;
+      const track = v.el.querySelector('#lbVideoTrack');
+      const doc = track.ownerDocument;
+      const wasPlaying = !v.video.paused;
+      v.video.pause();
+      const apply = (clientX) => {
+        const r = track.getBoundingClientRect();
+        const frac = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+        const dur = videoLbDurationMs();
+        const start = v.trimStart || 0;
+        const end = v.trimEnd || dur;
+        v.video.currentTime = (start + frac * (end - start)) / 1000;
+        videoLbUpdate();
+      };
+      apply(e.clientX);
+      const onMove = (ev) => apply(ev.clientX);
+      const onUp = () => {
+        doc.removeEventListener('mousemove', onMove);
+        doc.removeEventListener('mouseup', onUp);
+        if (wasPlaying) videoLB?.video?.play().catch(() => {});
+      };
+      doc.addEventListener('mousemove', onMove);
+      doc.addEventListener('mouseup', onUp);
+    }
+
+    // ── Trim mode: the playbar morphs into a timeline with edge handles ──
+    function startVideoTrim() {
+      const v = videoLB;
+      if (!v || v.trimMode) return;
+      v.trimMode = true;
+      v.pendStart = v.trimStart || 0;
+      v.pendEnd = v.trimEnd || videoLbDurationMs();
+      v.video.pause();
+      const playbar = v.el.querySelector('#videoPlaybar');
+      const trimbar = v.el.querySelector('#videoTrimbar');
+      if (playbar) playbar.style.maxWidth = '0px';
+      if (trimbar) trimbar.style.maxWidth = `${trimbar.scrollWidth}px`;
+      v.el.querySelector('#videoToolbar')?.classList.add('trim-mode');
+      v.el.querySelector('#videoTrimActions')?.classList.add('visible');
+      const closeBtn = v.el.querySelector('#lbVideoCloseBtn');
+      if (closeBtn) closeBtn.style.display = 'none';
+      const topActions = v.el.querySelector('#lbVideoTopActions');
+      if (topActions) topActions.style.display = 'none';
+      layoutVideoTrimRegion();
+      videoLbUpdate();
+    }
+
+    function endVideoTrimUI() {
+      const v = videoLB;
+      if (!v) return;
+      v.trimMode = false;
+      const playbar = v.el.querySelector('#videoPlaybar');
+      const trimbar = v.el.querySelector('#videoTrimbar');
+      if (trimbar) trimbar.style.maxWidth = '0px';
+      if (playbar) playbar.style.maxWidth = `${playbar.scrollWidth}px`;
+      v.el.querySelector('#videoToolbar')?.classList.remove('trim-mode');
+      v.el.querySelector('#videoTrimActions')?.classList.remove('visible');
+      const closeBtn = v.el.querySelector('#lbVideoCloseBtn');
+      if (closeBtn) closeBtn.style.display = '';
+      const topActions = v.el.querySelector('#lbVideoTopActions');
+      if (topActions) topActions.style.display = '';
+      v.video.currentTime = (v.trimStart || 0) / 1000;
+      videoLbUpdate();
+    }
+
+    function layoutVideoTrimRegion() {
+      const v = videoLB;
+      if (!v) return;
+      const region = v.el.querySelector('#lbTrimRegion');
+      if (!region) return;
+      const dur = videoLbDurationMs();
+      region.style.left = `${Math.max(0, v.pendStart / dur * 100)}%`;
+      region.style.width = `${Math.max(0, (v.pendEnd - v.pendStart) / dur * 100)}%`;
+    }
+
+    function videoTrimDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const v = videoLB;
+      if (!v || !v.trimMode) return;
+      const track = v.el.querySelector('#lbTrimTrack');
+      const doc = track.ownerDocument;
+      const dur = videoLbDurationMs();
+      const MIN_MS = 300;
+      const h = e.target.dataset?.h || null;
+      const seekTo = (ms) => {
+        v.video.currentTime = Math.max(0, Math.min(dur, ms)) / 1000;
+        videoLbUpdate();
+      };
+      const fracAt = (clientX) => {
+        const r = track.getBoundingClientRect();
+        return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+      };
+      const apply = (clientX) => {
+        const ms = fracAt(clientX) * dur;
+        if (h === 'l') {
+          v.pendStart = Math.min(ms, v.pendEnd - MIN_MS);
+          v.pendStart = Math.max(0, v.pendStart);
+          seekTo(v.pendStart);
+        } else if (h === 'r') {
+          v.pendEnd = Math.max(ms, v.pendStart + MIN_MS);
+          v.pendEnd = Math.min(dur, v.pendEnd);
+          seekTo(v.pendEnd);
+        } else {
+          seekTo(ms);
+        }
+        layoutVideoTrimRegion();
+      };
+      apply(e.clientX);
+      const onMove = (ev) => apply(ev.clientX);
+      const onUp = () => {
+        doc.removeEventListener('mousemove', onMove);
+        doc.removeEventListener('mouseup', onUp);
+      };
+      doc.addEventListener('mousemove', onMove);
+      doc.addEventListener('mouseup', onUp);
+    }
+
+    function cancelVideoTrim() {
+      endVideoTrimUI();
+    }
+
+    async function applyVideoTrim() {
+      const v = videoLB;
+      if (!v || !v.trimMode) return;
+      const dur = videoLbDurationMs();
+      const isFull = v.pendStart <= 20 && v.pendEnd >= dur - 20;
+      v.trimStart = isFull ? 0 : Math.round(v.pendStart);
+      v.trimEnd = isFull ? dur : Math.round(v.pendEnd);
+      const shot = v.shot;
+      if (isFull) {
+        delete shot.trimStartMs;
+        delete shot.trimEndMs;
+      } else {
+        shot.trimStartMs = v.trimStart;
+        shot.trimEndMs = v.trimEnd;
+      }
+      endVideoTrimUI();
+      if (v.mode === 'note') {
+        const session = allSessions.find(s => s.id === activeSessionId);
+        if (session) {
+          session.notes = composedSessionNotes();
+          await saveSession(session);
+        }
+        renderNotesList();
+      } else {
+        renderComposerShot();
+      }
+    }
+
+    function wiggleVideoTrimActions() {
+      const el = videoLB?.el?.querySelector('#videoTrimActions');
+      if (!el) return;
+      el.classList.remove('wiggle');
+      void el.offsetWidth;
+      el.classList.add('wiggle');
+    }
+
+    function onVideoLbKeydown(e) {
+      if (!videoLB) return;
+      if (e.key === 'Escape') {
+        if (videoLB.trimMode) cancelVideoTrim();
+        else closeVideoLightbox();
+        e.preventDefault();
+        return;
+      }
+      if (e.key === ' ' && !e.target.matches?.('input, textarea, select, [contenteditable="true"]')) {
+        videoLbTogglePlay();
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && videoLB.mode === 'composer' && !videoLB.trimMode) {
+        videoLbSaveNote();
+        e.preventDefault();
+      }
+    }
+
+    async function videoLbSaveNote() {
+      closeVideoLightbox();
+      await addNote();
+    }
+
+    function closeVideoLightbox() {
+      const v = videoLB;
+      videoLB = null;
+      if (!v) return;
+      try { v.video.pause(); } catch (_) {}
+      if (v.raf) cancelAnimationFrame(v.raf);
+      try { v.win.document.removeEventListener('keydown', onVideoLbKeydown); } catch (_) {}
+      const lb = v.el;
+      if (!lb) return;
+      lb.classList.remove('show', 'in');
+      lb.style.pointerEvents = 'none';
+      setTimeout(() => lb.remove(), 400);
+    }
+
+    // ── Canvas movie playback ──
+    // Movies never autoplay on canvas; hovering the card reveals a floating
+    // play/pause + scrubber pill overlaying the bottom of the movie.
+    function ciVideoControlsHTML() {
+      return `<div class="ci-video-controls" onmousedown="event.stopPropagation()" ondblclick="event.stopPropagation()">
+        <button type="button" class="ci-video-play" onclick="ciVideoToggle(this)" title="Play / pause">${icon('play', 'icon icon-sm')}</button>
+        <div class="scrub-track ci-video-track" onmousedown="ciVideoScrubDown(event)">
+          <div class="scrub-fill" style="width:0%"></div>
+        </div>
+      </div>`;
+    }
+
+    function ciVideoEndMs(el) {
+      return parseFloat(el.dataset.trimEnd)
+        || parseFloat(el.dataset.duration)
+        || (isFinite(el.duration) && el.duration ? el.duration * 1000 : 0);
+    }
+
+    function ciVideoInit(el) {
+      const start = (parseFloat(el.dataset.trimStart) || 0) / 1000;
+      if (!isFinite(el.duration) || !el.duration) {
+        const done = () => {
+          el.removeEventListener('seeked', done);
+          try { el.currentTime = start; } catch (_) {}
+        };
+        el.addEventListener('seeked', done);
+        setTimeout(done, 2500);
+        try { el.currentTime = 1e10; } catch (_) { done(); }
+      } else if (start) {
+        el.currentTime = start;
+      }
+    }
+
+    function ciVideoToggle(btn) {
+      const wrap = btn.closest('.ci-video-wrap');
+      const video = wrap?.querySelector('video');
+      if (!video) return;
+      const start = (parseFloat(video.dataset.trimStart) || 0) / 1000;
+      const endMs = ciVideoEndMs(video);
+      if (video.paused) {
+        if (endMs && video.currentTime * 1000 >= endMs - 60) video.currentTime = start;
+        video.play().catch(() => {});
+        btn.innerHTML = icon('pause', 'icon icon-sm');
+      } else {
+        video.pause();
+        btn.innerHTML = icon('play', 'icon icon-sm');
+      }
+    }
+
+    function ciVideoTime(el) {
+      const wrap = el.closest('.ci-video-wrap');
+      const start = parseFloat(el.dataset.trimStart) || 0;
+      const end = ciVideoEndMs(el);
+      const t = el.currentTime * 1000;
+      if (end && t >= end - 30 && !el.paused) {
+        el.pause();
+        el.currentTime = start / 1000;
+        const btn = wrap?.querySelector('.ci-video-play');
+        if (btn) btn.innerHTML = icon('play', 'icon icon-sm');
+      }
+      const fill = wrap?.querySelector('.ci-video-track .scrub-fill');
+      if (fill && end > start) {
+        fill.style.width = `${Math.min(100, Math.max(0, (t - start) / (end - start) * 100))}%`;
+      }
+    }
+
+    function ciVideoScrubDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const track = e.currentTarget;
+      const wrap = track.closest('.ci-video-wrap');
+      const video = wrap?.querySelector('video');
+      if (!video) return;
+      const start = parseFloat(video.dataset.trimStart) || 0;
+      const end = ciVideoEndMs(video);
+      const doc = track.ownerDocument;
+      const apply = (clientX) => {
+        const r = track.getBoundingClientRect();
+        const frac = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+        video.currentTime = (start + frac * (end - start)) / 1000;
+        ciVideoTime(video);
+      };
+      apply(e.clientX);
+      const onMove = (ev) => apply(ev.clientX);
+      const onUp = () => {
+        doc.removeEventListener('mousemove', onMove);
+        doc.removeEventListener('mouseup', onUp);
+      };
+      doc.addEventListener('mousemove', onMove);
+      doc.addEventListener('mouseup', onUp);
     }
 
     function startNotesPanelResize(e) {
@@ -7224,6 +8224,11 @@
       if (shots) {
         const si = focusedShotIndex(note, noteIndex);
         const shot = shots[si];
+        if (shot?.recordingVideo) return;
+        if (shot?.kind === 'video') {
+          openVideoLightbox({ mode: 'note', noteIndex, shot, note });
+          return;
+        }
         if (!shot?.url) return;
         openMarkupSession({
           mode: 'note', noteIndex, shotIndex: si,
@@ -9191,13 +10196,18 @@
                     <button type="button" class="screenshot-preview-btn screenshot-pip-btn" id="pipToggleBtn" onclick="toggleComposerPiP()" title="Open picture-in-picture">${icon('pip', 'icon icon-sm')}</button>
                     <div class="shot-layer" id="shotLayer">
                       <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openPendingScreenshotLightbox()">
+                      <video id="screenshotPreviewVideo" autoplay loop muted playsinline onclick="openComposerVideoLightbox(event)" ontimeupdate="snVideoLoop(this)" onloadedmetadata="snVideoLoop(this)"></video>
                       <div class="screenshot-preview-empty">
-                        <button type="button" class="btn btn-ghost screenshot-empty-action" onclick="retakeScreenshot()">Take screenshot</button>
+                        <div class="capture-circle-row">
+                          <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="startComposerVideoCapture()" title="Record movie">${icon('movie', 'icon')}</button>
+                          <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="retakeScreenshot()" title="Take screenshot">${icon('image', 'icon')}</button>
+                        </div>
+                        <button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture()" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button>
                       </div>
                       <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
                     </div>
                     <div class="screenshot-preview-actions">
-                      <button type="button" class="screenshot-preview-btn" id="shotAddBtn" onclick="addComposerShot()" title="Add another screenshot">${icon('plus', 'icon icon-sm')}</button>
+                      <button type="button" class="screenshot-preview-btn" id="shotAddBtn" onclick="openComposerAddMenu(event)" title="Add movie or image">${icon('plus', 'icon icon-sm')}</button>
                       <button type="button" class="screenshot-preview-btn" onclick="retakeScreenshot()" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
                       <button type="button" class="screenshot-preview-btn" onclick="removeScreenshot()" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
                     </div>
@@ -9283,27 +10293,45 @@
         const shots = noteShots(note);
         const fIdx = focusedShotIndex(note, realIndex);
         const focusedShot = shots ? shots[fIdx] : null;
-        const imgSrc = focusedShot
-          ? (focusedShot._mkPreview || focusedShot.url)
-          : (note._mkPreview || note.screenshotUrl || note.screenshot);
+        const recordingShot = !!focusedShot?.recordingVideo;
+        const isVideoShot = focusedShot?.kind === 'video';
+        const videoSrc = isVideoShot ? (focusedShot._localUrl || focusedShot.url) : null;
+        const imgSrc = (recordingShot || isVideoShot)
+          ? null
+          : focusedShot
+            ? (focusedShot._mkPreview || focusedShot.url)
+            : (note._mkPreview || note.screenshotUrl || note.screenshot);
+        const hasMedia = !!(imgSrc || videoSrc || recordingShot);
         const enterClass = note.createdAt && note.createdAt === enteringNoteCreatedAt ? ' note-card-entering' : '';
         const noteKey = note.createdAt || `note-${realIndex}`;
         const carousel = shots && shots.length > 1 ? `
               <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-prev note-shot-nav" onclick="event.stopPropagation(); navigateNoteShot(${realIndex}, -1)"${fIdx === 0 ? ' style="display:none"' : ''} title="Previous screenshot">${icon('chevron', 'icon icon-sm shot-chevron-left')}</button>
               <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-next note-shot-nav" onclick="event.stopPropagation(); navigateNoteShot(${realIndex}, 1)"${fIdx === shots.length - 1 ? ' style="display:none"' : ''} title="Next screenshot">${icon('chevron', 'icon icon-sm shot-chevron-right')}</button>
               <div class="shot-dots note-shot-dots"></div>` : '';
+        const mediaHtml = recordingShot
+          ? `<div class="note-shot-recording"><button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture()" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button></div>`
+          : isVideoShot
+            ? `<video class="note-card-screenshot"
+                 src="${videoSrc}"
+                 autoplay loop muted playsinline
+                 data-trim-start="${focusedShot.trimStartMs || 0}"
+                 data-trim-end="${focusedShot.trimEndMs || ''}"
+                 ontimeupdate="snVideoLoop(this)"
+                 onloadedmetadata="snVideoLoop(this)"
+                 onclick="openMarkupLightbox(${realIndex})"></video>`
+            : `<img class="note-card-screenshot"
+                 src="${imgSrc}"
+                 alt="Screenshot"
+                 onclick="openMarkupLightbox(${realIndex})"
+                 loading="lazy">`;
         return `
-          <div class="note-card${imgSrc ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
-            ${imgSrc ? `<div class="note-card-screenshot-wrap">
-              <img class="note-card-screenshot"
-                   src="${imgSrc}"
-                   alt="Screenshot"
-                   onclick="openMarkupLightbox(${realIndex})"
-                   loading="lazy">
+          <div class="note-card${hasMedia ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
+            ${hasMedia ? `<div class="note-card-screenshot-wrap${recordingShot ? ' video-recording' : ''}">
+              ${mediaHtml}
               <div class="screenshot-preview-timestamp note-shot-timestamp"><span>${escapeHtml(formatDuration((focusedShot ? focusedShot.timestamp : note.timestamp) || 0))}</span></div>
               ${carousel}
               <div class="note-card-screenshot-actions">
-                ${isRecording ? `<button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); addNoteShot(${realIndex})" title="Add another screenshot to this note">${icon('plus', 'icon icon-sm')}</button>` : ''}
+                ${isRecording ? `<button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); openNoteShotMenu(event, ${realIndex})" title="Add a movie or image to this note">${icon('plus', 'icon icon-sm')}</button>` : ''}
                 <button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); retakeRecordingNoteScreenshot(${realIndex})" title="Retake screenshot">${icon('refresh', 'icon icon-sm')}</button>
                 <button type="button" class="screenshot-preview-btn" onclick="event.stopPropagation(); removeRecordingNoteScreenshot(${realIndex})" title="Remove screenshot">${icon('trash', 'icon icon-sm')}</button>
               </div>
@@ -10103,9 +11131,12 @@
           // Multi-image note: one ultra-wide card, each image grouped inside.
           // Images are individually selectable (click) for per-image deletion.
           const shotSelIdxs = canvas.shotSel && canvas.shotSel.itemId === item.id ? (canvas.shotSel.shotIndexes || []) : [];
-          const imgs = shots.map((s, si) =>
-            `<div class="ci-screenshot-img-wrap${shotSelIdxs.includes(si) ? ' shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;"><img src="${s._mkPreview || s.url}" alt="" draggable="false" style="max-height:${item.h}px;"></div>`
-          ).join('');
+          const imgs = shots.map((s, si) => {
+            const inner = s.kind === 'video'
+              ? `<video src="${s._localUrl || s.url}" muted playsinline preload="metadata" style="max-height:${item.h}px;" data-trim-start="${s.trimStartMs || 0}" data-trim-end="${s.trimEndMs || ''}" data-duration="${s.durationMs || 0}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>${ciVideoControlsHTML()}`
+              : `<img src="${s._mkPreview || s.url}" alt="" draggable="false" style="max-height:${item.h}px;">`;
+            return `<div class="ci-screenshot-img-wrap${s.kind === 'video' ? ' ci-video-wrap' : ''}${shotSelIdxs.includes(si) ? ' shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;">${inner}</div>`;
+          }).join('');
           const cardStyle = `left:${item.x}px;top:${item.y}px;`;
           return `
             <div class="canvas-item ci-screenshot ci-screenshot-multi ${sel}" data-id="${item.id}" style="${cardStyle}">
@@ -10113,6 +11144,24 @@
               <div class="ci-note">
                 <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
                 <div class="ci-note-time">${shots.map(s => formatDuration(s.timestamp || 0)).join(' · ')}</div>
+              </div>
+              ${handle}
+            </div>
+          `;
+        }
+        const shot0 = shots ? shots[0] : null;
+        if (shot0?.kind === 'video') {
+          // Movie note on canvas: paused by default, hover reveals play + scrubber
+          const cardStyle = `left:${item.x}px;top:${item.y}px;max-width:${item.w}px;`;
+          return `
+            <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
+              <div class="ci-screenshot-img-wrap ci-video-wrap" style="max-width:${item.w}px;max-height:${item.h}px;">
+                <video src="${shot0._localUrl || shot0.url}" muted playsinline preload="metadata" style="max-width:${item.w}px;max-height:${item.h}px;" data-trim-start="${shot0.trimStartMs || 0}" data-trim-end="${shot0.trimEndMs || ''}" data-duration="${shot0.durationMs || 0}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>
+                ${ciVideoControlsHTML()}
+              </div>
+              <div class="ci-note">
+                <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
+                <div class="ci-note-time">${formatDuration(shot0.timestamp || note.timestamp || 0)}</div>
               </div>
               ${handle}
             </div>
