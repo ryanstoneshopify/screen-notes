@@ -7968,12 +7968,25 @@
     }
 
     function growAllNoteTextareas() {
-      document.querySelectorAll('.recording-note-edit').forEach(autoGrowTextarea);
+      // The notes list lives in the PiP window while it's open — querying only
+      // this document left saved-note textareas at one line until focused
+      const docs = [document];
+      if (pipOpen()) { try { docs.push(pipWindow.document); } catch (_) {} }
+      docs.forEach(d => d.querySelectorAll('.recording-note-edit').forEach(autoGrowTextarea));
     }
 
     function autoGrowTextarea(el) {
       el.style.height = 'auto';
-      el.style.height = `${el.scrollHeight}px`;
+      const h = el.scrollHeight;
+      if (h) {
+        el.style.height = `${h}px`;
+      } else {
+        // Not laid out yet (mid-render/animation) — try again next frame
+        (el.ownerDocument.defaultView || window).requestAnimationFrame(() => {
+          el.style.height = 'auto';
+          if (el.scrollHeight) el.style.height = `${el.scrollHeight}px`;
+        });
+      }
     }
 
     // ── Lightbox ──
