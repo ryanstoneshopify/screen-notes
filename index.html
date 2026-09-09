@@ -2096,7 +2096,9 @@
     .canvas-item { position: absolute; cursor: pointer; box-sizing: border-box; }
     /* Multi-image note cards: images side by side, note spans below */
     .ci-shot-row { display: flex; gap: 16px; align-items: flex-start; }
-    .ci-screenshot-multi { width: max-content; }
+    /* Must outrank .ci-screenshot's width:min-content (declared later) —
+       otherwise the grouped card collapses and crops trailing movies */
+    .ci-screenshot.ci-screenshot-multi { width: max-content; }
     .ci-screenshot-multi .ci-screenshot-img-wrap.shot-selected {
       outline: 2px solid var(--terra-cotta);
       outline-offset: -2px;
@@ -7683,13 +7685,17 @@
     // Movies never autoplay on canvas. Hovering reveals the same dark video
     // toolbar as the lightbox — play/pause, timestamp, scrubber, and a trim
     // button that morphs the bar into the timeline editor with Done/Cancel.
-    function ciVideoSizeStyle(s, maxH) {
-      // Known capture dimensions let the element size itself before the webm's
-      // metadata arrives, so grouped cards count movies in their layout
+    function ciVideoSizeStyle(s, maxH, maxW = null) {
+      // Known capture dimensions produce fully definite pixel sizes — videos
+      // must not rely on aspect-ratio/intrinsic sizing, which breaks the
+      // min/max-content measurement the cards and Arrange depend on
       if (s.vw && s.vh) {
-        return `height:${Math.round(Math.min(maxH, s.vh))}px;aspect-ratio:${s.vw} / ${s.vh};`;
+        let h = Math.min(maxH, s.vh);
+        if (maxW) h = Math.min(h, maxW * s.vh / s.vw);
+        h = Math.round(h);
+        return `width:${Math.round(h * s.vw / s.vh)}px;height:${h}px;`;
       }
-      return `max-height:${maxH}px;`;
+      return maxW ? `max-height:${maxH}px;max-width:${maxW}px;` : `max-height:${maxH}px;`;
     }
 
     function ciVideoControlsHTML() {
@@ -7737,6 +7743,20 @@
 
     function ciVideoInit(el) {
       const start = (parseFloat(el.dataset.trimStart) || 0) / 1000;
+      // Legacy movies without stored capture dimensions: once metadata is in,
+      // pin definite pixel sizes so the card hugs and measures correctly
+      if (!el.dataset.vw && el.videoWidth && el.videoHeight) {
+        el.dataset.vw = el.videoWidth;
+        el.dataset.vh = el.videoHeight;
+        const mh = parseFloat(el.style.maxHeight) || 640;
+        const mw = parseFloat(el.style.maxWidth) || 0;
+        let h = Math.min(mh, el.videoHeight);
+        if (mw) h = Math.min(h, mw * el.videoHeight / el.videoWidth);
+        el.style.height = `${Math.round(h)}px`;
+        el.style.width = `${Math.round(h * el.videoWidth / el.videoHeight)}px`;
+        el.style.maxHeight = '';
+        el.style.maxWidth = '';
+      }
       if (!isFinite(el.duration) || !el.duration) {
         const done = () => {
           el.removeEventListener('seeked', done);
@@ -11377,7 +11397,7 @@
           return `
             <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
               <div class="ci-screenshot-img-wrap ci-video-wrap" style="max-width:${item.w}px;max-height:${item.h}px;">
-                <video src="${shot0._localUrl || shot0.url}" muted playsinline preload="metadata" style="${ciVideoSizeStyle(shot0, item.h)}max-width:${item.w}px;" data-trim-start="${shot0.trimStartMs || 0}" data-trim-end="${shot0.trimEndMs || ''}" data-duration="${shot0.durationMs || 0}" data-vw="${shot0.vw || ''}" data-vh="${shot0.vh || ''}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>
+                <video src="${shot0._localUrl || shot0.url}" muted playsinline preload="metadata" style="${ciVideoSizeStyle(shot0, item.h, item.w)}" data-trim-start="${shot0.trimStartMs || 0}" data-trim-end="${shot0.trimEndMs || ''}" data-duration="${shot0.durationMs || 0}" data-vw="${shot0.vw || ''}" data-vh="${shot0.vh || ''}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>
                 ${ciVideoControlsHTML()}
               </div>
               <div class="ci-note">
@@ -12244,9 +12264,12 @@
             wrap.style.height = '';
           });
           el.querySelectorAll('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video').forEach(media => {
-            // Dimension-aware videos use an explicit height + aspect-ratio
-            if (media.tagName === 'VIDEO' && media.dataset.vh) {
-              media.style.height = Math.min(item.h, parseFloat(media.dataset.vh)) + 'px';
+            // Dimension-aware videos keep fully definite pixel sizes
+            const vw = parseFloat(media.dataset.vw), vh = parseFloat(media.dataset.vh);
+            if (media.tagName === 'VIDEO' && vw && vh) {
+              const h = Math.min(item.h, vh);
+              media.style.height = Math.round(h) + 'px';
+              media.style.width = Math.round(h * vw / vh) + 'px';
             } else {
               media.style.maxHeight = item.h + 'px';
             }
@@ -12264,10 +12287,15 @@
         }
         const media = el.querySelector('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video');
         if (media) {
-          media.style.maxWidth = item.w + 'px';
-          if (media.tagName === 'VIDEO' && media.dataset.vh) {
-            media.style.height = Math.min(item.h, parseFloat(media.dataset.vh)) + 'px';
+          const vw = parseFloat(media.dataset.vw), vh = parseFloat(media.dataset.vh);
+          if (media.tagName === 'VIDEO' && vw && vh) {
+            let h = Math.min(item.h, vh, item.w * vh / vw);
+            media.style.height = Math.round(h) + 'px';
+            media.style.width = Math.round(h * vw / vh) + 'px';
+            media.style.maxWidth = '';
+            media.style.maxHeight = '';
           } else {
+            media.style.maxWidth = item.w + 'px';
             media.style.maxHeight = item.h + 'px';
           }
         }
