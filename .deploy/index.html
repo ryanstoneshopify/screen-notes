@@ -5718,11 +5718,15 @@
             // Let images/text render, then measure actual heights and arrange once.
             // (Skip auto-arrange when appending to an existing canvas.)
             setTimeout(async () => {
-              if (!intoCanvas) {
-                // Unloaded screenshots measure tiny and clump the layout —
-                // wait for them (capped) so heights are real before arranging
-                await waitForCanvasImages();
-                autoArrangeCanvas();
+              try {
+                if (!intoCanvas) {
+                  // Unloaded screenshots measure tiny and clump the layout —
+                  // wait for them (capped) so heights are real before arranging
+                  await waitForCanvasImages();
+                  autoArrangeCanvas();
+                }
+              } catch (e) {
+                console.warn('[screen-notes] auto-arrange after session failed', e);
               }
               fitToScreen();
             }, 100);
@@ -11272,11 +11276,18 @@
       let x = 0, y = 0, rowH = 0;
 
       notes.forEach((note, i) => {
-        const shotCount = noteShots(note)?.length || ((note.screenshotUrl || note.screenshot) ? 1 : 0);
+        const shots = noteShots(note);
+        const shotCount = shots?.length || ((note.screenshotUrl || note.screenshot) ? 1 : 0);
         const hasScreenshot = shotCount > 0;
-        // Estimated footprint (multi-image rows: n images at ~16:10 in cardH height)
+        // Estimated footprint. Movies with known dimensions estimate at their
+        // real aspect; everything else assumes ~16:10 in cardH height.
+        const shotW = (s) => (s?.kind === 'video' && s.vw && s.vh)
+          ? Math.round(cardH * s.vw / s.vh)
+          : Math.round(cardH * 1.6);
         const estW = hasScreenshot
-          ? (shotCount > 1 ? shotCount * Math.round(cardH * 1.6) + (shotCount - 1) * 16 : cardW)
+          ? (shotCount > 1
+              ? (shots || []).reduce((sum, s) => sum + shotW(s), 0) + (shotCount - 1) * 16
+              : Math.min(cardW, shots?.[0] ? shotW(shots[0]) : cardW))
           : estimateTextNoteWidth(note.text || '');
         const estH = hasScreenshot ? estimateScreenshotCardHeight(note, cardW, cardH) : 60;
 
@@ -12419,19 +12430,31 @@
       if (!canvas.items.length) return;
       pushUndoState();
 
-      const gap = 48;
+      const gap = 48; // consistent horizontal + vertical padding
 
       // Preserve every layer's current size. Arrange only changes x/y.
       // Render once first so auto-height notes/text/images can be measured accurately.
       renderCanvas();
 
-      const items = canvas.items;
+      // Reading order: note cards chronologically (left→right, top→bottom),
+      // then everything else (dropped images, text, strokes) in spatial order.
+      const items = [...canvas.items].sort((a, b) => {
+        const an = a.noteIndex != null ? a.noteIndex : Infinity;
+        const bn = b.noteIndex != null ? b.noteIndex : Infinity;
+        if (an !== bn) return an - bn;
+        return (a.y - b.y) || (a.x - b.x);
+      });
+
       const measured = new Map(items.map(item => [item.id, getRenderedItemSize(item)]));
       // Shelf layout on real rendered sizes — handles ultra-wide multi-image
       // cards without overlapping neighbours
-      const totalW = items.reduce((s, item) => s + (measured.get(item.id).w || item.w || 960) + gap, 0);
-      const widest = Math.max(...items.map(item => measured.get(item.id).w || item.w || 960));
-      const maxRowW = Math.max(widest, Math.ceil(Math.sqrt(totalW * 700)));
+      const widths = items.map(item => measured.get(item.id).w || item.w || 960);
+      const heights = items.map(item => measured.get(item.id).h || item.h || 640);
+      const totalW = widths.reduce((s, w) => s + w + gap, 0);
+      const avgH = heights.reduce((s, h) => s + h, 0) / heights.length;
+      const widest = Math.max(...widths);
+      // Wrap rows so the overall block lands near a wide 16:10-ish shape
+      const maxRowW = Math.max(widest, Math.ceil(Math.sqrt(totalW * (avgH + gap) * 1.6)));
       let x = 0, y = 0, rowH = 0;
 
       items.forEach(item => {
