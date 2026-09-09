@@ -9456,12 +9456,33 @@
             // Multi-image notes: every screenshot goes into this ONE issue
             const ghShots = noteShots(note);
             const ghSrcs = ghShots
-              ? ghShots.map(s => ({ src: s.url, strokes: s.markupStrokes }))
+              ? ghShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: s.kind === 'video' }))
               : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
             let ghOffsetX = 0;
             for (let si = 0; si < ghSrcs.length; si++) {
               const entry = ghSrcs[si];
               try {
+                // Movies upload as-is (no markup/canvas baking) and link out,
+                // since GitHub won't inline-render repo-hosted video files
+                if (entry.video) {
+                  const resp = await fetch(entry.src);
+                  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                  const vblob = await resp.blob();
+                  const vext = { 'video/webm': 'webm', 'video/mp4': 'mp4', 'video/quicktime': 'mov' }[vblob.type]
+                    || (entry.src.match(/\.(webm|mp4|mov)(\?|$)/i)?.[1] || 'webm');
+                  const suffix = ghSrcs.length > 1 ? `-${si + 1}` : '';
+                  const vpath = `.screen-notes/${sessionSlug}-${stamp}/${String(i + 1).padStart(2, '0')}${suffix}-${slugifyForFile(note.text)}.${vext}`;
+                  await ghApi(`/repos/${repo}/contents/${vpath}`, token, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                      message: `Screen Notes: movie for "${(note.text || 'note').slice(0, 60)}"`,
+                      content: await blobToBase64(vblob),
+                      branch,
+                    }),
+                  });
+                  imageMarkdown += `\n\n\ud83c\udfac [Watch movie](https://github.com/${repo}/blob/${branch}/${vpath}?raw=true)`;
+                  continue;
+                }
                 let blob = await bakeNoteMarkupIntoBlob({ markupStrokes: entry.strokes }, await (await fetch(entry.src)).blob());
                 if (entry.canvasBake || (ghShots && ghShots.length === 1)) {
                   blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
@@ -9611,6 +9632,7 @@
         const folderName = `session-${slugifyForFile(session.title || 'untitled')}`;
         const root = zip.folder(folderName);
         const shots = root.folder('screenshots');
+        const movies = root.folder('movies');
         const notes = session.notes || [];
 
         const lines = [
@@ -9634,13 +9656,24 @@
           // All of a note's screenshots export under the same note section
           const zipShots = noteShots(note);
           const noteSrcs = zipShots
-            ? zipShots.map(s => ({ src: s.url, strokes: s.markupStrokes }))
+            ? zipShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: s.kind === 'video' }))
             : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
           let zipOffsetX = 0;
           for (const entry of noteSrcs) {
             try {
               const resp = await fetch(entry.src);
               if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+              // Movies go into the zip untouched, under movies/ with a real video extension
+              if (entry.video) {
+                const vblob = await resp.blob();
+                shotNum++;
+                const vext = { 'video/webm': 'webm', 'video/mp4': 'mp4', 'video/quicktime': 'mov' }[vblob.type]
+                  || (entry.src.match(/\.(webm|mp4|mov)(\?|$)/i)?.[1] || 'webm');
+                const vname = `${String(shotNum).padStart(2, '0')}-${slugifyForFile(note.text)}.${vext}`;
+                movies.file(vname, vblob);
+                lines.push(`\ud83c\udfac [Movie](movies/${vname})`, '');
+                continue;
+              }
               let blob = await bakeNoteMarkupIntoBlob({ markupStrokes: entry.strokes }, await resp.blob());
               if (entry.canvasBake || (zipShots && zipShots.length === 1)) {
                 blob = await bakeCanvasStrokesIntoNoteBlob(session, i, blob);
