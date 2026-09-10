@@ -3888,7 +3888,7 @@
     }
 
     // ── Liquid glass settings ──
-    const GLASS_DEFAULTS = { alpha: 56, blur: 19, sat: 171, sheen: 107, glow: 150, btn: 100, bend: false, bendStrength: 17 };
+    const GLASS_DEFAULTS = { alpha: 56, blur: 19, sat: 171, sheen: 43, glow: 57, btn: 100, bend: false, bendStrength: 17 };
     let glassSettings = (() => {
       try { return { ...GLASS_DEFAULTS, ...JSON.parse(localStorage.getItem('sn-glass') || '{}') }; }
       catch (_) { return { ...GLASS_DEFAULTS }; }
