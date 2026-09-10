@@ -7162,19 +7162,7 @@
 
     function beginVideoCapture(target) {
       if (!mediaStream || videoCapture) return false;
-      // Prefer MP4 (H.264) — Chrome 126+ can record it natively, and .mp4
-      // plays everywhere after export. WebM remains the fallback.
-      const candidates = [
-        'video/mp4;codecs=avc1.640028',
-        'video/mp4;codecs=avc1',
-        'video/mp4',
-        'video/webm;codecs=vp9',
-        'video/webm;codecs=vp8',
-        'video/webm',
-      ];
-      const mime = window.MediaRecorder
-        ? candidates.find(t => MediaRecorder.isTypeSupported(t)) || '' : '';
-      if (!mime) { showToast('Movie capture is not supported in this browser'); return false; }
+      if (!window.MediaRecorder) { showToast('Movie capture is not supported in this browser'); return false; }
       let rec;
       // Movies record exactly what the recording screen shows — the live share
       // or the scrubbed playback — INCLUDING pauses, scrubs, and live↔past
@@ -7189,6 +7177,20 @@
           : 'No video frame available yet — try again in a moment');
         return false;
       }
+      // Prefer MP4 (H.264, plays everywhere after export) — but ONLY when the
+      // capture dimensions are H.264-safe. isTypeSupported() lies: it accepts
+      // mp4 and then the encoder emits ZERO bytes for >4K or odd dimensions
+      // (common for hi-res screen captures). WebM/VP9 handles anything.
+      const capW = srcVideo.videoWidth, capH = srcVideo.videoHeight;
+      const mp4Safe = capW <= 3840 && capH <= 2160 && capW % 2 === 0 && capH % 2 === 0;
+      const candidates = [
+        ...(mp4Safe ? ['video/mp4;codecs=avc1.640033', 'video/mp4;codecs=avc1', 'video/mp4'] : []),
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+      ];
+      const mime = candidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
+      if (!mime) { showToast('Movie capture is not supported in this browser'); return false; }
       let srcStream = null;
       let cleanup = null;
 
