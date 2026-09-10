@@ -3541,10 +3541,16 @@
        inline previews and cards are clipped by their containers instead */
     .screenshot-preview video,
     video.note-card-screenshot,
-    .ci-screenshot .ci-screenshot-img-wrap video {
+    .ci-screenshot .ci-screenshot-img-wrap video,
+    .ci-image .ci-image-img-wrap video {
       border-radius: 0;
       border: none;
       box-shadow: none;
+    }
+    .ci-image .ci-image-img-wrap video {
+      pointer-events: none;
+      object-fit: contain;
+      background: #000;
     }
     .screenshot-preview.has-video video { display: block; cursor: zoom-in; }
     .screenshot-preview.has-video img { display: none !important; }
@@ -6983,7 +6989,7 @@
       // Movies (and in-flight recordings) don't do the in-place img push —
       // fall back to a full re-render, which swaps the media element type.
       const cur = focusedShotIndex(note, index);
-      const involvesVideo = [shots[cur], shots[next]].some(s => s && (s.kind === 'video' || s.recordingVideo));
+      const involvesVideo = [shots[cur], shots[next]].some(s => s && (shotIsVideo(s) || s.recordingVideo));
       if (involvesVideo) {
         noteShotFocus[key] = next;
         renderNotesList();
@@ -7158,7 +7164,17 @@
     // players (composer, saved notes, lightbox, canvas).
     let videoCapture = null; // { mode:'composer'|'note', slot|shot, note, rec, chunks, startedAt, ... }
 
-    function slotIsVideo(s) { return !!(s && s.kind === 'video'); }
+    // Movies are detected by kind OR by URL — shots can lose their kind marker
+    // (e.g. a failed upload drops note.screenshots at persist and the array is
+    // later rebuilt from the legacy screenshotUrl mirror, which points at the
+    // movie file). Treating those as images rendered broken sliver cards.
+    function mediaUrlIsVideo(u) {
+      return typeof u === 'string' && /\.(webm|mp4|mov)($|\?)/i.test(u.split('#')[0]);
+    }
+    function shotIsVideo(s) {
+      return !!(s && (s.kind === 'video' || mediaUrlIsVideo(s.url || s._localUrl || '')));
+    }
+    function slotIsVideo(s) { return shotIsVideo(s); }
 
     function beginVideoCapture(target) {
       if (!mediaStream || videoCapture) return false;
@@ -8735,7 +8751,7 @@
         const si = focusedShotIndex(note, noteIndex);
         const shot = shots[si];
         if (shot?.recordingVideo) return;
-        if (shot?.kind === 'video') {
+        if (shotIsVideo(shot)) {
           openVideoLightbox({ mode: 'note', noteIndex, shot, note });
           return;
         }
@@ -8751,6 +8767,15 @@
       }
       const src = note && (note.markupOriginalUrl || note.screenshotUrl || note.screenshot);
       if (!src) return;
+      if (mediaUrlIsVideo(src)) {
+        // Legacy movie note (screenshots array was lost) — migrate and route
+        const migrated = ensureNoteShotArray(note);
+        if (migrated?.[0]) {
+          migrated[0].kind = 'video';
+          openVideoLightbox({ mode: 'note', noteIndex, shot: migrated[0], note });
+        }
+        return;
+      }
       openMarkupSession({
         mode: 'note', noteIndex, src, strokes: note.markupStrokes || [],
         cropBase: note.cropBaseUrl ? { src: note.cropBaseUrl, w: note.cropBaseW, h: note.cropBaseH } : null,
@@ -9973,7 +9998,7 @@
             // Multi-image notes: every screenshot goes into this ONE issue
             const ghShots = noteShots(note);
             const ghSrcs = ghShots
-              ? ghShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: s.kind === 'video' }))
+              ? ghShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: shotIsVideo(s) }))
               : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
             let ghOffsetX = 0;
             for (let si = 0; si < ghSrcs.length; si++) {
@@ -10173,7 +10198,7 @@
           // All of a note's screenshots export under the same note section
           const zipShots = noteShots(note);
           const noteSrcs = zipShots
-            ? zipShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: s.kind === 'video' }))
+            ? zipShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: shotIsVideo(s) }))
             : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
           let zipOffsetX = 0;
           for (const entry of noteSrcs) {
@@ -10845,8 +10870,11 @@
         const fIdx = focusedShotIndex(note, realIndex);
         const focusedShot = shots ? shots[fIdx] : null;
         const recordingShot = !!focusedShot?.recordingVideo;
-        const isVideoShot = focusedShot?.kind === 'video';
-        const videoSrc = isVideoShot ? (focusedShot._localUrl || focusedShot.url) : null;
+        const legacyShot = !shots && (note.screenshotUrl || note.screenshot)
+          ? { url: note.screenshotUrl || note.screenshot } : null;
+        const effShot = focusedShot || legacyShot;
+        const isVideoShot = shotIsVideo(effShot);
+        const videoSrc = isVideoShot ? (effShot._localUrl || effShot.url) : null;
         const imgSrc = (recordingShot || isVideoShot)
           ? null
           : focusedShot
@@ -10865,8 +10893,8 @@
             ? `<video class="note-card-screenshot"
                  src="${videoSrc}"
                  autoplay loop muted playsinline
-                 data-trim-start="${focusedShot.trimStartMs || 0}"
-                 data-trim-end="${focusedShot.trimEndMs || ''}"
+                 data-trim-start="${effShot.trimStartMs || 0}"
+                 data-trim-end="${effShot.trimEndMs || ''}"
                  ontimeupdate="snVideoLoop(this)"
                  onloadedmetadata="snVideoLoop(this)"
                  onclick="openMarkupLightbox(${realIndex})"></video>`
@@ -11698,10 +11726,11 @@
           // Images are individually selectable (click) for per-image deletion.
           const shotSelIdxs = canvas.shotSel && canvas.shotSel.itemId === item.id ? (canvas.shotSel.shotIndexes || []) : [];
           const imgs = shots.map((s, si) => {
-            const inner = s.kind === 'video'
+            const sVid = shotIsVideo(s);
+            const inner = sVid
               ? `<video src="${s._localUrl || s.url}" muted playsinline preload="metadata" style="${ciVideoSizeStyle(s, item.h)}" data-trim-start="${s.trimStartMs || 0}" data-trim-end="${s.trimEndMs || ''}" data-duration="${s.durationMs || 0}" data-vw="${s.vw || ''}" data-vh="${s.vh || ''}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>${ciVideoControlsHTML()}`
               : `<img src="${s._mkPreview || s.url}" alt="" draggable="false" style="max-height:${item.h}px;">`;
-            return `<div class="ci-screenshot-img-wrap${s.kind === 'video' ? ' ci-video-wrap' : ''}${shotSelIdxs.includes(si) ? ' shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;">${inner}</div>`;
+            return `<div class="ci-screenshot-img-wrap${sVid ? ' ci-video-wrap' : ''}${shotSelIdxs.includes(si) ? ' shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;">${inner}</div>`;
           }).join('');
           const cardStyle = `left:${item.x}px;top:${item.y}px;`;
           return `
@@ -11715,8 +11744,12 @@
             </div>
           `;
         }
-        const shot0 = shots ? shots[0] : null;
-        if (shot0?.kind === 'video') {
+        const shot0 = shots
+          ? shots[0]
+          : ((note.screenshotUrl || note.screenshot)
+              ? { url: note.screenshotUrl || note.screenshot, timestamp: note.timestamp }
+              : null);
+        if (shotIsVideo(shot0)) {
           // Movie note on canvas: paused by default, hover reveals play + scrubber
           const cardStyle = `left:${item.x}px;top:${item.y}px;max-width:${item.w}px;`;
           return `
@@ -11798,10 +11831,13 @@
         // Dropped images are AUTO-HEIGHT too: item.h controls image height;
         // the optional note field grows below it.
         const imageStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;`;
+        const imgInner = mediaUrlIsVideo(item.url)
+          ? `<video src="${item.url}" muted playsinline preload="metadata" style="max-width:100%;max-height:100%;" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>${ciVideoControlsHTML()}`
+          : `<img src="${item.url}" alt="" draggable="false">`;
         return `
           <div class="canvas-item ci-image ${sel}" data-id="${item.id}" style="${imageStyle}">
-            <div class="ci-image-img-wrap" style="height:${item.h}px;">
-              <img src="${item.url}" alt="" draggable="false">
+            <div class="ci-image-img-wrap${mediaUrlIsVideo(item.url) ? ' ci-video-wrap' : ''}" style="height:${item.h}px;">
+              ${imgInner}
             </div>
             <div class="ci-note">
               <div class="ci-note-text" data-image-note-id="${item.id}">${escapeHtml(item.note || '')}</div>
