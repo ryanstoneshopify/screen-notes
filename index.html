@@ -7589,6 +7589,7 @@
         trimEnd: shot.trimEndMs || durationMs,
         pendStart: 0, pendEnd: 0,
         trimMode: false, raf: null,
+        autoplayPending: true,
       };
       const lb = win.document.createElement('div');
       lb.className = 'lightbox markup-lightbox video-lightbox';
@@ -7648,6 +7649,7 @@
             }
             video.currentTime = (vv.trimStart || 0) / 1000;
             videoLbUpdate();
+            videoLbAutoplay(vv);
           };
           video.addEventListener('seeked', done);
           setTimeout(done, 2500);
@@ -7659,6 +7661,7 @@
           }
           video.currentTime = (v.trimStart || 0) / 1000;
           videoLbUpdate();
+          videoLbAutoplay(v);
         }
       });
       video.addEventListener('play', () => { videoLbSetPlayIcon(true); });
@@ -7696,6 +7699,13 @@
       return v.durationMs
         || (isFinite(v.video?.duration) && v.video.duration ? v.video.duration * 1000 : 0)
         || 1;
+    }
+
+    // Opening the lightbox starts playback from the trim start automatically
+    function videoLbAutoplay(v) {
+      if (!v || !v.autoplayPending || v.trimMode) return;
+      v.autoplayPending = false;
+      v.video?.play().catch(() => {});
     }
 
     function videoLbSetPlayIcon(playing) {
