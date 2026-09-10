@@ -7180,18 +7180,101 @@
           : 'No video frame available yet — try again in a moment');
         return false;
       }
-      let srcStream, pumpCanvas, pumpCtx;
-      try {
-        pumpCanvas = document.createElement('canvas');
-        pumpCanvas.width = srcVideo.videoWidth;
-        pumpCanvas.height = srcVideo.videoHeight;
-        pumpCtx = pumpCanvas.getContext('2d');
-        pumpCtx.drawImage(srcVideo, 0, 0);
-        srcStream = pumpCanvas.captureStream(30);
-      } catch (e) {
-        console.warn('[screen-notes] canvas capture failed', e);
-        showToast('Could not start movie capture');
-        return false;
+      let srcStream = null;
+      let cleanup = null;
+
+      // Preferred: Insertable Streams (Chrome). Live frames are PUSHED to us by
+      // the capture pipeline — no page timers — so background recording stays
+      // full-rate like Meet. While scrubbed, we substitute frames grabbed from
+      // the playback element (scrubbing is inherently a foreground activity).
+      if (window.MediaStreamTrackProcessor && window.MediaStreamTrackGenerator && window.VideoFrame) {
+        try {
+          const liveTrack = mediaStream.getVideoTracks()[0];
+          const processor = new MediaStreamTrackProcessor({ track: liveTrack });
+          const generator = new MediaStreamTrackGenerator({ kind: 'video' });
+          const writer = generator.writable.getWriter();
+          let stopped = false;
+          // One monotonic timebase for both sources — mixed source timestamps
+          // confuse the encoder (cloning a VideoFrame is by-reference, cheap)
+          const stamp = () => Math.round(performance.now() * 1000);
+          (async () => {
+            const reader = processor.readable.getReader();
+            try {
+              while (!stopped) {
+                const { value: frame, done } = await reader.read();
+                if (done) break;
+                if (!frame) continue;
+                if (!scrubActive && !stopped) {
+                  let out = null;
+                  try { out = new VideoFrame(frame, { timestamp: stamp() }); } catch (_) {}
+                  frame.close();
+                  if (out) {
+                    try { await writer.write(out); } catch (_) { try { out.close(); } catch (_) {} }
+                  }
+                } else {
+                  frame.close();
+                }
+              }
+            } catch (_) {} finally {
+              try { reader.releaseLock(); } catch (_) {}
+            }
+          })();
+          // Scrubbed feed: push what the recording screen shows (incl. pauses)
+          const scrubPump = setInterval(() => {
+            if (stopped || !scrubActive) return;
+            const v = docById('playbackVideo');
+            if (!v || v.readyState < 2 || !v.videoWidth) return;
+            let out = null;
+            try { out = new VideoFrame(v, { timestamp: stamp() }); } catch (_) { return; }
+            writer.write(out).catch(() => { try { out.close(); } catch (_) {} });
+          }, 33);
+          srcStream = new MediaStream([generator]);
+          cleanup = () => {
+            stopped = true;
+            clearInterval(scrubPump);
+            try { writer.close(); } catch (_) {}
+          };
+        } catch (e) {
+          console.warn('[screen-notes] insertable-streams capture unavailable — falling back to canvas', e);
+          srcStream = null;
+          cleanup = null;
+        }
+      }
+
+      // Fallback: pumped canvas (throttled when the tab is backgrounded; the
+      // PiP window's rAF keeps it at full rate while PiP is open)
+      if (!srcStream) {
+        try {
+          const pumpCanvas = document.createElement('canvas');
+          pumpCanvas.width = srcVideo.videoWidth;
+          pumpCanvas.height = srcVideo.videoHeight;
+          const pumpCtx = pumpCanvas.getContext('2d');
+          pumpCtx.drawImage(srcVideo, 0, 0);
+          srcStream = pumpCanvas.captureStream(30);
+          let stopped = false;
+          const drawTick = () => {
+            if (stopped) return;
+            const v = activeCaptureVideo();
+            if (v && v.readyState >= 2 && v.videoWidth) {
+              try { pumpCtx.drawImage(v, 0, 0, pumpCanvas.width, pumpCanvas.height); } catch (_) {}
+            }
+          };
+          const pump = setInterval(drawTick, 33);
+          if (pipOpen()) {
+            const win = pipWindow;
+            const loop = () => {
+              if (stopped) return;
+              drawTick();
+              try { win.requestAnimationFrame(loop); } catch (_) {}
+            };
+            try { win.requestAnimationFrame(loop); } catch (_) {}
+          }
+          cleanup = () => { stopped = true; clearInterval(pump); };
+        } catch (e) {
+          console.warn('[screen-notes] canvas capture failed', e);
+          showToast('Could not start movie capture');
+          return false;
+        }
       }
       try {
         rec = new MediaRecorder(srcStream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
@@ -7205,33 +7288,14 @@
       rec.onerror = (e) => console.warn('[screen-notes] movie recorder error', e?.error || e);
       rec.start(500);
       videoCapture = {
-        ...target, rec, chunks, mime,
+        ...target, rec, chunks, mime, cleanup,
         // Players size themselves from these before the webm's late metadata
-        vw: pumpCanvas.width, vh: pumpCanvas.height,
+        vw: srcVideo.videoWidth, vh: srcVideo.videoHeight,
         fromScrub: scrubActive,
         startedAt: Date.now(),
         capturedTimestampMs: currentCaptureTimestampMs(),
         timer: setInterval(updateVideoCaptureTimer, 250),
       };
-      // Follow whatever the recording screen shows, every frame. setInterval
-      // survives tab backgrounding (throttled); when the PiP composer is open
-      // its rAF keeps the pump at full rate even with the tab in background.
-      const drawTick = () => {
-        const v = activeCaptureVideo();
-        if (v && v.readyState >= 2 && v.videoWidth) {
-          try { pumpCtx.drawImage(v, 0, 0, pumpCanvas.width, pumpCanvas.height); } catch (_) {}
-        }
-      };
-      videoCapture.pump = setInterval(drawTick, 33);
-      if (pipOpen()) {
-        const win = pipWindow;
-        const loop = () => {
-          if (!videoCapture || videoCapture.rec !== rec) return;
-          drawTick();
-          try { win.requestAnimationFrame(loop); } catch (_) {}
-        };
-        try { win.requestAnimationFrame(loop); } catch (_) {}
-      }
       // Starting a capture on a paused scrubbed feed plays it so frames advance
       if (scrubActive && !scrubPlaying) startScrubPlayback();
       updateVideoCaptureTimer();
@@ -7300,7 +7364,7 @@
       });
       try { vc.rec.stop(); } catch (_) {}
       await stopped;
-      if (vc.pump) clearInterval(vc.pump);
+      try { vc.cleanup?.(); } catch (_) {}
       // Past-time captures drove the scrubbed playback — leave it paused where it ended
       if (vc.fromScrub && scrubActive) pauseScrubPlayback();
       const durationMs = Date.now() - vc.startedAt;
@@ -7413,7 +7477,7 @@
       if (!vc) return;
       videoCapture = null;
       clearInterval(vc.timer);
-      if (vc.pump) clearInterval(vc.pump);
+      try { vc.cleanup?.(); } catch (_) {}
       try { vc.rec.stop(); } catch (_) {}
       removeVideoCapturePlaceholder(vc);
       updateSaveNoteButtonState();
