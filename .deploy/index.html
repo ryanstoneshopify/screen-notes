@@ -3648,7 +3648,9 @@
       position: relative;
       width: 320px;
       height: 28px;
-      margin: 0 6px;
+      /* Handles hang 12px past the region edges — the trimbar clips at its
+         overflow (max-width morph) box, so leave clearance on both sides */
+      margin: 0 16px;
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.16);
       flex: 0 0 auto;
@@ -11751,6 +11753,12 @@
               : null);
         if (shotIsVideo(shot0)) {
           // Movie note on canvas: paused by default, hover reveals play + scrubber
+          console.debug('[screen-notes] video card', {
+            id: item.id, w: item.w, h: item.h,
+            vw: shot0.vw, vh: shot0.vh, kind: shot0.kind,
+            durationMs: shot0.durationMs, url: (shot0._localUrl || shot0.url || '').slice(0, 120),
+            size: ciVideoSizeStyle(shot0, item.h, item.w),
+          });
           const cardStyle = `left:${item.x}px;top:${item.y}px;max-width:${item.w}px;`;
           return `
             <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
