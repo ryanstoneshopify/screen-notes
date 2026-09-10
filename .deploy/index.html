@@ -9930,41 +9930,6 @@
       return resp.json();
     }
 
-    // First-frame poster for a movie blob — GitHub can't inline-play
-    // repo-hosted videos, so issues embed a clickable poster image instead
-    async function movieBlobPoster(blob, seekMs = 0) {
-      const url = URL.createObjectURL(blob);
-      try {
-        const video = document.createElement('video');
-        video.muted = true;
-        video.playsInline = true;
-        video.src = url;
-        await new Promise((res, rej) => {
-          video.addEventListener('loadeddata', res, { once: true });
-          video.addEventListener('error', rej, { once: true });
-          setTimeout(rej, 6000);
-        });
-        if (seekMs) {
-          video.currentTime = seekMs / 1000;
-          await new Promise(res => {
-            video.addEventListener('seeked', res, { once: true });
-            setTimeout(res, 2000);
-          });
-        }
-        if (!video.videoWidth) return null;
-        const c = document.createElement('canvas');
-        const scale = Math.min(1, 1280 / video.videoWidth);
-        c.width = Math.round(video.videoWidth * scale);
-        c.height = Math.round(video.videoHeight * scale);
-        c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
-        return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
-      } catch (_) {
-        return null;
-      } finally {
-        URL.revokeObjectURL(url);
-      }
-    }
-
     function blobToBase64(blob) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -10033,7 +9998,7 @@
             // Multi-image notes: every screenshot goes into this ONE issue
             const ghShots = noteShots(note);
             const ghSrcs = ghShots
-              ? ghShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: shotIsVideo(s), trimStartMs: s.trimStartMs || 0 }))
+              ? ghShots.map(s => ({ src: s.url || s._localUrl, strokes: s.markupStrokes, video: shotIsVideo(s) }))
               : ((note.screenshotUrl || note.screenshot) ? [{ src: note.screenshotUrl || note.screenshot, strokes: note.markupStrokes, canvasBake: true }] : []);
             let ghOffsetX = 0;
             for (let si = 0; si < ghSrcs.length; si++) {
@@ -10057,29 +10022,7 @@
                       branch,
                     }),
                   });
-                  const movieUrl = `https://github.com/${repo}/blob/${branch}/${vpath}?raw=true`;
-                  // Inline video players in issues only work for GitHub's own
-                  // drag-drop attachments (no public API) — embed a clickable
-                  // poster frame that links to the movie instead
-                  let posterMd = '';
-                  try {
-                    const poster = await movieBlobPoster(vblob, entry.trimStartMs || 0);
-                    if (poster) {
-                      const ppath = vpath.replace(/\.\w+$/, '-poster.jpg');
-                      await ghApi(`/repos/${repo}/contents/${ppath}`, token, {
-                        method: 'PUT',
-                        body: JSON.stringify({
-                          message: `Screen Notes: movie poster for "${(note.text || 'note').slice(0, 60)}"`,
-                          content: await blobToBase64(poster),
-                          branch,
-                        }),
-                      });
-                      posterMd = `\n\n<a href="${movieUrl}"><img src="https://github.com/${repo}/blob/${branch}/${ppath}?raw=true" width="600" alt="Movie poster — click to watch"></a>`;
-                    }
-                  } catch (posterErr) {
-                    console.warn('[screen-notes] movie poster failed', posterErr);
-                  }
-                  imageMarkdown += `${posterMd}\n\n\ud83c\udfac [Watch movie](${movieUrl})`;
+                  imageMarkdown += `\n\n\ud83c\udfac [Watch movie](https://github.com/${repo}/blob/${branch}/${vpath}?raw=true)`;
                   continue;
                 }
                 let blob = await bakeNoteMarkupIntoBlob({ markupStrokes: entry.strokes }, await (await fetch(entry.src)).blob());
