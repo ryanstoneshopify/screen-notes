@@ -7645,18 +7645,23 @@
         else closeVideoLightbox();
       });
       win.document.addEventListener('keydown', onVideoLbKeydown);
-      // Measured max-width so the playbar ↔ trimbar morph animates symmetrically
-      requestAnimationFrame(() => {
+      // Reveal via the lightbox's OWN window's rAF — the main window's rAF
+      // never fires while the tab is backgrounded (e.g. working in PiP), which
+      // left an invisible, click-blocking overlay stuck over the page
+      const reveal = () => lb.classList.add('show', 'in');
+      win.requestAnimationFrame(() => {
+        // Measured max-width so the playbar ↔ trimbar morph animates symmetrically
         const playbar = lb.querySelector('#videoPlaybar');
         const trimbar = lb.querySelector('#videoTrimbar');
         if (playbar) playbar.style.maxWidth = `${playbar.scrollWidth}px`;
         if (trimbar) trimbar.style.maxWidth = '0px';
-        requestAnimationFrame(() => lb.classList.add('show', 'in'));
+        win.requestAnimationFrame(reveal);
       });
+      setTimeout(reveal, 350); // belt-and-braces if rAF stalls
       const tick = () => {
         if (!videoLB || videoLB.el !== lb) return;
         videoLbUpdate();
-        videoLB.raf = requestAnimationFrame(tick);
+        videoLB.raf = win.requestAnimationFrame(tick);
       };
       tick();
     }
@@ -7906,7 +7911,7 @@
       videoLB = null;
       if (!v) return;
       try { v.video.pause(); } catch (_) {}
-      if (v.raf) cancelAnimationFrame(v.raf);
+      if (v.raf) { try { v.win.cancelAnimationFrame(v.raf); } catch (_) { cancelAnimationFrame(v.raf); } }
       try { v.win.document.removeEventListener('keydown', onVideoLbKeydown); } catch (_) {}
       resumeInlineNoteVideos();
       const lb = v.el;
@@ -8761,7 +8766,11 @@
         else closeMarkupLightbox();
       });
       markupWin.document.addEventListener('keydown', onMarkupKeydown);
-      requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('show', 'in')));
+      // Reveal via the lightbox window's own rAF — the main window's rAF stalls
+      // while the tab is backgrounded (PiP), leaving an invisible blocker
+      const revealMk = () => lb.classList.add('show', 'in');
+      markupWin.requestAnimationFrame(() => markupWin.requestAnimationFrame(revealMk));
+      setTimeout(revealMk, 350);
     }
 
     // Undo stack for lightbox markup (draw / delete / move / resize strokes)
