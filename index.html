@@ -11753,7 +11753,7 @@
               : null);
         if (shotIsVideo(shot0)) {
           // Movie note on canvas: paused by default, hover reveals play + scrubber
-          console.debug('[screen-notes] video card', {
+          console.log('[screen-notes] video card', {
             id: item.id, w: item.w, h: item.h,
             vw: shot0.vw, vh: shot0.vh, kind: shot0.kind,
             durationMs: shot0.durationMs, url: (shot0._localUrl || shot0.url || '').slice(0, 120),
