@@ -7604,6 +7604,7 @@
         </div>`;
       win.document.body.appendChild(lb);
       if (win !== window) bindPipGlobals(win);
+      pauseInlineNoteVideos();
       videoLB.el = lb;
       const video = lb.querySelector('#lbVideo');
       videoLB.video = video;
@@ -7907,6 +7908,7 @@
       try { v.video.pause(); } catch (_) {}
       if (v.raf) cancelAnimationFrame(v.raf);
       try { v.win.document.removeEventListener('keydown', onVideoLbKeydown); } catch (_) {}
+      resumeInlineNoteVideos();
       const lb = v.el;
       if (!lb) return;
       lb.classList.remove('show', 'in');
@@ -8736,6 +8738,7 @@
         </div>`;
       markupWin.document.body.appendChild(lb);
       if (markupWin !== window) bindPipGlobals(markupWin);
+      pauseInlineNoteVideos();
       const img = lb.querySelector('#markupImg');
       const ready = () => {
         noteMarkup.natW = img.naturalWidth;
@@ -8833,6 +8836,7 @@
         lb.style.pointerEvents = 'none';
         setTimeout(() => lb.remove(), 400);
       }
+      resumeInlineNoteVideos();
       if (state?.dirty) await persistMarkup(state);
       if (state?.mode === 'composer') await addNote();
     }
@@ -9124,6 +9128,7 @@
       clearTimeout(markupSaveTimer);
       if (state?.dirty) persistMarkup(state); // flush pending auto-save
       try { markupWin.document.removeEventListener('keydown', onMarkupKeydown); } catch (_) {}
+      resumeInlineNoteVideos();
       if (!lb) return;
       lb.classList.remove('show', 'in');
       lb.style.pointerEvents = 'none';
