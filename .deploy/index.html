@@ -7538,6 +7538,30 @@
       else if (start && el.currentTime < start - 0.08) el.currentTime = start;
     }
 
+    // While a lightbox is open, autoplaying movies behind it are distracting —
+    // pause them and resume the ones we paused when the lightbox closes
+    function inlineNoteVideos() {
+      const docs = [document];
+      if (pipOpen()) { try { docs.push(pipWindow.document); } catch (_) {} }
+      return docs.flatMap(d => [...d.querySelectorAll('.screenshot-preview video, video.note-card-screenshot')]);
+    }
+    function pauseInlineNoteVideos() {
+      inlineNoteVideos().forEach(v => {
+        if (!v.paused) {
+          v.dataset.lbPaused = '1';
+          try { v.pause(); } catch (_) {}
+        }
+      });
+    }
+    function resumeInlineNoteVideos() {
+      inlineNoteVideos().forEach(v => {
+        if (v.dataset.lbPaused) {
+          delete v.dataset.lbPaused;
+          v.play?.().catch(() => {});
+        }
+      });
+    }
+
     // ── Video lightbox ──
     let videoLB = null;
 
