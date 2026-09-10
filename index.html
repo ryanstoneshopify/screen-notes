@@ -7162,7 +7162,16 @@
 
     function beginVideoCapture(target) {
       if (!mediaStream || videoCapture) return false;
-      const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+      // Prefer MP4 (H.264) — Chrome 126+ can record it natively, and .mp4
+      // plays everywhere after export. WebM remains the fallback.
+      const candidates = [
+        'video/mp4;codecs=avc1.640028',
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+      ];
       const mime = window.MediaRecorder
         ? candidates.find(t => MediaRecorder.isTypeSupported(t)) || '' : '';
       if (!mime) { showToast('Movie capture is not supported in this browser'); return false; }
@@ -7376,7 +7385,8 @@
         return;
       }
       const localUrl = URL.createObjectURL(blob);
-      const file = new File([blob], `movie-${Date.now()}.webm`, { type: 'video/webm' });
+      const ext = vc.mime.includes('mp4') ? 'mp4' : 'webm';
+      const file = new File([blob], `movie-${Date.now()}.${ext}`, { type: vc.mime.split(';')[0] });
       console.log(`[screen-notes] captured movie ${(blob.size / 1024).toFixed(1)} KB, ${formatDuration(durationMs)}`);
       const uploadPromise = (async () => {
         try {
