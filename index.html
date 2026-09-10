@@ -3563,7 +3563,7 @@
     .screenshot-preview .shot-dots {
       transition: transform 240ms cubic-bezier(0.2, 0.8, 0.3, 1.15), opacity 180ms ease;
     }
-    .screenshot-preview.video-recording .screenshot-pip-btn,
+    /* PiP toggle stays visible + actionable while a movie records */
     .screenshot-preview.video-recording .screenshot-preview-actions,
     .screenshot-preview.video-recording .screenshot-preview-timestamp,
     .screenshot-preview.video-recording .shot-dots {
@@ -7921,16 +7921,18 @@
     // toolbar as the lightbox — play/pause, timestamp, scrubber, and a trim
     // button that morphs the bar into the timeline editor with Done/Cancel.
     function ciVideoSizeStyle(s, maxH, maxW = null) {
-      // Known capture dimensions produce fully definite pixel sizes — videos
-      // must not rely on aspect-ratio/intrinsic sizing, which breaks the
-      // min/max-content measurement the cards and Arrange depend on
-      if (s.vw && s.vh) {
-        let h = Math.min(maxH, s.vh);
-        if (maxW) h = Math.min(h, maxW * s.vh / s.vw);
-        h = Math.round(h);
-        return `width:${Math.round(h * s.vw / s.vh)}px;height:${h}px;`;
-      }
-      return maxW ? `max-height:${maxH}px;max-width:${maxW}px;` : `max-height:${maxH}px;`;
+      // Videos ALWAYS get fully definite pixel sizes — intrinsic/aspect-ratio
+      // sizing breaks min/max-content measurement, and movies whose metadata
+      // never loads would otherwise collapse or stretch the card. Unknown or
+      // implausible dimensions fall back to a 16:9 box; ciVideoInit corrects
+      // the box once real metadata arrives.
+      let vw = s.vw, vh = s.vh;
+      const ar = vw && vh ? vw / vh : 0;
+      if (!ar || ar < 0.1 || ar > 10) { vw = 16; vh = 9; }
+      let h = Math.min(maxH, s.vh && ar >= 0.1 && ar <= 10 ? s.vh : maxH);
+      if (maxW) h = Math.min(h, maxW * vh / vw);
+      h = Math.round(h);
+      return `width:${Math.round(h * vw / vh)}px;height:${h}px;`;
     }
 
     function ciVideoControlsHTML() {
@@ -7979,14 +7981,14 @@
     function ciVideoInit(el) {
       const start = (parseFloat(el.dataset.trimStart) || 0) / 1000;
       // Legacy movies without stored capture dimensions: once metadata is in,
-      // pin definite pixel sizes so the card hugs and measures correctly
+      // pin correct definite pixel sizes (replacing the 16:9 fallback box)
       if (!el.dataset.vw && el.videoWidth && el.videoHeight) {
         el.dataset.vw = el.videoWidth;
         el.dataset.vh = el.videoHeight;
-        const mh = parseFloat(el.style.maxHeight) || 640;
-        const mw = parseFloat(el.style.maxWidth) || 0;
-        let h = Math.min(mh, el.videoHeight);
-        if (mw) h = Math.min(h, mw * el.videoHeight / el.videoWidth);
+        const boxH = parseFloat(el.style.height) || parseFloat(el.style.maxHeight) || 640;
+        const boxW = parseFloat(el.style.width) || parseFloat(el.style.maxWidth) || 0;
+        let h = Math.min(boxH, el.videoHeight);
+        if (boxW) h = Math.min(h, boxW * el.videoHeight / el.videoWidth);
         el.style.height = `${Math.round(h)}px`;
         el.style.width = `${Math.round(h * el.videoWidth / el.videoHeight)}px`;
         el.style.maxHeight = '';
@@ -12503,12 +12505,13 @@
             wrap.style.height = '';
           });
           el.querySelectorAll('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video').forEach(media => {
-            // Dimension-aware videos keep fully definite pixel sizes
-            const vw = parseFloat(media.dataset.vw), vh = parseFloat(media.dataset.vh);
-            if (media.tagName === 'VIDEO' && vw && vh) {
-              const h = Math.min(item.h, vh);
+            // Videos keep fully definite pixel sizes (16:9 fallback if unknown)
+            if (media.tagName === 'VIDEO') {
+              const vw = parseFloat(media.dataset.vw), vh = parseFloat(media.dataset.vh);
+              const ar = vw && vh && vw / vh >= 0.1 && vw / vh <= 10 ? vw / vh : 16 / 9;
+              const h = Math.min(item.h, vh || item.h);
               media.style.height = Math.round(h) + 'px';
-              media.style.width = Math.round(h * vw / vh) + 'px';
+              media.style.width = Math.round(h * ar) + 'px';
             } else {
               media.style.maxHeight = item.h + 'px';
             }
@@ -12526,11 +12529,12 @@
         }
         const media = el.querySelector('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video');
         if (media) {
-          const vw = parseFloat(media.dataset.vw), vh = parseFloat(media.dataset.vh);
-          if (media.tagName === 'VIDEO' && vw && vh) {
-            let h = Math.min(item.h, vh, item.w * vh / vw);
+          if (media.tagName === 'VIDEO') {
+            const vw = parseFloat(media.dataset.vw), vh = parseFloat(media.dataset.vh);
+            const ar = vw && vh && vw / vh >= 0.1 && vw / vh <= 10 ? vw / vh : 16 / 9;
+            let h = Math.min(item.h, vh || item.h, item.w / ar);
             media.style.height = Math.round(h) + 'px';
-            media.style.width = Math.round(h * vw / vh) + 'px';
+            media.style.width = Math.round(h * ar) + 'px';
             media.style.maxWidth = '';
             media.style.maxHeight = '';
           } else {
