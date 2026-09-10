@@ -11441,6 +11441,14 @@
           }
           return item;
         });
+        // Heal pathological card sizes left behind by earlier mis-measured
+        // layouts/resizes (collapsed cards persisted w/h around 80px) —
+        // nothing legitimate is under these floors
+        canvas.items.forEach(it => {
+          if (it.type !== 'screenshot') return;
+          if (!(it.w >= 150)) it.w = 960;
+          if (!(it.h >= 100)) it.h = 640;
+        });
         canvas.x = session.canvas.viewport?.x ?? 0;
         canvas.y = session.canvas.viewport?.y ?? 0;
         canvas.scale = session.canvas.viewport?.scale ?? 1;
