@@ -3702,6 +3702,13 @@
     .ci-screenshot .ci-screenshot-img-wrap video {
       width: auto;
       height: auto;
+      /* The global video rule's max-width/height:100% is CIRCULAR inside the
+         card's width:min-content: before metadata loads the video contributes
+         nothing, the card collapses to the note text width, and the 100% cap
+         squashes the video into a tall sliver. Sizes are definite inline px —
+         never cap them against the container. */
+      max-width: none;
+      max-height: none;
       object-fit: contain;
       display: block;
       pointer-events: none;
@@ -11753,7 +11760,7 @@
               : null);
         if (shotIsVideo(shot0)) {
           // Movie note on canvas: paused by default, hover reveals play + scrubber
-          console.log('[screen-notes] video card', {
+          console.debug('[screen-notes] video card', {
             id: item.id, w: item.w, h: item.h,
             vw: shot0.vw, vh: shot0.vh, kind: shot0.kind,
             durationMs: shot0.durationMs, url: (shot0._localUrl || shot0.url || '').slice(0, 120),
