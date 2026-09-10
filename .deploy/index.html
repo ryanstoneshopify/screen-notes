@@ -7182,15 +7182,24 @@
       // mp4 and then the encoder emits ZERO bytes for >4K or odd dimensions
       // (common for hi-res screen captures). WebM/VP9 handles anything.
       const capW = srcVideo.videoWidth, capH = srcVideo.videoHeight;
-      const mp4Safe = capW <= 3840 && capH <= 2160 && capW % 2 === 0 && capH % 2 === 0;
+      // MP4/H.264 tops out at 4K and needs even dimensions; instead of falling
+      // back to WebM for hi-res captures (retina screens are >4K), downscale
+      // the recorded frames to fit — mp4 plays everywhere after export.
+      const mp4Scale = Math.min(1, 3840 / capW, 2160 / capH);
       const candidates = [
-        ...(mp4Safe ? ['video/mp4;codecs=avc1.640033', 'video/mp4;codecs=avc1', 'video/mp4'] : []),
+        'video/mp4;codecs=avc1.640033',
+        'video/mp4;codecs=avc1',
+        'video/mp4',
         'video/webm;codecs=vp9',
         'video/webm;codecs=vp8',
         'video/webm',
       ];
       const mime = candidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
       if (!mime) { showToast('Movie capture is not supported in this browser'); return false; }
+      const isMp4 = mime.includes('mp4');
+      const recW = isMp4 ? Math.max(2, Math.floor(capW * mp4Scale / 2) * 2) : capW;
+      const recH = isMp4 ? Math.max(2, Math.floor(capH * mp4Scale / 2) * 2) : capH;
+      const needScale = recW !== capW || recH !== capH;
       let srcStream = null;
       let cleanup = null;
 
@@ -7208,6 +7217,18 @@
           // One monotonic timebase for both sources — mixed source timestamps
           // confuse the encoder (cloning a VideoFrame is by-reference, cheap)
           const stamp = () => Math.round(performance.now() * 1000);
+          // H.264 downscale: route frames through an OffscreenCanvas at the
+          // encoder-safe size (frame-arrival driven, so background still works)
+          let scaleCtx = null, scaleCanvas = null;
+          if (needScale) {
+            scaleCanvas = new OffscreenCanvas(recW, recH);
+            scaleCtx = scaleCanvas.getContext('2d');
+          }
+          const toOut = (source) => {
+            if (!scaleCtx) return new VideoFrame(source, { timestamp: stamp() });
+            scaleCtx.drawImage(source, 0, 0, recW, recH);
+            return new VideoFrame(scaleCanvas, { timestamp: stamp() });
+          };
           (async () => {
             const reader = processor.readable.getReader();
             try {
@@ -7217,7 +7238,7 @@
                 if (!frame) continue;
                 if (!scrubActive && !stopped) {
                   let out = null;
-                  try { out = new VideoFrame(frame, { timestamp: stamp() }); } catch (_) {}
+                  try { out = toOut(frame); } catch (_) {}
                   frame.close();
                   if (out) {
                     try { await writer.write(out); } catch (_) { try { out.close(); } catch (_) {} }
@@ -7236,7 +7257,7 @@
             const v = docById('playbackVideo');
             if (!v || v.readyState < 2 || !v.videoWidth) return;
             let out = null;
-            try { out = new VideoFrame(v, { timestamp: stamp() }); } catch (_) { return; }
+            try { out = toOut(v); } catch (_) { return; }
             writer.write(out).catch(() => { try { out.close(); } catch (_) {} });
           }, 33);
           srcStream = new MediaStream([generator]);
@@ -7257,10 +7278,10 @@
       if (!srcStream) {
         try {
           const pumpCanvas = document.createElement('canvas');
-          pumpCanvas.width = srcVideo.videoWidth;
-          pumpCanvas.height = srcVideo.videoHeight;
+          pumpCanvas.width = recW;
+          pumpCanvas.height = recH;
           const pumpCtx = pumpCanvas.getContext('2d');
-          pumpCtx.drawImage(srcVideo, 0, 0);
+          pumpCtx.drawImage(srcVideo, 0, 0, recW, recH);
           srcStream = pumpCanvas.captureStream(30);
           let stopped = false;
           const drawTick = () => {
@@ -7300,8 +7321,8 @@
       rec.start(500);
       videoCapture = {
         ...target, rec, chunks, mime, cleanup,
-        // Players size themselves from these before the webm's late metadata
-        vw: srcVideo.videoWidth, vh: srcVideo.videoHeight,
+        // Players size themselves from these before the container's late metadata
+        vw: recW, vh: recH,
         fromScrub: scrubActive,
         startedAt: Date.now(),
         capturedTimestampMs: currentCaptureTimestampMs(),
