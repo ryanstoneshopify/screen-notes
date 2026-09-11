@@ -3681,6 +3681,20 @@
       border-bottom: 1px solid var(--border-soft);
     }
     .whats-new-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .whats-new-eyebrow .whats-new-pr {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .whats-new-bullets {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--graphite);
+    }
 
     /* ── Movie capture & playback ── */
     .capture-circle-row { display: flex; gap: 12px; }
@@ -4528,38 +4542,24 @@
     let voiceHintAnimationElement = null;
 
     // ── What's new ──
-    // Convention: prepend an entry (newest first, max 2 sentences, PR link)
-    // when a PR opens, with merged:false. Flip merged:true when the PR lands
-    // on main — ONLY merged entries ever render. The banner shows the newest;
-    // the rest live in the All updates modal.
+    // Convention: ONE entry per PR (newest first). `text` is a max 2-sentence
+    // summary; `bullets` (optional, max 5) show only in the All updates modal.
+    // Add the entry with merged:false when the PR opens; flip merged:true when
+    // it lands on main — only merged entries ever render.
     const WHATS_NEW_ALL = [
       {
-        id: 'pr14-movies',
+        id: 'pr14',
         date: 'Sep 11',
         pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
         merged: false,
         text: 'Movie capture is here! Record movies during sessions — from the live feed or from past moments via the scrubber — right alongside screenshots.',
-      },
-      {
-        id: 'pr14-voice',
-        date: 'Sep 11',
-        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
-        merged: false,
-        text: 'Voice commands grew up: say “movie” to start recording, “delete movie” for the asset in view, or “delete all media” to clear a note. Hover the animated hint to see every command.',
-      },
-      {
-        id: 'pr14-lightbox',
-        date: 'Sep 11',
-        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
-        merged: false,
-        text: 'Movies open in a lightbox with play/pause, a scrubber, and a non-destructive trim timeline. The same dark toolbar appears when hovering movies on canvas.',
-      },
-      {
-        id: 'pr14-notes',
-        date: 'Sep 11',
-        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
-        merged: false,
-        text: 'Notes can now be saved empty and filled with assets later, and zip/GitHub exports include your movies (mp4 when supported).',
+        bullets: [
+          'Say “movie”, “delete movie”, or “delete all media” — hover the hint to see every voice command',
+          'Movies open in a lightbox with play/pause, scrubber, and non-destructive trimming',
+          'The same dark video toolbar appears when hovering movies on canvas',
+          'Notes can be saved empty and filled with assets later',
+          'Zip and GitHub exports include movies (mp4 when supported)',
+        ],
       },
     ];
     const WHATS_NEW_UPDATES = WHATS_NEW_ALL.filter(u => u.merged);
@@ -4577,8 +4577,8 @@
         <div class="whats-new" id="whatsNewBanner">
           <img class="whats-new-avatar" src="notes/ryan-avatar.jpg" alt="Ryan">
           <div class="whats-new-body">
-            <div class="whats-new-eyebrow">What’s new <span class="whats-new-dot">·</span> ${escapeHtml(u.date)}</div>
-            <div class="whats-new-text">${escapeHtml(u.text)} <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+            <div class="whats-new-eyebrow">What’s new <span class="whats-new-dot">·</span> ${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+            <div class="whats-new-text">${escapeHtml(u.text)}</div>
             ${more > 0 ? `<button type="button" class="whats-new-more" onclick="openWhatsNewModal()">+${more} more update${more === 1 ? '' : 's'}</button>` : ''}
           </div>
           <button type="button" class="whats-new-close" onclick="dismissWhatsNew()" title="Dismiss" aria-label="Dismiss">${icon('close', 'icon icon-sm')}</button>
@@ -4606,8 +4606,9 @@
           <div class="whats-new-list">
             ${WHATS_NEW_UPDATES.map(u => `
               <div class="whats-new-item">
-                <div class="whats-new-eyebrow">${escapeHtml(u.date)}</div>
-                <div class="whats-new-text">${escapeHtml(u.text)} <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+                <div class="whats-new-eyebrow">${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+                <div class="whats-new-text">${escapeHtml(u.text)}</div>
+                ${Array.isArray(u.bullets) && u.bullets.length ? `<ul class="whats-new-bullets">${u.bullets.slice(0, 5).map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : ''}
               </div>`).join('')}
           </div>
           <div style="display:flex;justify-content:flex-end;">
