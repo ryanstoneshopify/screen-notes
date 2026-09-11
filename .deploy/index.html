@@ -7368,8 +7368,8 @@
         capturedTimestampMs: currentCaptureTimestampMs(),
         timer: setInterval(updateVideoCaptureTimer, 250),
       });
-      // Starting a capture on a paused scrubbed feed plays it so frames advance
-      if (scrubActive && !scrubPlaying) startScrubPlayback();
+      // Note: starting a capture never touches the scrubber's play state —
+      // a paused feed records paused (frozen frames) until the user hits play
       updateVideoCaptureTimer();
       updateSaveNoteButtonState();
       return true;
@@ -7453,9 +7453,7 @@
       try { vc.rec.stop(); } catch (_) {}
       await stopped;
       try { vc.cleanup?.(); } catch (_) {}
-      // Past-time captures drove the scrubbed playback — leave it paused where
-      // it ended (unless another past-time capture still depends on it)
-      if (vc.fromScrub && scrubActive && !videoCaptures.some(c => c.fromScrub)) pauseScrubPlayback();
+      // Stopping a capture never touches the scrubber's play state either
       const durationMs = Date.now() - vc.startedAt;
       const blob = new Blob(vc.chunks, { type: vc.mime });
       if (!blob.size) {
