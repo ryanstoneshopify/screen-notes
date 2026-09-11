@@ -1550,8 +1550,47 @@
     .voice-listening-hint.visible {
       opacity: 1;
       transform: translateY(0);
+      /* Hoverable: reveals the voice-commands reference popover */
+      pointer-events: auto;
+      cursor: help;
     }
-    .voice-listening-label { display: inline-flex; white-space: pre; }
+    .voice-listening-label {
+      display: inline-flex;
+      white-space: pre;
+      /* Dotted underline hugs the animated text — grows/shrinks as it types */
+      border-bottom: 1px dotted var(--stone);
+      padding-bottom: 2px;
+      min-height: 15px;
+      box-sizing: border-box;
+    }
+    .voice-prompts-popover {
+      padding: 10px 12px;
+      max-width: 360px;
+      pointer-events: none;
+    }
+    .voice-prompts-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--stone);
+      margin-bottom: 6px;
+    }
+    .voice-prompt-row {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      padding: 3px 0;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .vp-cmd {
+      flex: 0 0 auto;
+      color: var(--ink-black);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .vp-desc { color: var(--text-dim); }
     .voice-hint-character {
       display: inline-block;
       opacity: 1;
@@ -4343,9 +4382,23 @@
     const voiceCommandResultIndexes = new Set();
     const voiceSaveResultIndexes = new Set();
     const voiceRemoveScreenshotResultIndexes = new Set();
+    const voiceActionResultIndexes = new Set(); // movie/delete-all commands, keyed `${i}:${action}`
     let voiceSaveNoteInFlight = false;
     let suppressNextNoteFocusCapture = false;
-    const VOICE_LISTENING_HINTS = ['screenshot', 'remove screenshot', 'delete screenshot', 'save note', 'period', 'comma', 'question mark', 'new line'];
+    const VOICE_LISTENING_HINTS = ['screenshot', 'add movie', 'stop movie', 'delete screenshot', 'delete movie', 'delete all media', 'delete all movies', 'delete all images', 'save note', 'period', 'comma', 'question mark', 'new line'];
+    const VOICE_PROMPT_REFERENCE = [
+      { cmd: 'screenshot', desc: 'Capture a screenshot (adds alongside existing assets)' },
+      { cmd: 'add movie', desc: 'Start recording a movie' },
+      { cmd: 'stop movie', desc: 'Finish the movie recording' },
+      { cmd: 'delete screenshot', desc: 'Remove the screenshot in view' },
+      { cmd: 'delete movie', desc: 'Remove the movie in view' },
+      { cmd: 'delete all movies', desc: 'Remove every movie in the note' },
+      { cmd: 'delete all images', desc: 'Remove every screenshot in the note' },
+      { cmd: 'delete all media', desc: 'Remove every asset in the note' },
+      { cmd: 'save note', desc: 'Save the note' },
+      { cmd: 'period · comma · question mark', desc: 'Spoken punctuation' },
+      { cmd: 'new line · new paragraph', desc: 'Line breaks' },
+    ];
     let voiceHintAnimationRun = 0;
     let voiceHintAnimationElement = null;
 
@@ -6049,7 +6102,11 @@
     function stripVoiceControlPhrases(text) {
       return String(text || '')
         .replace(/\bsave\s+note\b/ig, ' ')
+        .replace(/\b(?:remove|delete)\s+all\s+(?:the\s+)?(?:movies\s+and\s+images|images\s+and\s+movies|movies|images|screenshots|media|assets)\b/ig, ' ')
         .replace(/\b(?:remove|delete)\s+(?:the\s+)?screenshot\b/ig, ' ')
+        .replace(/\b(?:remove|delete)\s+(?:the\s+)?movie\b/ig, ' ')
+        .replace(/\b(?:add|record|start)\s+(?:a\s+|the\s+)?movie\b/ig, ' ')
+        .replace(/\b(?:stop|end)\s+(?:the\s+)?movie\b/ig, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -6120,13 +6177,38 @@
           || removeScreenshotAcrossResults;
         const command = removeScreenshotCommand ? null : /\bscreenshot\b/i.exec(transcript);
         const saveCommand = /\bsave\s+note\b/i.test(transcript);
+        // Movie + bulk-delete commands (final results only — interims revise)
+        const deleteAllMatch = /\b(?:remove|delete)\s+all\s+(?:the\s+)?(movies\s+and\s+images|images\s+and\s+movies|movies|images|screenshots|media|assets)\b/i.exec(transcript);
+        const deleteMovieCommand = !deleteAllMatch && /\b(?:remove|delete)\s+(?:the\s+)?movie\b/i.test(transcript);
+        const addMovieCommand = /\b(?:add|record|start)\s+(?:a\s+|the\s+)?movie\b/i.test(transcript);
+        const stopMovieCommand = /\b(?:stop|end)\s+(?:the\s+)?movie\b/i.test(transcript);
+        if (result.isFinal) {
+          if (deleteAllMatch && !voiceActionResultIndexes.has(`${i}:da`)) {
+            voiceActionResultIndexes.add(`${i}:da`);
+            voiceDeleteAllMedia(deleteAllMatch[1]);
+          } else if (deleteMovieCommand && !voiceActionResultIndexes.has(`${i}:dm`)) {
+            voiceActionResultIndexes.add(`${i}:dm`);
+            voiceDeleteMovie();
+          }
+          if (addMovieCommand && !voiceActionResultIndexes.has(`${i}:am`)) {
+            voiceActionResultIndexes.add(`${i}:am`);
+            voiceNoteDictationActive = true;
+            voiceCaptureOnFirstDictationText = false;
+            updateVoiceCommandControl();
+            // Append alongside existing assets, like the plus menu would
+            startComposerVideoCapture(!!pendingScreenshot);
+          } else if (stopMovieCommand && !voiceActionResultIndexes.has(`${i}:sm`)) {
+            voiceActionResultIndexes.add(`${i}:sm`);
+            if (composerVideoCapture()) stopVideoCapture('composer');
+          }
+        }
         let noteText = '';
 
         if (removeScreenshotCommand) {
           if (!voiceRemoveScreenshotResultIndexes.has(i)) {
             voiceRemoveScreenshotResultIndexes.add(i);
             if (removeScreenshotAcrossResults) removeTrailingVoiceCommandPrefix();
-            removeScreenshot();
+            voiceDeleteScreenshot();
           }
           if (voiceNoteDictationActive) {
             noteText = removeScreenshotAcrossResults
@@ -6249,6 +6331,7 @@
           voiceCommandResultIndexes.clear();
           voiceSaveResultIndexes.clear();
           voiceRemoveScreenshotResultIndexes.clear();
+          voiceActionResultIndexes.clear();
           updateVoiceCommandControl();
         };
 
@@ -6348,10 +6431,55 @@
       lastVoiceScreenshotAt = now;
       voiceScreenshotInFlight = true;
       try {
-        await retakeScreenshot(false);
+        // "screenshot" ADDS an asset — never replaces what's already in view
+        if (pendingScreenshot) {
+          addComposerShot();
+        } else {
+          await retakeScreenshot(false);
+        }
       } finally {
         voiceScreenshotInFlight = false;
       }
+    }
+
+    // "delete screenshot" / "delete movie" only act on the asset IN VIEW
+    function voiceDeleteScreenshot() {
+      const slot = activeComposerSlot();
+      if (slot && !slot.empty && !slot.recordingVideo && !shotIsVideo(slot)) removeScreenshot();
+    }
+
+    function voiceDeleteMovie() {
+      const slot = activeComposerSlot();
+      if (slot && !slot.empty && !slot.recordingVideo && shotIsVideo(slot)) removeScreenshot();
+    }
+
+    // "delete all movies/images/media" clears matching composer assets
+    function voiceDeleteAllMedia(which) {
+      const w = String(which || '').toLowerCase();
+      const dropMovies = /movie|media|asset/.test(w) || /movies\s+and\s+images|images\s+and\s+movies/.test(w);
+      const dropImages = /image|screenshot|media|asset/.test(w) || /movies\s+and\s+images|images\s+and\s+movies/.test(w);
+      const keep = composerShots.filter(s => {
+        if (!s || s.empty) return false;
+        if (s.recordingVideo) return true; // never nuke an in-flight recording
+        return shotIsVideo(s) ? !dropMovies : !dropImages;
+      });
+      if (keep.length === composerShots.filter(s => s && !s.empty).length && keep.length) return;
+      if (!keep.length) {
+        resetComposerShots();
+        screenshotRemoved = true;
+        const previewEl = docById('screenshotPreview');
+        const previewImg = docById('screenshotPreviewImg');
+        const previewTimestamp = docById('screenshotPreviewTimestamp');
+        if (previewEl) previewEl.classList.remove('has-image', 'has-video', 'saving-out', 'capturing-image');
+        if (previewImg) previewImg.src = '';
+        if (previewTimestamp) previewTimestamp.innerHTML = '';
+      } else {
+        composerShots = keep;
+        composerShotIndex = Math.min(composerShotIndex, composerShots.length - 1);
+        syncComposerAlias();
+        renderComposerShot();
+      }
+      updateSaveNoteButtonState();
     }
 
     // ── Screenshot ──
@@ -7573,6 +7701,34 @@
         removeVideoCapturePlaceholder(vc);
       });
       updateSaveNoteButtonState();
+    }
+
+    // ── Voice prompts reference popover (hover on the animated hint) ──
+    let voicePromptsEl = null;
+    function showVoicePrompts(event) {
+      hideVoicePrompts();
+      const anchor = event.currentTarget;
+      const doc = anchor.ownerDocument;
+      const win = doc.defaultView || window;
+      const pop = doc.createElement('div');
+      pop.className = 'session-menu-popover voice-prompts-popover';
+      pop.innerHTML = `<div class="voice-prompts-title">Voice commands</div>`
+        + VOICE_PROMPT_REFERENCE.map(p =>
+            `<div class="voice-prompt-row"><span class="vp-cmd">“${p.cmd}”</span><span class="vp-desc">${p.desc}</span></div>`
+          ).join('');
+      doc.body.appendChild(pop);
+      const r = anchor.getBoundingClientRect();
+      let left = r.left;
+      let top = r.top - pop.offsetHeight - 8;
+      if (top < 8) top = r.bottom + 8;
+      if (left + pop.offsetWidth > win.innerWidth - 8) left = Math.max(8, win.innerWidth - 8 - pop.offsetWidth);
+      pop.style.left = `${left}px`;
+      pop.style.top = `${top}px`;
+      voicePromptsEl = pop;
+    }
+    function hideVoicePrompts() {
+      voicePromptsEl?.remove();
+      voicePromptsEl = null;
     }
 
     // ── Movie/Image plus-button popover ──
@@ -10852,6 +11008,8 @@
                       class="voice-listening-hint ${voiceCommandsVisualActive ? 'visible' : ''}"
                       id="voiceListeningHint"
                       aria-hidden="true"
+                     onmouseenter="showVoicePrompts(event)"
+                     onmouseleave="hideVoicePrompts()"
                     >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
                     <div class="note-input-button-row">
                       <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" title="Save note (⌘↩)">
