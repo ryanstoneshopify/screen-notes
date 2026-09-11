@@ -3726,6 +3726,11 @@
     .whats-new-dialog { width: 460px; }
     /* 20px between the header and the first update (dialog gap is 12px) */
     .whats-new-dialog .whats-new-list { margin-top: 8px; }
+    .whats-new-item-footer {
+      margin-top: 6px;
+      text-align: right;
+      font-size: 12.5px;
+    }
     .whats-new-list {
       display: flex;
       flex-direction: column;
@@ -4730,9 +4735,10 @@
           <div class="whats-new-list">
             ${WHATS_NEW_UPDATES.map(u => `
               <div class="whats-new-item">
-                <div class="whats-new-eyebrow">${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+                <div class="whats-new-eyebrow">${escapeHtml(u.date)}</div>
                 <div class="whats-new-text">${escapeHtml(u.text)}</div>
                 ${Array.isArray(u.bullets) && u.bullets.length ? `<ul class="whats-new-bullets">${u.bullets.slice(0, 3).map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : ''}
+                <div class="whats-new-item-footer"><a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
               </div>`).join('')}
           </div>
           <div style="display:flex;justify-content:flex-end;">
