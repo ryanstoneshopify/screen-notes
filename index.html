@@ -6103,9 +6103,11 @@
       const next = formatVoiceDictationText(input.value.slice(0, start), text);
       if (!isFinal && previous && next.length < previous.length) return;
       input.setRangeText(next, start, start + previous.length, 'end');
+      // Dictated text does NOT auto-capture a screenshot — in voice mode the
+      // user picks assets explicitly ("screenshot" / "add movie"). Typed text
+      // keeps the auto-capture behaviour via onNoteFocus/onNoteInput.
       if (voiceCaptureOnFirstDictationText && next.trim()) {
         voiceCaptureOnFirstDictationText = false;
-        beginNoteScreenshotCapture().then(updateSaveNoteButtonState);
       }
       if (isFinal) {
         voiceInterimStart = null;
