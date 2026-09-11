@@ -4403,10 +4403,10 @@
     const voiceActionResultIndexes = new Set(); // movie/delete-all commands, keyed `${i}:${action}`
     let voiceSaveNoteInFlight = false;
     let suppressNextNoteFocusCapture = false;
-    const VOICE_LISTENING_HINTS = ['screenshot', 'add movie', 'stop movie', 'delete screenshot', 'delete movie', 'delete all media', 'delete all movies', 'delete all images', 'save note', 'period', 'comma', 'question mark', 'new line'];
+    const VOICE_LISTENING_HINTS = ['screenshot', 'movie', 'stop movie', 'delete screenshot', 'delete movie', 'delete all media', 'delete all movies', 'delete all images', 'save note', 'period', 'comma', 'question mark', 'new line'];
     const VOICE_PROMPT_REFERENCE = [
       { cmd: 'screenshot', desc: 'Capture a screenshot (adds alongside existing assets)' },
-      { cmd: 'add movie', desc: 'Start recording a movie' },
+      { cmd: 'movie', desc: 'Start recording a movie' },
       { cmd: 'stop movie', desc: 'Finish the movie recording' },
       { cmd: 'delete screenshot', desc: 'Remove the screenshot in view' },
       { cmd: 'delete movie', desc: 'Remove the movie in view' },
@@ -6131,8 +6131,9 @@
         .replace(/\b(?:remove|delete)\s+all\s+(?:the\s+)?(?:movies\s+and\s+images|images\s+and\s+movies|movies|images|screenshots|media|assets)\b/ig, ' ')
         .replace(/\b(?:remove|delete)\s+(?:the\s+)?screenshot\b/ig, ' ')
         .replace(/\b(?:remove|delete)\s+(?:the\s+)?movie\b/ig, ' ')
-        .replace(/\b(?:add|record|start)\s+(?:a\s+|the\s+)?movie\b/ig, ' ')
         .replace(/\b(?:stop|end)\s+(?:the\s+)?movie\b/ig, ' ')
+        .replace(/\b(?:add|record|start)\s+(?:a\s+|the\s+)?movie\b/ig, ' ')
+        .replace(/\bmovie\b/ig, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -6206,8 +6207,11 @@
         // Movie + bulk-delete commands (final results only — interims revise)
         const deleteAllMatch = /\b(?:remove|delete)\s+all\s+(?:the\s+)?(movies\s+and\s+images|images\s+and\s+movies|movies|images|screenshots|media|assets)\b/i.exec(transcript);
         const deleteMovieCommand = !deleteAllMatch && /\b(?:remove|delete)\s+(?:the\s+)?movie\b/i.test(transcript);
-        const addMovieCommand = /\b(?:add|record|start)\s+(?:a\s+|the\s+)?movie\b/i.test(transcript);
         const stopMovieCommand = /\b(?:stop|end)\s+(?:the\s+)?movie\b/i.test(transcript);
+        // Bare "movie" starts a recording, like bare "screenshot" captures —
+        // unless the mention is part of a delete/stop phrase
+        const addMovieCommand = !deleteAllMatch && !deleteMovieCommand && !stopMovieCommand
+          && /\bmovie\b/i.test(transcript);
         if (result.isFinal) {
           if (deleteAllMatch && !voiceActionResultIndexes.has(`${i}:da`)) {
             voiceActionResultIndexes.add(`${i}:da`);
