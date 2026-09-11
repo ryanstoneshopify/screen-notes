@@ -1570,14 +1570,21 @@
       right: 0;
       bottom: 0;
       border-bottom: 1px dotted var(--stone);
+      pointer-events: none;
+    }
+    /* Right edge only dissolves while characters are typing in / deleting out */
+    .voice-hint-text.typing::after {
       -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
       mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
-      pointer-events: none;
     }
     .voice-prompts-popover {
       padding: 10px 12px;
       max-width: 360px;
       pointer-events: none;
+      /* Solid — the glass blur let the buttons underneath shine through */
+      background: var(--snow-white) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
     }
     .voice-prompts-title {
       font-size: 11px;
@@ -5982,22 +5989,27 @@
 
     async function animateVoiceListeningHint(labelElement, runId) {
       let labelIndex = 0;
+      const wrap = labelElement.closest('.voice-hint-text');
+      const setTyping = (on) => wrap?.classList.toggle('typing', on);
       while (runId === voiceHintAnimationRun && voiceCommandsVisualActive && labelElement.isConnected) {
         const label = VOICE_LISTENING_HINTS[labelIndex];
         labelElement.replaceChildren();
 
+        setTyping(true);
         for (const value of label) {
-          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) return;
+          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) { setTyping(false); return; }
           const character = document.createElement('span');
           character.className = 'voice-hint-character entering';
           character.textContent = value;
           labelElement.appendChild(character);
           await waitForVoiceHintAnimation(90);
         }
+        setTyping(false);
 
         await waitForVoiceHintAnimation(3000);
+        setTyping(true);
         while (labelElement.lastElementChild) {
-          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) return;
+          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) { setTyping(false); return; }
           const character = labelElement.lastElementChild;
           character.classList.remove('entering');
           character.classList.add('exiting');
@@ -6005,6 +6017,7 @@
           await waitForVoiceHintAnimation(160);
           character.remove();
         }
+        setTyping(false);
 
         await waitForVoiceHintAnimation(220);
         labelIndex = (labelIndex + 1) % VOICE_LISTENING_HINTS.length;
