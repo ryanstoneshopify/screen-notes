@@ -1554,14 +1554,25 @@
       pointer-events: auto;
       cursor: help;
     }
-    .voice-listening-label {
+    .voice-listening-label { display: inline-flex; white-space: pre; }
+    /* Dotted underline spans "Say" + the animated text, growing/shrinking with
+       it; the right edge dissolves like the letters blurring in/out */
+    .voice-hint-text {
+      position: relative;
       display: inline-flex;
-      white-space: pre;
-      /* Dotted underline hugs the animated text — grows/shrinks as it types */
+      align-items: center;
+      padding-bottom: 3px;
+    }
+    .voice-hint-text::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
       border-bottom: 1px dotted var(--stone);
-      padding-bottom: 2px;
-      min-height: 15px;
-      box-sizing: border-box;
+      -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
+      mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
+      pointer-events: none;
     }
     .voice-prompts-popover {
       padding: 10px 12px;
@@ -7714,13 +7725,13 @@
       pop.className = 'session-menu-popover voice-prompts-popover';
       pop.innerHTML = `<div class="voice-prompts-title">Voice commands</div>`
         + VOICE_PROMPT_REFERENCE.map(p =>
-            `<div class="voice-prompt-row"><span class="vp-cmd">“${p.cmd}”</span><span class="vp-desc">${p.desc}</span></div>`
+            `<div class="voice-prompt-row"><span class="vp-cmd">“${p.cmd}”</span></div>`
           ).join('');
       doc.body.appendChild(pop);
       const r = anchor.getBoundingClientRect();
       let left = r.left;
-      let top = r.top - pop.offsetHeight - 8;
-      if (top < 8) top = r.bottom + 8;
+      let top = r.bottom + 8;
+      if (top + pop.offsetHeight > win.innerHeight - 8) top = r.top - pop.offsetHeight - 8;
       if (left + pop.offsetWidth > win.innerWidth - 8) left = Math.max(8, win.innerWidth - 8 - pop.offsetWidth);
       pop.style.left = `${left}px`;
       pop.style.top = `${top}px`;
@@ -11010,7 +11021,7 @@
                       aria-hidden="true"
                      onmouseenter="showVoicePrompts(event)"
                      onmouseleave="hideVoicePrompts()"
-                    >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
+                    ><span class="voice-hint-text">Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></span></div>
                     <div class="note-input-button-row">
                       <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" title="Save note (⌘↩)">
                         Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
