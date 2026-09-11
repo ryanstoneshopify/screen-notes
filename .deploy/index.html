@@ -3579,6 +3579,8 @@
     .whats-new {
       position: absolute;
       top: 24px;
+      /* Animate repositioning (e.g. narrow viewports) instead of jumping */
+      transition: top 300ms var(--ease-out);
       left: 50%;
       transform: translateX(-50%);
       z-index: 30;
@@ -3627,6 +3629,10 @@
       to { transform: translate(-50%, calc(-100% - 48px)) scale(0.8); filter: blur(8px); opacity: 0; }
     }
     .whats-new.entering { animation: whatsNewIn 400ms var(--ease-out-spring) backwards; }
+    /* Narrow viewports: drop below the floating top-bar elements */
+    @media (max-width: 900px) {
+      .whats-new { top: 72px; }
+    }
     .whats-new.leaving {
       animation: whatsNewOut 400ms var(--ease-out) forwards;
       pointer-events: none;
