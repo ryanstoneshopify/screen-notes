@@ -2490,6 +2490,7 @@
     }
     .gh-dialog-overlay.in { opacity: 1; }
     .gh-dialog {
+      position: relative;
       width: 380px;
       max-width: calc(100vw - 48px);
       background: var(--floating-bg);
@@ -2513,6 +2514,24 @@
       color: var(--ink-black);
       margin: 0;
     }
+    .gh-dialog-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: none;
+      color: var(--graphite);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+    .gh-dialog-close:hover { background: var(--surface-hover); color: var(--ink-black); }
+    .gh-dialog-close .icon { width: 15px; height: 15px; }
     .gh-dialog label {
       font-size: 12px;
       color: var(--graphite);
@@ -4660,6 +4679,7 @@
       overlay.id = 'whatsNewOverlay';
       overlay.innerHTML = `
         <div class="gh-dialog whats-new-dialog">
+          <button type="button" class="gh-dialog-close" onclick="closeWhatsNewModal()" title="Close" aria-label="Close">${icon('close', 'icon icon-sm')}</button>
           <h3>All updates</h3>
           <div class="whats-new-list">
             ${WHATS_NEW_UPDATES.map(u => `
@@ -10355,6 +10375,7 @@
       overlay.id = 'ghDialogOverlay';
       overlay.innerHTML = `
         <div class="gh-dialog">
+          <button type="button" class="gh-dialog-close" onclick="closeGithubExportDialog()" title="Close" aria-label="Close">${icon('close', 'icon icon-sm')}</button>
           <h3>Export ${totalCount} note${totalCount === 1 ? '' : 's'} to GitHub</h3>
           <div>
             <label>Resource owner</label>
