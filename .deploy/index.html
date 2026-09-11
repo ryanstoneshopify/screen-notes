@@ -3575,6 +3575,113 @@
     html.glass-bend .markup-toolbar {
       backdrop-filter: url(#glassBend) var(--glass-frost);
     }
+    /* ── What's new banner ── */
+    .whats-new {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      width: 540px;
+      max-width: calc(100vw - 48px);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: var(--glass-bg);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      border: 1px solid var(--glass-border);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        inset 0 -1px 0 var(--glass-sheen-soft),
+        inset 0 0 18px var(--glass-glow),
+        var(--glass-shadow);
+      overflow: hidden;
+    }
+    /* Accent tint over the glass — 25% on the left fading to 0% on the right */
+    .whats-new::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right,
+        color-mix(in srgb, var(--terra-cotta) 25%, transparent),
+        transparent);
+      pointer-events: none;
+    }
+    .whats-new > * { position: relative; z-index: 1; }
+    .whats-new-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex: 0 0 auto;
+      border: 1px solid var(--glass-border);
+    }
+    .whats-new-body { flex: 1; min-width: 0; }
+    .whats-new-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin-bottom: 4px;
+    }
+    .whats-new-dot { opacity: 0.6; }
+    .whats-new-text {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--ink-black);
+    }
+    .whats-new-pr {
+      color: #4092E5;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .whats-new-pr:hover { text-decoration: underline; }
+    .whats-new-more {
+      display: block;
+      margin-top: 8px;
+      padding: 0;
+      background: none;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      color: var(--graphite);
+      cursor: pointer;
+      text-align: left;
+    }
+    .whats-new-more:hover { color: var(--ink-black); text-decoration: underline; }
+    .whats-new-close {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      margin: -4px -4px 0 0;
+      border: none;
+      border-radius: 50%;
+      background: none;
+      color: var(--graphite);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .whats-new-close:hover { background: var(--surface-hover); color: var(--ink-black); }
+    .whats-new-dialog { width: 460px; }
+    .whats-new-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 55vh;
+      overflow-y: auto;
+    }
+    .whats-new-item {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .whats-new-item:last-child { border-bottom: none; padding-bottom: 0; }
+
     /* ── Movie capture & playback ── */
     .capture-circle-row { display: flex; gap: 12px; }
     .capture-circle-btn { width: 40px; height: 40px; border-radius: 50%; }
@@ -4419,6 +4526,106 @@
     ];
     let voiceHintAnimationRun = 0;
     let voiceHintAnimationElement = null;
+
+    // ── What's new ──
+    // Convention: prepend an entry (newest first, max 2 sentences, PR link)
+    // when a PR opens, with merged:false. Flip merged:true when the PR lands
+    // on main — ONLY merged entries ever render. The banner shows the newest;
+    // the rest live in the All updates modal.
+    const WHATS_NEW_ALL = [
+      {
+        id: 'pr14-movies',
+        date: 'Sep 11',
+        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
+        text: 'Movie capture is here! Record movies during sessions — from the live feed or from past moments via the scrubber — right alongside screenshots.',
+      },
+      {
+        id: 'pr14-voice',
+        date: 'Sep 11',
+        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
+        text: 'Voice commands grew up: say “movie” to start recording, “delete movie” for the asset in view, or “delete all media” to clear a note. Hover the animated hint to see every command.',
+      },
+      {
+        id: 'pr14-lightbox',
+        date: 'Sep 11',
+        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
+        text: 'Movies open in a lightbox with play/pause, a scrubber, and a non-destructive trim timeline. The same dark toolbar appears when hovering movies on canvas.',
+      },
+      {
+        id: 'pr14-notes',
+        date: 'Sep 11',
+        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
+        text: 'Notes can now be saved empty and filled with assets later, and zip/GitHub exports include your movies (mp4 when supported).',
+      },
+    ];
+    const WHATS_NEW_UPDATES = WHATS_NEW_ALL.filter(u => u.merged);
+
+    function whatsNewDismissed() {
+      try { return localStorage.getItem('sn-whatsnew-dismissed') === (WHATS_NEW_UPDATES[0]?.id || ''); }
+      catch (_) { return false; }
+    }
+
+    function renderWhatsNewBanner() {
+      if (!WHATS_NEW_UPDATES.length || whatsNewDismissed()) return '';
+      const u = WHATS_NEW_UPDATES[0];
+      const more = WHATS_NEW_UPDATES.length - 1;
+      return `
+        <div class="whats-new" id="whatsNewBanner">
+          <img class="whats-new-avatar" src="notes/ryan-avatar.jpg" alt="Ryan">
+          <div class="whats-new-body">
+            <div class="whats-new-eyebrow">What’s new <span class="whats-new-dot">·</span> ${escapeHtml(u.date)}</div>
+            <div class="whats-new-text">${escapeHtml(u.text)} <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+            ${more > 0 ? `<button type="button" class="whats-new-more" onclick="openWhatsNewModal()">+${more} more update${more === 1 ? '' : 's'}</button>` : ''}
+          </div>
+          <button type="button" class="whats-new-close" onclick="dismissWhatsNew()" title="Dismiss" aria-label="Dismiss">${icon('close', 'icon icon-sm')}</button>
+        </div>`;
+    }
+
+    function dismissWhatsNew() {
+      try { localStorage.setItem('sn-whatsnew-dismissed', WHATS_NEW_UPDATES[0]?.id || ''); } catch (_) {}
+      const b = docById('whatsNewBanner');
+      if (!b) return;
+      b.style.transition = 'opacity 220ms ease, transform 220ms ease';
+      b.style.opacity = '0';
+      b.style.transform = 'translate(-50%, -10px)';
+      setTimeout(() => b.remove(), 240);
+    }
+
+    function openWhatsNewModal() {
+      docById('whatsNewOverlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'gh-dialog-overlay';
+      overlay.id = 'whatsNewOverlay';
+      overlay.innerHTML = `
+        <div class="gh-dialog whats-new-dialog">
+          <h3>All updates</h3>
+          <div class="whats-new-list">
+            ${WHATS_NEW_UPDATES.map(u => `
+              <div class="whats-new-item">
+                <div class="whats-new-eyebrow">${escapeHtml(u.date)}</div>
+                <div class="whats-new-text">${escapeHtml(u.text)} <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+              </div>`).join('')}
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeWhatsNewModal()">Close</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeWhatsNewModal(); });
+      requestAnimationFrame(() => overlay.classList.add('in'));
+    }
+
+    function closeWhatsNewModal() {
+      const overlay = docById('whatsNewOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('in');
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => overlay.remove(), 400);
+    }
 
     // ── Init ──
     function blurActiveFieldIfClickedOutside(event) {
@@ -10745,6 +10952,7 @@
       // Empty state
       main.innerHTML = `
         <div class="grid-bg" id="gridBg">${renderHomeHiddenNotes()}<svg class="home-draw-svg" id="homeDrawSvg"></svg></div>
+        ${renderWhatsNewBanner()}
         <div class="empty-state" id="emptyState">
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>

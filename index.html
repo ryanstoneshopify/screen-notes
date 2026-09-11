@@ -4528,35 +4528,41 @@
     let voiceHintAnimationElement = null;
 
     // ── What's new ──
-    // Convention: when a PR merges to main, prepend an entry here (newest
-    // first, max 2 sentences, link to the PR). The banner shows the newest;
+    // Convention: prepend an entry (newest first, max 2 sentences, PR link)
+    // when a PR opens, with merged:false. Flip merged:true when the PR lands
+    // on main — ONLY merged entries ever render. The banner shows the newest;
     // the rest live in the All updates modal.
-    const WHATS_NEW_UPDATES = [
+    const WHATS_NEW_ALL = [
       {
         id: 'pr14-movies',
         date: 'Sep 11',
         pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
         text: 'Movie capture is here! Record movies during sessions — from the live feed or from past moments via the scrubber — right alongside screenshots.',
       },
       {
         id: 'pr14-voice',
         date: 'Sep 11',
         pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
         text: 'Voice commands grew up: say “movie” to start recording, “delete movie” for the asset in view, or “delete all media” to clear a note. Hover the animated hint to see every command.',
       },
       {
         id: 'pr14-lightbox',
         date: 'Sep 11',
         pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
         text: 'Movies open in a lightbox with play/pause, a scrubber, and a non-destructive trim timeline. The same dark toolbar appears when hovering movies on canvas.',
       },
       {
         id: 'pr14-notes',
         date: 'Sep 11',
         pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: false,
         text: 'Notes can now be saved empty and filled with assets later, and zip/GitHub exports include your movies (mp4 when supported).',
       },
     ];
+    const WHATS_NEW_UPDATES = WHATS_NEW_ALL.filter(u => u.merged);
 
     function whatsNewDismissed() {
       try { return localStorage.getItem('sn-whatsnew-dismissed') === (WHATS_NEW_UPDATES[0]?.id || ''); }
