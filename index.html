@@ -4641,14 +4641,13 @@
     function renderWhatsNewBanner() {
       if (!WHATS_NEW_UPDATES.length || whatsNewDismissed()) return '';
       const u = WHATS_NEW_UPDATES[0];
-      const more = WHATS_NEW_UPDATES.length - 1;
       return `
         <div class="whats-new whats-new-hidden" id="whatsNewBanner">
           <img class="whats-new-avatar" src="notes/ryan-avatar.jpg" alt="Ryan">
           <div class="whats-new-body">
-            <div class="whats-new-eyebrow">What’s new <span class="whats-new-dot">·</span> ${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+            <div class="whats-new-eyebrow">What’s new <span class="whats-new-dot">·</span> ${escapeHtml(u.date)}</div>
             <div class="whats-new-text">${escapeHtml(u.text)}</div>
-            ${more > 0 ? `<button type="button" class="whats-new-more" onclick="openWhatsNewModal()">+${more} more update${more === 1 ? '' : 's'}</button>` : ''}
+            <button type="button" class="whats-new-more" onclick="openWhatsNewModal()">View all updates</button>
           </div>
           <button type="button" class="whats-new-close" onclick="dismissWhatsNew()" title="Dismiss" aria-label="Dismiss">${icon('close', 'icon icon-sm')}</button>
         </div>`;
