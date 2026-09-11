@@ -1842,7 +1842,9 @@
     }
     .note-card-screenshot {
       width: 100%;
-      aspect-ratio: 16/9;
+      /* Fixed media height matching the composer preview — cards never grow
+         when assets land; media cover-crops horizontally instead */
+      height: 220px;
       object-fit: cover;
       display: block;
       cursor: zoom-in;
@@ -3589,7 +3591,7 @@
     .note-card-video-enter { animation: screenshotCaptureIn 300ms cubic-bezier(0.2, 0.8, 0.3, 1.15); }
     .note-shot-recording {
       width: 100%;
-      aspect-ratio: 16/9;
+      height: 220px;
       display: flex;
       align-items: center;
       justify-content: center;
