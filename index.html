@@ -3724,6 +3724,8 @@
     }
     .whats-new-close:hover { background: var(--surface-hover); color: var(--ink-black); }
     .whats-new-dialog { width: 460px; }
+    /* 20px between the header and the first update (dialog gap is 12px) */
+    .whats-new-dialog .whats-new-list { margin-top: 8px; }
     .whats-new-list {
       display: flex;
       flex-direction: column;
@@ -4621,7 +4623,8 @@
 
     // ── What's new ──
     // Convention: ONE entry per PR (newest first). `text` is a max 2-sentence
-    // summary; `bullets` (optional, max 5) show only in the All updates modal.
+    // summary; `bullets` (optional, first 3 shown) appear only in the All
+    // updates modal.
     // Add the entry with merged:false when the PR opens; flip merged:true when
     // it lands on main — only merged entries ever render.
     const WHATS_NEW_ALL = [
@@ -4729,7 +4732,7 @@
               <div class="whats-new-item">
                 <div class="whats-new-eyebrow">${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
                 <div class="whats-new-text">${escapeHtml(u.text)}</div>
-                ${Array.isArray(u.bullets) && u.bullets.length ? `<ul class="whats-new-bullets">${u.bullets.slice(0, 5).map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : ''}
+                ${Array.isArray(u.bullets) && u.bullets.length ? `<ul class="whats-new-bullets">${u.bullets.slice(0, 3).map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : ''}
               </div>`).join('')}
           </div>
           <div style="display:flex;justify-content:flex-end;">
