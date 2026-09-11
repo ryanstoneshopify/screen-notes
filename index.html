@@ -3595,6 +3595,15 @@
       justify-content: center;
       background: var(--surface-sunken);
     }
+    /* Asset-less saved notes: same empty-state capture buttons as the composer */
+    .note-shot-empty {
+      width: 100%;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-sunken);
+    }
     .note-card-screenshot-wrap .note-card-screenshot-actions,
     .note-card-screenshot-wrap .note-shot-dots,
     .note-card-screenshot-wrap .note-shot-nav {
@@ -6499,9 +6508,10 @@
       const input = docById('noteInput');
       const button = docById('saveNoteBtn');
       if (!button) return;
-      const hasText = !!input?.value.trim();
-      const hasScreenshot = composerImageCount() > 0 && !screenshotRemoved;
-      button.disabled = !!videoCapture || !(hasText || hasScreenshot);
+      // Save is always available during recording — empty notes are allowed
+      // (placeholder cards to fill with assets later). Only an in-flight movie
+      // capture blocks saving.
+      button.disabled = !!videoCapture;
     }
 
     async function retakeScreenshot(focusNoteInput = true) {
@@ -6794,12 +6804,11 @@
       const input = docById('noteInput');
       const text = input.value.trim();
 
-      // Resolve every filled slot's upload (multi-image notes)
+      // Resolve every filled slot's upload (multi-image notes). Note: no
+      // implicit capture here — focusing the input already captures, and an
+      // untouched composer saves an EMPTY note (fill with assets later).
       const filledShots = [];
       if (!screenshotRemoved) {
-        if (!composerImageCount()) {
-          await beginNoteScreenshotCapture();
-        }
         for (const slot of composerShots) {
           if (!slot || slot.empty || slot.recordingVideo) continue;
           const u = await slot.uploadPromise;
@@ -6811,9 +6820,6 @@
         }
       }
       const url = filledShots[0]?.url || null;
-
-      // Allow image-only or text-only notes, but don't save a completely empty note.
-      if (!text && !url) return;
 
       const note = {
         text,
@@ -10820,7 +10826,7 @@
                       aria-hidden="true"
                     >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
                     <div class="note-input-button-row">
-                      <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" title="Save note (⌘↩)" disabled>
+                      <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" title="Save note (⌘↩)">
                         Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
                       </button>
                       <button
@@ -10890,6 +10896,8 @@
             ? (focusedShot._mkPreview || focusedShot.url)
             : (note._mkPreview || note.screenshotUrl || note.screenshot);
         const hasMedia = !!(imgSrc || videoSrc || recordingShot);
+        // Asset-less notes show the standard empty-state capture buttons
+        const emptyMedia = !hasMedia && isRecording;
         const enterClass = note.createdAt && note.createdAt === enteringNoteCreatedAt ? ' note-card-entering' : '';
         const noteKey = note.createdAt || `note-${realIndex}`;
         const carousel = shots && shots.length > 1 ? `
@@ -10912,8 +10920,18 @@
                  alt="Screenshot"
                  onclick="openMarkupLightbox(${realIndex})"
                  loading="lazy">`;
+        const emptyMediaHtml = emptyMedia ? `
+            <div class="note-card-screenshot-wrap">
+              <div class="note-shot-empty">
+                <div class="capture-circle-row">
+                  <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="event.stopPropagation(); startNoteVideoCapture(${realIndex})" title="Record movie">${icon('movie', 'icon')}</button>
+                  <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="event.stopPropagation(); addNoteShot(${realIndex})" title="Take screenshot">${icon('image', 'icon')}</button>
+                </div>
+              </div>
+            </div>` : '';
         return `
-          <div class="note-card${hasMedia ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
+          <div class="note-card${hasMedia || emptyMedia ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
+            ${emptyMediaHtml}
             ${hasMedia ? `<div class="note-card-screenshot-wrap${recordingShot ? ' video-recording' : ''}">
               ${mediaHtml}
               <div class="screenshot-preview-timestamp note-shot-timestamp"><span>${escapeHtml(formatDuration((focusedShot ? focusedShot.timestamp : note.timestamp) || 0))}</span></div>
@@ -10926,6 +10944,7 @@
             </div>` : ''}
             <div class="note-card-body">
               <textarea class="recording-note-edit"
+                        placeholder="Add note"
                         rows="1"
                         oninput="autoGrowTextarea(this)"
                         onfocus="autoGrowTextarea(this)"
@@ -11661,6 +11680,8 @@
         const shots = noteShots(note);
         const shotCount = shots?.length || ((note.screenshotUrl || note.screenshot) ? 1 : 0);
         const hasScreenshot = shotCount > 0;
+        // Notes with no assets AND no text never land on the canvas
+        if (!hasScreenshot && !(note.text || '').trim()) return;
         // Estimated footprint. Movies with known dimensions estimate at their
         // real aspect; everything else assumes ~16:10 in cardH height.
         const shotW = (s) => (s?.kind === 'video' && s.vw && s.vh)
