@@ -497,7 +497,7 @@
 
     .session-item {
       position: relative;
-      padding: 14px 12px;
+      padding: 9px 12px;
       border-radius: 9.6px;
       cursor: pointer;
       margin-bottom: 4px;
@@ -525,7 +525,6 @@
       font-size: 14px;
       font-weight: 500;
       color: var(--ink-black);
-      margin-bottom: 6px;
       padding-right: 36px;
       white-space: nowrap;
       overflow: hidden;
@@ -538,6 +537,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      margin-top: 4px;
     }
     .session-meta-separator {
       color: var(--stone);
@@ -9036,13 +9036,9 @@
             : `<div class="session-item-title">${escapeHtml(s.title)}</div>`}
           ${isMySession(s) ? `<button class="session-menu-btn" title="More actions"
                   onclick="event.stopPropagation(); openSessionMenu(event, '${s.id}')">${icon('more')}</button>` : ''}
-          <div class="session-item-meta">
-            ${sessionListTab === 'others' ? `
-              <span>${escapeHtml(ownerLabel(s))}</span>
-              <span class="session-meta-separator">•</span>
-            ` : ''}
-            <span>${formatSessionDateOnly(s.created_at)}</span>
-          </div>
+          ${sessionListTab === 'others' ? `<div class="session-item-meta">
+            <span>${escapeHtml(ownerLabel(s))}</span>
+          </div>` : ''}
         </div>
       `;
 
