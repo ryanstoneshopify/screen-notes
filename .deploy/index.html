@@ -3614,7 +3614,12 @@
       transform: translateX(-50%);
       z-index: 30;
       width: 540px;
-      max-width: calc(100vw - 48px);
+      /* Shrink before the sidebar (12px inset + --sidebar-w wide) gets within
+         16px of the centered banner */
+      max-width: min(
+        calc(100vw - 48px),
+        calc(100vw - 2 * var(--sidebar-w, 300px) - 56px)
+      );
       display: flex;
       gap: 14px;
       align-items: flex-start;
@@ -3658,9 +3663,14 @@
       to { transform: translate(-50%, calc(-100% - 48px)) scale(0.8); filter: blur(8px); opacity: 0; }
     }
     .whats-new.entering { animation: whatsNewIn 1000ms var(--ease-out-spring) backwards; }
-    /* Narrow viewports: drop below the floating top-bar elements */
+    /* Narrow viewports: drop below the floating top-bar elements and span the
+       full window width (the sidebar auto-collapses down here) */
     @media (max-width: 900px) {
-      .whats-new { top: 72px; }
+      .whats-new {
+        top: 72px;
+        width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
+      }
     }
     .whats-new.leaving {
       animation: whatsNewOut 1000ms var(--ease-out) forwards;
