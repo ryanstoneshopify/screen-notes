@@ -2514,23 +2514,33 @@
       color: var(--ink-black);
       margin: 0;
     }
+    /* Secondary-style icon button, vertically centered with the h3 header
+       (20px dialog padding + ~22px title line, 30px button) */
     .gh-dialog-close {
       position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 28px;
-      height: 28px;
-      border: none;
+      top: 16px;
+      right: 16px;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--glass-border);
       border-radius: 50%;
-      background: none;
-      color: var(--graphite);
+      background: var(--glass-bg-strong);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+      color: var(--ink-black);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       z-index: 1;
+      transition: background 120ms ease;
     }
-    .gh-dialog-close:hover { background: var(--surface-hover); color: var(--ink-black); }
+    .gh-dialog-close:hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #1f1e1d); }
+    html.dark .gh-dialog-close:hover { background: color-mix(in srgb, var(--glass-bg-strong) 92%, #f0efe9); }
+    .gh-dialog-close:active { transform: translateY(1px); }
     .gh-dialog-close .icon { width: 15px; height: 15px; }
     .gh-dialog label {
       font-size: 12px;
