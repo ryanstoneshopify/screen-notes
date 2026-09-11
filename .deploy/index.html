@@ -3647,13 +3647,13 @@
       from { transform: translate(-50%, 0) scale(1); filter: blur(0); opacity: 1; }
       to { transform: translate(-50%, calc(-100% - 48px)) scale(0.8); filter: blur(8px); opacity: 0; }
     }
-    .whats-new.entering { animation: whatsNewIn 400ms var(--ease-out-spring) backwards; }
+    .whats-new.entering { animation: whatsNewIn 1000ms var(--ease-out-spring) backwards; }
     /* Narrow viewports: drop below the floating top-bar elements */
     @media (max-width: 900px) {
       .whats-new { top: 72px; }
     }
     .whats-new.leaving {
-      animation: whatsNewOut 400ms var(--ease-out) forwards;
+      animation: whatsNewOut 1000ms var(--ease-out) forwards;
       pointer-events: none;
     }
     .whats-new-avatar {
@@ -4649,11 +4649,22 @@
       const b = docById('whatsNewBanner');
       if (!b) return;
       b.classList.add('leaving');
-      setTimeout(() => b.remove(), 420);
+      setTimeout(() => b.remove(), 1020);
+    }
+
+    // Prototype settings: clear the dismissal and replay the banner entrance
+    function resetWhatsNewBanner() {
+      try { localStorage.removeItem('sn-whatsnew-dismissed'); } catch (_) {}
+      whatsNewAnimated = false;
+      toggleProtoPanel(false);
+      if (!isRecording && !activeSessionId) {
+        docById('whatsNewBanner')?.remove();
+        renderMain();
+      }
     }
 
     // Slide the banner in from the top once the page has fully loaded
-    // (toast-style enter, 400ms). Only animates once per page load.
+    // (toast-style enter, 1000ms like the toast). Only animates once per page load.
     let whatsNewAnimated = false;
     function requestWhatsNewEntrance() {
       const banner = docById('whatsNewBanner');
@@ -4666,7 +4677,7 @@
         if (!el) return;
         el.classList.remove('whats-new-hidden');
         el.classList.add('entering');
-        setTimeout(() => el.classList.remove('entering'), 450);
+        setTimeout(() => el.classList.remove('entering'), 1050);
       };
       if (document.readyState === 'complete') setTimeout(start, 150);
       else window.addEventListener('load', () => setTimeout(start, 150), { once: true });
@@ -13562,12 +13573,14 @@
             display: {
               showTimestamps: window.getDisplaySettings().showTimestamps,
             },
+            resetWhatsNew: { type: 'action', label: 'Reset What\u2019s new banner' },
             privateSession: { type: 'action', label: 'Trigger private session' },
             readOnly: { type: 'action', label: 'Trigger read-only mode' },
           }, {
             id: 'liquid-glass',
             onAction: (path) => {
-              if (path === 'privateSession') window.protoTriggerPrivateSession?.();
+              if (path === 'resetWhatsNew') window.resetWhatsNewBanner?.();
+              else if (path === 'privateSession') window.protoTriggerPrivateSession?.();
               else if (path === 'readOnly') window.protoToggleReadOnly?.();
               else if (path.endsWith('resetGlass')) { window.resetGlassSettings?.(); window.resetPipAnimSettings?.(); window.resetDisplaySettings?.(); dial.resetValues(); }
             },
