@@ -3727,15 +3727,38 @@
     .whats-new-list {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 20px;
       max-height: 55vh;
       overflow-y: auto;
     }
+    /* Timeline rail: hollow dot per update (latest is blue), connected by a line */
     .whats-new-item {
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-soft);
+      position: relative;
+      padding-left: 26px;
     }
-    .whats-new-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .whats-new-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 3px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 1.5px solid var(--stone);
+      background: transparent;
+      box-sizing: border-box;
+    }
+    .whats-new-item:first-child::before { border-color: #4092E5; }
+    .whats-new-item::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 16px;
+      bottom: -20px; /* bridges the 20px list gap to the next dot */
+      width: 1px;
+      background: var(--border-soft);
+    }
+    .whats-new-item:last-child::after { display: none; }
     .whats-new-eyebrow .whats-new-pr {
       font-weight: 600;
       letter-spacing: 0.5px;
