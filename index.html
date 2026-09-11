@@ -6435,7 +6435,7 @@
     async function beginNoteScreenshotCapture() {
       if (!isRecording || pendingScreenshot || screenshotRemoved) return pendingScreenshot;
       // Never capture over a movie that is recording or already captured
-      if (videoCapture) return null;
+      if (composerVideoCapture()) return null;
       // A deliberately added empty slot only fills via its Take screenshot button
       const autoSlot = activeComposerSlot();
       if (autoSlot?.recordingVideo || (autoSlot && !autoSlot.empty)) return null;
@@ -6510,9 +6510,9 @@
       const button = docById('saveNoteBtn');
       if (!button) return;
       // Save is always available during recording — empty notes are allowed
-      // (placeholder cards to fill with assets later). Only an in-flight movie
-      // capture blocks saving.
-      button.disabled = !!videoCapture;
+      // (placeholder cards to fill with assets later). Only an in-flight
+      // COMPOSER movie capture blocks saving; saved-note captures don't.
+      button.disabled = !!composerVideoCapture();
     }
 
     async function retakeScreenshot(focusNoteInput = true) {
@@ -6801,7 +6801,7 @@
     }
 
     async function addNote() {
-      if (videoCapture) return; // finish the movie first
+      if (composerVideoCapture()) return; // finish the composer movie first
       const input = docById('noteInput');
       const text = input.value.trim();
 
@@ -7178,7 +7178,12 @@
     // clip from the live share. The clip is uploaded as webm; trims are stored
     // as non-destructive metadata ({ trimStartMs, trimEndMs }) respected by all
     // players (composer, saved notes, lightbox, canvas).
-    let videoCapture = null; // { mode:'composer'|'note', slot|shot, note, rec, chunks, startedAt, ... }
+    // Concurrent captures: the composer and any number of saved notes can each
+    // record a movie at the same time (each gets its own cloned track/recorder)
+    let videoCaptures = []; // [{ mode:'composer'|'note', slot|shot, note, rec, chunks, startedAt, ... }]
+
+    function composerVideoCapture() { return videoCaptures.find(c => c.mode === 'composer') || null; }
+    function noteVideoCapture(note) { return videoCaptures.find(c => c.mode === 'note' && c.note === note) || null; }
 
     // Movies are detected by kind OR by URL — shots can lose their kind marker
     // (e.g. a failed upload drops note.screenshots at persist and the array is
@@ -7193,7 +7198,7 @@
     function slotIsVideo(s) { return shotIsVideo(s); }
 
     function beginVideoCapture(target) {
-      if (!mediaStream || videoCapture) return false;
+      if (!mediaStream) return false;
       if (!window.MediaRecorder) { showToast('Movie capture is not supported in this browser'); return false; }
       let rec;
       // Movies record exactly what the recording screen shows — the live share
@@ -7241,7 +7246,9 @@
       // the playback element (scrubbing is inherently a foreground activity).
       if (window.MediaStreamTrackProcessor && window.MediaStreamTrackGenerator && window.VideoFrame) {
         try {
-          const liveTrack = mediaStream.getVideoTracks()[0];
+          // Clone the track per capture so concurrent recordings don't
+          // contend for the same processor
+          const liveTrack = mediaStream.getVideoTracks()[0].clone();
           const processor = new MediaStreamTrackProcessor({ track: liveTrack });
           const generator = new MediaStreamTrackGenerator({ kind: 'video' });
           const writer = generator.writable.getWriter();
@@ -7297,6 +7304,7 @@
             stopped = true;
             clearInterval(scrubPump);
             try { writer.close(); } catch (_) {}
+            try { liveTrack.stop(); } catch (_) {}
           };
         } catch (e) {
           console.warn('[screen-notes] insertable-streams capture unavailable — falling back to canvas', e);
@@ -7351,7 +7359,7 @@
       rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
       rec.onerror = (e) => console.warn('[screen-notes] movie recorder error', e?.error || e);
       rec.start(500);
-      videoCapture = {
+      videoCaptures.push({
         ...target, rec, chunks, mime, cleanup,
         // Players size themselves from these before the container's late metadata
         vw: recW, vh: recH,
@@ -7359,7 +7367,7 @@
         startedAt: Date.now(),
         capturedTimestampMs: currentCaptureTimestampMs(),
         timer: setInterval(updateVideoCaptureTimer, 250),
-      };
+      });
       // Starting a capture on a paused scrubbed feed plays it so frames advance
       if (scrubActive && !scrubPlaying) startScrubPlayback();
       updateVideoCaptureTimer();
@@ -7368,16 +7376,27 @@
     }
 
     function updateVideoCaptureTimer() {
-      if (!videoCapture) return;
-      const t = formatDuration(Date.now() - videoCapture.startedAt);
+      if (!videoCaptures.length) return;
       const docs = [document];
       if (pipOpen()) { try { docs.push(pipWindow.document); } catch (_) {} }
-      docs.forEach(d => d.querySelectorAll('.video-stop-timer').forEach(el => { el.textContent = t; }));
+      videoCaptures.forEach(vc => {
+        const t = formatDuration(Date.now() - vc.startedAt);
+        if (vc.mode === 'composer') {
+          docs.forEach(d => d.querySelectorAll('.screenshot-preview .video-stop-timer')
+            .forEach(el => { el.textContent = t; }));
+        } else {
+          const idx = currentNotes.indexOf(vc.note);
+          if (idx < 0) return;
+          const key = noteKeyFor(vc.note, idx);
+          docs.forEach(d => d.querySelectorAll(`.note-card[data-note-key="${CSS.escape(key)}"] .video-stop-timer`)
+            .forEach(el => { el.textContent = t; }));
+        }
+      });
     }
 
     // Movie circle button (empty state) and the composer plus-menu both land here
     function startComposerVideoCapture(fromPlus = false) {
-      if (!isRecording || videoCapture) return;
+      if (!isRecording || composerVideoCapture()) return;
       let slot;
       if (fromPlus) {
         slot = { empty: true, userAdded: true, recordingVideo: true };
@@ -7404,9 +7423,9 @@
 
     // Plus-menu → Movie on a saved note card
     function startNoteVideoCapture(index) {
-      if (!isRecording || videoCapture) return;
+      if (!isRecording) return;
       const note = currentNotes[index];
-      if (!note) return;
+      if (!note || noteVideoCapture(note)) return;
       const shots = ensureNoteShotArray(note);
       const shot = { recordingVideo: true };
       const insertAt = shots.length ? focusedShotIndex(note, index) + 1 : 0;
@@ -7417,10 +7436,15 @@
       updateVideoCaptureTimer();
     }
 
-    async function stopVideoCapture() {
-      const vc = videoCapture;
+    // target: 'composer', a note index, a capture object, or undefined (first)
+    async function stopVideoCapture(target) {
+      let vc = null;
+      if (target === 'composer') vc = composerVideoCapture();
+      else if (typeof target === 'number') vc = noteVideoCapture(currentNotes[target]);
+      else if (target && typeof target === 'object') vc = videoCaptures.includes(target) ? target : null;
+      if (!vc) vc = videoCaptures[0] || null;
       if (!vc) return;
-      videoCapture = null;
+      videoCaptures = videoCaptures.filter(c => c !== vc);
       clearInterval(vc.timer);
       const stopped = new Promise(res => {
         vc.rec.onstop = res;
@@ -7429,8 +7453,9 @@
       try { vc.rec.stop(); } catch (_) {}
       await stopped;
       try { vc.cleanup?.(); } catch (_) {}
-      // Past-time captures drove the scrubbed playback — leave it paused where it ended
-      if (vc.fromScrub && scrubActive) pauseScrubPlayback();
+      // Past-time captures drove the scrubbed playback — leave it paused where
+      // it ended (unless another past-time capture still depends on it)
+      if (vc.fromScrub && scrubActive && !videoCaptures.some(c => c.fromScrub)) pauseScrubPlayback();
       const durationMs = Date.now() - vc.startedAt;
       const blob = new Blob(vc.chunks, { type: vc.mime });
       if (!blob.size) {
@@ -7538,13 +7563,15 @@
 
     // Discard an in-flight capture (session ended, etc.)
     function cancelVideoCapture() {
-      const vc = videoCapture;
-      if (!vc) return;
-      videoCapture = null;
-      clearInterval(vc.timer);
-      try { vc.cleanup?.(); } catch (_) {}
-      try { vc.rec.stop(); } catch (_) {}
-      removeVideoCapturePlaceholder(vc);
+      // Cancels ALL in-flight captures (used at session end)
+      const list = videoCaptures;
+      videoCaptures = [];
+      list.forEach(vc => {
+        clearInterval(vc.timer);
+        try { vc.cleanup?.(); } catch (_) {}
+        try { vc.rec.stop(); } catch (_) {}
+        removeVideoCapturePlaceholder(vc);
+      });
       updateSaveNoteButtonState();
     }
 
@@ -10794,7 +10821,7 @@
                           <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="startComposerVideoCapture()" title="Record movie">${icon('movie', 'icon')}</button>
                           <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="retakeScreenshot()" title="Take screenshot">${icon('image', 'icon')}</button>
                         </div>
-                        <button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture()" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button>
+                        <button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture('composer')" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button>
                       </div>
                       <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
                     </div>
@@ -10906,7 +10933,7 @@
               <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-next note-shot-nav" onclick="event.stopPropagation(); navigateNoteShot(${realIndex}, 1)"${fIdx === shots.length - 1 ? ' style="display:none"' : ''} title="Next screenshot">${icon('chevron', 'icon icon-sm shot-chevron-right')}</button>
               <div class="shot-dots note-shot-dots"></div>` : '';
         const mediaHtml = recordingShot
-          ? `<div class="note-shot-recording"><button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture()" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button></div>`
+          ? `<div class="note-shot-recording"><button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture(${realIndex})" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button></div>`
           : isVideoShot
             ? `<video class="note-card-screenshot"
                  src="${videoSrc}"
