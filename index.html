@@ -9036,9 +9036,6 @@
             : `<div class="session-item-title">${escapeHtml(s.title)}</div>`}
           ${isMySession(s) ? `<button class="session-menu-btn" title="More actions"
                   onclick="event.stopPropagation(); openSessionMenu(event, '${s.id}')">${icon('more')}</button>` : ''}
-          ${sessionListTab === 'others' ? `<div class="session-item-meta">
-            <span>${escapeHtml(ownerLabel(s))}</span>
-          </div>` : ''}
         </div>
       `;
 
