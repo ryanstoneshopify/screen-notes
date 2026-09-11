@@ -1550,8 +1550,65 @@
     .voice-listening-hint.visible {
       opacity: 1;
       transform: translateY(0);
+      /* Hoverable: reveals the voice-commands reference popover */
+      pointer-events: auto;
+      cursor: help;
     }
     .voice-listening-label { display: inline-flex; white-space: pre; }
+    /* Dotted underline spans "Say" + the animated text, growing/shrinking with
+       it; the right edge dissolves like the letters blurring in/out */
+    .voice-hint-text {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding-bottom: 3px;
+    }
+    .voice-hint-text::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-bottom: 1px dotted var(--stone);
+      pointer-events: none;
+    }
+    /* Right edge only dissolves while characters are typing in / deleting out */
+    .voice-hint-text.typing::after {
+      -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
+      mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
+    }
+    .voice-prompts-popover {
+      padding: 10px 12px;
+      max-width: 360px;
+      pointer-events: none;
+      /* Solid — the glass blur let the buttons underneath shine through */
+      background: var(--snow-white) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+    .voice-prompts-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--stone);
+      margin-bottom: 6px;
+    }
+    .voice-prompt-row {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      padding: 3px 0;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .vp-cmd {
+      flex: 0 0 auto;
+      color: var(--ink-black);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .vp-desc { color: var(--text-dim); }
     .voice-hint-character {
       display: inline-block;
       opacity: 1;
@@ -1842,7 +1899,9 @@
     }
     .note-card-screenshot {
       width: 100%;
-      aspect-ratio: 16/9;
+      /* Fixed media height matching the composer preview — cards never grow
+         when assets land; media cover-crops horizontally instead */
+      height: 220px;
       object-fit: cover;
       display: block;
       cursor: zoom-in;
@@ -3516,6 +3575,127 @@
     html.glass-bend .markup-toolbar {
       backdrop-filter: url(#glassBend) var(--glass-frost);
     }
+    /* ── What's new banner ── */
+    .whats-new {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      width: 540px;
+      max-width: calc(100vw - 48px);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: var(--glass-bg);
+      -webkit-backdrop-filter: var(--glass-frost);
+      backdrop-filter: var(--glass-frost);
+      border: 1px solid var(--glass-border);
+      box-shadow:
+        inset 0 1px 0 var(--glass-sheen),
+        inset 0 -1px 0 var(--glass-sheen-soft),
+        inset 0 0 18px var(--glass-glow),
+        var(--glass-shadow);
+      overflow: hidden;
+    }
+    /* Accent tint over the glass — 25% on the left fading to 0% on the right */
+    .whats-new::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right,
+        color-mix(in srgb, var(--terra-cotta) 25%, transparent),
+        transparent);
+      pointer-events: none;
+    }
+    .whats-new > * { position: relative; z-index: 1; }
+    .whats-new-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex: 0 0 auto;
+      border: 1px solid var(--glass-border);
+    }
+    .whats-new-body { flex: 1; min-width: 0; }
+    .whats-new-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin-bottom: 4px;
+    }
+    .whats-new-dot { opacity: 0.6; }
+    .whats-new-text {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--ink-black);
+    }
+    .whats-new-pr {
+      color: #4092E5;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .whats-new-pr:hover { text-decoration: underline; }
+    .whats-new-more {
+      display: block;
+      margin-top: 8px;
+      padding: 0;
+      background: none;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      color: var(--graphite);
+      cursor: pointer;
+      text-align: left;
+    }
+    .whats-new-more:hover { color: var(--ink-black); text-decoration: underline; }
+    .whats-new-close {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      margin: -4px -4px 0 0;
+      border: none;
+      border-radius: 50%;
+      background: none;
+      color: var(--graphite);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .whats-new-close:hover { background: var(--surface-hover); color: var(--ink-black); }
+    .whats-new-dialog { width: 460px; }
+    .whats-new-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 55vh;
+      overflow-y: auto;
+    }
+    .whats-new-item {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .whats-new-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .whats-new-eyebrow .whats-new-pr {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .whats-new-bullets {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--graphite);
+    }
+
     /* ── Movie capture & playback ── */
     .capture-circle-row { display: flex; gap: 12px; }
     .capture-circle-btn { width: 40px; height: 40px; border-radius: 50%; }
@@ -3589,7 +3769,17 @@
     .note-card-video-enter { animation: screenshotCaptureIn 300ms cubic-bezier(0.2, 0.8, 0.3, 1.15); }
     .note-shot-recording {
       width: 100%;
-      aspect-ratio: 16/9;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-sunken);
+    }
+    /* Asset-less saved notes: same empty-state capture buttons as the composer,
+       and the same 220px height so cards don't grow when an asset lands */
+    .note-shot-empty {
+      width: 100%;
+      height: 220px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -4331,11 +4521,126 @@
     const voiceCommandResultIndexes = new Set();
     const voiceSaveResultIndexes = new Set();
     const voiceRemoveScreenshotResultIndexes = new Set();
+    const voiceActionResultIndexes = new Set(); // movie/delete-all commands, keyed `${i}:${action}`
     let voiceSaveNoteInFlight = false;
     let suppressNextNoteFocusCapture = false;
-    const VOICE_LISTENING_HINTS = ['screenshot', 'remove screenshot', 'delete screenshot', 'save note', 'period', 'comma', 'question mark', 'new line'];
+    const VOICE_LISTENING_HINTS = ['screenshot', 'movie', 'stop movie', 'delete screenshot', 'delete movie', 'delete all media', 'delete all movies', 'delete all images', 'save note', 'period', 'comma', 'question mark', 'new line'];
+    const VOICE_PROMPT_REFERENCE = [
+      { cmd: 'screenshot', desc: 'Capture a screenshot (adds alongside existing assets)' },
+      { cmd: 'movie', desc: 'Start recording a movie' },
+      { cmd: 'stop movie', desc: 'Finish the movie recording' },
+      { cmd: 'delete screenshot', desc: 'Remove the screenshot in view' },
+      { cmd: 'delete movie', desc: 'Remove the movie in view' },
+      { cmd: 'delete all movies', desc: 'Remove every movie in the note' },
+      { cmd: 'delete all images', desc: 'Remove every screenshot in the note' },
+      { cmd: 'delete all media', desc: 'Remove every asset in the note' },
+      { cmd: 'save note', desc: 'Save the note' },
+      { cmd: 'period · comma · question mark', desc: 'Spoken punctuation' },
+      { cmd: 'new line · new paragraph', desc: 'Line breaks' },
+    ];
     let voiceHintAnimationRun = 0;
     let voiceHintAnimationElement = null;
+
+    // ── What's new ──
+    // Convention: ONE entry per PR (newest first). `text` is a max 2-sentence
+    // summary; `bullets` (optional, max 5) show only in the All updates modal.
+    // Add the entry with merged:false when the PR opens; flip merged:true when
+    // it lands on main — only merged entries ever render.
+    const WHATS_NEW_ALL = [
+      {
+        id: 'pr15',
+        date: 'Sep 11',
+        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/15',
+        merged: false,
+        text: 'Notes got more flexible and voice got smarter. Save empty notes and fill them with assets later, record movies in several places at once, and drive it all by voice.',
+        bullets: [
+          'Save note is always available — empty notes show movie/image buttons to fill later',
+          'Composer and saved notes can record movies at the same time',
+          'Say “movie”, “stop movie”, “delete movie”, or “delete all media” — hover the hint for every command',
+          'Dictated text no longer auto-captures a screenshot',
+          'This What’s new banner — one update per merged PR',
+        ],
+      },
+      {
+        id: 'pr14',
+        date: 'Sep 10',
+        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/14',
+        merged: true,
+        text: 'Movie capture is here! Record movies during sessions — from the live feed or from past moments via the scrubber — right alongside screenshots.',
+        bullets: [
+          'Say “movie”, “delete movie”, or “delete all media” — hover the hint to see every voice command',
+          'Movies open in a lightbox with play/pause, scrubber, and non-destructive trimming',
+          'The same dark video toolbar appears when hovering movies on canvas',
+          'Notes can be saved empty and filled with assets later',
+          'Zip and GitHub exports include movies (mp4 when supported)',
+        ],
+      },
+    ];
+    const WHATS_NEW_UPDATES = WHATS_NEW_ALL.filter(u => u.merged);
+
+    function whatsNewDismissed() {
+      try { return localStorage.getItem('sn-whatsnew-dismissed') === (WHATS_NEW_UPDATES[0]?.id || ''); }
+      catch (_) { return false; }
+    }
+
+    function renderWhatsNewBanner() {
+      if (!WHATS_NEW_UPDATES.length || whatsNewDismissed()) return '';
+      const u = WHATS_NEW_UPDATES[0];
+      const more = WHATS_NEW_UPDATES.length - 1;
+      return `
+        <div class="whats-new" id="whatsNewBanner">
+          <img class="whats-new-avatar" src="notes/ryan-avatar.jpg" alt="Ryan">
+          <div class="whats-new-body">
+            <div class="whats-new-eyebrow">What’s new <span class="whats-new-dot">·</span> ${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+            <div class="whats-new-text">${escapeHtml(u.text)}</div>
+            ${more > 0 ? `<button type="button" class="whats-new-more" onclick="openWhatsNewModal()">+${more} more update${more === 1 ? '' : 's'}</button>` : ''}
+          </div>
+          <button type="button" class="whats-new-close" onclick="dismissWhatsNew()" title="Dismiss" aria-label="Dismiss">${icon('close', 'icon icon-sm')}</button>
+        </div>`;
+    }
+
+    function dismissWhatsNew() {
+      try { localStorage.setItem('sn-whatsnew-dismissed', WHATS_NEW_UPDATES[0]?.id || ''); } catch (_) {}
+      const b = docById('whatsNewBanner');
+      if (!b) return;
+      b.style.transition = 'opacity 220ms ease, transform 220ms ease';
+      b.style.opacity = '0';
+      b.style.transform = 'translate(-50%, -10px)';
+      setTimeout(() => b.remove(), 240);
+    }
+
+    function openWhatsNewModal() {
+      docById('whatsNewOverlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'gh-dialog-overlay';
+      overlay.id = 'whatsNewOverlay';
+      overlay.innerHTML = `
+        <div class="gh-dialog whats-new-dialog">
+          <h3>All updates</h3>
+          <div class="whats-new-list">
+            ${WHATS_NEW_UPDATES.map(u => `
+              <div class="whats-new-item">
+                <div class="whats-new-eyebrow">${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
+                <div class="whats-new-text">${escapeHtml(u.text)}</div>
+                ${Array.isArray(u.bullets) && u.bullets.length ? `<ul class="whats-new-bullets">${u.bullets.slice(0, 5).map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : ''}
+              </div>`).join('')}
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeWhatsNewModal()">Close</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeWhatsNewModal(); });
+      requestAnimationFrame(() => overlay.classList.add('in'));
+    }
+
+    function closeWhatsNewModal() {
+      const overlay = docById('whatsNewOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('in');
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => overlay.remove(), 400);
+    }
 
     // ── Init ──
     function blurActiveFieldIfClickedOutside(event) {
@@ -5906,22 +6211,27 @@
 
     async function animateVoiceListeningHint(labelElement, runId) {
       let labelIndex = 0;
+      const wrap = labelElement.closest('.voice-hint-text');
+      const setTyping = (on) => wrap?.classList.toggle('typing', on);
       while (runId === voiceHintAnimationRun && voiceCommandsVisualActive && labelElement.isConnected) {
         const label = VOICE_LISTENING_HINTS[labelIndex];
         labelElement.replaceChildren();
 
+        setTyping(true);
         for (const value of label) {
-          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) return;
+          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) { setTyping(false); return; }
           const character = document.createElement('span');
           character.className = 'voice-hint-character entering';
           character.textContent = value;
           labelElement.appendChild(character);
           await waitForVoiceHintAnimation(90);
         }
+        setTyping(false);
 
         await waitForVoiceHintAnimation(3000);
+        setTyping(true);
         while (labelElement.lastElementChild) {
-          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) return;
+          if (runId !== voiceHintAnimationRun || !voiceCommandsVisualActive || !labelElement.isConnected) { setTyping(false); return; }
           const character = labelElement.lastElementChild;
           character.classList.remove('entering');
           character.classList.add('exiting');
@@ -5929,6 +6239,7 @@
           await waitForVoiceHintAnimation(160);
           character.remove();
         }
+        setTyping(false);
 
         await waitForVoiceHintAnimation(220);
         labelIndex = (labelIndex + 1) % VOICE_LISTENING_HINTS.length;
@@ -6014,9 +6325,11 @@
       const next = formatVoiceDictationText(input.value.slice(0, start), text);
       if (!isFinal && previous && next.length < previous.length) return;
       input.setRangeText(next, start, start + previous.length, 'end');
+      // Dictated text does NOT auto-capture a screenshot — in voice mode the
+      // user picks assets explicitly ("screenshot" / "add movie"). Typed text
+      // keeps the auto-capture behaviour via onNoteFocus/onNoteInput.
       if (voiceCaptureOnFirstDictationText && next.trim()) {
         voiceCaptureOnFirstDictationText = false;
-        beginNoteScreenshotCapture().then(updateSaveNoteButtonState);
       }
       if (isFinal) {
         voiceInterimStart = null;
@@ -6037,7 +6350,12 @@
     function stripVoiceControlPhrases(text) {
       return String(text || '')
         .replace(/\bsave\s+note\b/ig, ' ')
+        .replace(/\b(?:remove|delete)\s+all\s+(?:the\s+)?(?:movies\s+and\s+images|images\s+and\s+movies|movies|images|screenshots|media|assets)\b/ig, ' ')
         .replace(/\b(?:remove|delete)\s+(?:the\s+)?screenshot\b/ig, ' ')
+        .replace(/\b(?:remove|delete)\s+(?:the\s+)?movie\b/ig, ' ')
+        .replace(/\b(?:stop|end)\s+(?:the\s+)?movie\b/ig, ' ')
+        .replace(/\b(?:add|record|start)\s+(?:a\s+|the\s+)?movie\b/ig, ' ')
+        .replace(/\bmovie\b/ig, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -6108,13 +6426,41 @@
           || removeScreenshotAcrossResults;
         const command = removeScreenshotCommand ? null : /\bscreenshot\b/i.exec(transcript);
         const saveCommand = /\bsave\s+note\b/i.test(transcript);
+        // Movie + bulk-delete commands (final results only — interims revise)
+        const deleteAllMatch = /\b(?:remove|delete)\s+all\s+(?:the\s+)?(movies\s+and\s+images|images\s+and\s+movies|movies|images|screenshots|media|assets)\b/i.exec(transcript);
+        const deleteMovieCommand = !deleteAllMatch && /\b(?:remove|delete)\s+(?:the\s+)?movie\b/i.test(transcript);
+        const stopMovieCommand = /\b(?:stop|end)\s+(?:the\s+)?movie\b/i.test(transcript);
+        // Bare "movie" starts a recording, like bare "screenshot" captures —
+        // unless the mention is part of a delete/stop phrase
+        const addMovieCommand = !deleteAllMatch && !deleteMovieCommand && !stopMovieCommand
+          && /\bmovie\b/i.test(transcript);
+        if (result.isFinal) {
+          if (deleteAllMatch && !voiceActionResultIndexes.has(`${i}:da`)) {
+            voiceActionResultIndexes.add(`${i}:da`);
+            voiceDeleteAllMedia(deleteAllMatch[1]);
+          } else if (deleteMovieCommand && !voiceActionResultIndexes.has(`${i}:dm`)) {
+            voiceActionResultIndexes.add(`${i}:dm`);
+            voiceDeleteMovie();
+          }
+          if (addMovieCommand && !voiceActionResultIndexes.has(`${i}:am`)) {
+            voiceActionResultIndexes.add(`${i}:am`);
+            voiceNoteDictationActive = true;
+            voiceCaptureOnFirstDictationText = false;
+            updateVoiceCommandControl();
+            // Append alongside existing assets, like the plus menu would
+            startComposerVideoCapture(!!pendingScreenshot);
+          } else if (stopMovieCommand && !voiceActionResultIndexes.has(`${i}:sm`)) {
+            voiceActionResultIndexes.add(`${i}:sm`);
+            if (composerVideoCapture()) stopVideoCapture('composer');
+          }
+        }
         let noteText = '';
 
         if (removeScreenshotCommand) {
           if (!voiceRemoveScreenshotResultIndexes.has(i)) {
             voiceRemoveScreenshotResultIndexes.add(i);
             if (removeScreenshotAcrossResults) removeTrailingVoiceCommandPrefix();
-            removeScreenshot();
+            voiceDeleteScreenshot();
           }
           if (voiceNoteDictationActive) {
             noteText = removeScreenshotAcrossResults
@@ -6237,6 +6583,7 @@
           voiceCommandResultIndexes.clear();
           voiceSaveResultIndexes.clear();
           voiceRemoveScreenshotResultIndexes.clear();
+          voiceActionResultIndexes.clear();
           updateVoiceCommandControl();
         };
 
@@ -6336,10 +6683,55 @@
       lastVoiceScreenshotAt = now;
       voiceScreenshotInFlight = true;
       try {
-        await retakeScreenshot(false);
+        // "screenshot" ADDS an asset — never replaces what's already in view
+        if (pendingScreenshot) {
+          addComposerShot();
+        } else {
+          await retakeScreenshot(false);
+        }
       } finally {
         voiceScreenshotInFlight = false;
       }
+    }
+
+    // "delete screenshot" / "delete movie" only act on the asset IN VIEW
+    function voiceDeleteScreenshot() {
+      const slot = activeComposerSlot();
+      if (slot && !slot.empty && !slot.recordingVideo && !shotIsVideo(slot)) removeScreenshot();
+    }
+
+    function voiceDeleteMovie() {
+      const slot = activeComposerSlot();
+      if (slot && !slot.empty && !slot.recordingVideo && shotIsVideo(slot)) removeScreenshot();
+    }
+
+    // "delete all movies/images/media" clears matching composer assets
+    function voiceDeleteAllMedia(which) {
+      const w = String(which || '').toLowerCase();
+      const dropMovies = /movie|media|asset/.test(w) || /movies\s+and\s+images|images\s+and\s+movies/.test(w);
+      const dropImages = /image|screenshot|media|asset/.test(w) || /movies\s+and\s+images|images\s+and\s+movies/.test(w);
+      const keep = composerShots.filter(s => {
+        if (!s || s.empty) return false;
+        if (s.recordingVideo) return true; // never nuke an in-flight recording
+        return shotIsVideo(s) ? !dropMovies : !dropImages;
+      });
+      if (keep.length === composerShots.filter(s => s && !s.empty).length && keep.length) return;
+      if (!keep.length) {
+        resetComposerShots();
+        screenshotRemoved = true;
+        const previewEl = docById('screenshotPreview');
+        const previewImg = docById('screenshotPreviewImg');
+        const previewTimestamp = docById('screenshotPreviewTimestamp');
+        if (previewEl) previewEl.classList.remove('has-image', 'has-video', 'saving-out', 'capturing-image');
+        if (previewImg) previewImg.src = '';
+        if (previewTimestamp) previewTimestamp.innerHTML = '';
+      } else {
+        composerShots = keep;
+        composerShotIndex = Math.min(composerShotIndex, composerShots.length - 1);
+        syncComposerAlias();
+        renderComposerShot();
+      }
+      updateSaveNoteButtonState();
     }
 
     // ── Screenshot ──
@@ -6425,7 +6817,7 @@
     async function beginNoteScreenshotCapture() {
       if (!isRecording || pendingScreenshot || screenshotRemoved) return pendingScreenshot;
       // Never capture over a movie that is recording or already captured
-      if (videoCapture) return null;
+      if (composerVideoCapture()) return null;
       // A deliberately added empty slot only fills via its Take screenshot button
       const autoSlot = activeComposerSlot();
       if (autoSlot?.recordingVideo || (autoSlot && !autoSlot.empty)) return null;
@@ -6499,9 +6891,10 @@
       const input = docById('noteInput');
       const button = docById('saveNoteBtn');
       if (!button) return;
-      const hasText = !!input?.value.trim();
-      const hasScreenshot = composerImageCount() > 0 && !screenshotRemoved;
-      button.disabled = !!videoCapture || !(hasText || hasScreenshot);
+      // Save is always available during recording — empty notes are allowed
+      // (placeholder cards to fill with assets later). Only an in-flight
+      // COMPOSER movie capture blocks saving; saved-note captures don't.
+      button.disabled = !!composerVideoCapture();
     }
 
     async function retakeScreenshot(focusNoteInput = true) {
@@ -6790,16 +7183,15 @@
     }
 
     async function addNote() {
-      if (videoCapture) return; // finish the movie first
+      if (composerVideoCapture()) return; // finish the composer movie first
       const input = docById('noteInput');
       const text = input.value.trim();
 
-      // Resolve every filled slot's upload (multi-image notes)
+      // Resolve every filled slot's upload (multi-image notes). Note: no
+      // implicit capture here — focusing the input already captures, and an
+      // untouched composer saves an EMPTY note (fill with assets later).
       const filledShots = [];
       if (!screenshotRemoved) {
-        if (!composerImageCount()) {
-          await beginNoteScreenshotCapture();
-        }
         for (const slot of composerShots) {
           if (!slot || slot.empty || slot.recordingVideo) continue;
           const u = await slot.uploadPromise;
@@ -6811,9 +7203,6 @@
         }
       }
       const url = filledShots[0]?.url || null;
-
-      // Allow image-only or text-only notes, but don't save a completely empty note.
-      if (!text && !url) return;
 
       const note = {
         text,
@@ -7171,7 +7560,12 @@
     // clip from the live share. The clip is uploaded as webm; trims are stored
     // as non-destructive metadata ({ trimStartMs, trimEndMs }) respected by all
     // players (composer, saved notes, lightbox, canvas).
-    let videoCapture = null; // { mode:'composer'|'note', slot|shot, note, rec, chunks, startedAt, ... }
+    // Concurrent captures: the composer and any number of saved notes can each
+    // record a movie at the same time (each gets its own cloned track/recorder)
+    let videoCaptures = []; // [{ mode:'composer'|'note', slot|shot, note, rec, chunks, startedAt, ... }]
+
+    function composerVideoCapture() { return videoCaptures.find(c => c.mode === 'composer') || null; }
+    function noteVideoCapture(note) { return videoCaptures.find(c => c.mode === 'note' && c.note === note) || null; }
 
     // Movies are detected by kind OR by URL — shots can lose their kind marker
     // (e.g. a failed upload drops note.screenshots at persist and the array is
@@ -7186,7 +7580,7 @@
     function slotIsVideo(s) { return shotIsVideo(s); }
 
     function beginVideoCapture(target) {
-      if (!mediaStream || videoCapture) return false;
+      if (!mediaStream) return false;
       if (!window.MediaRecorder) { showToast('Movie capture is not supported in this browser'); return false; }
       let rec;
       // Movies record exactly what the recording screen shows — the live share
@@ -7234,7 +7628,9 @@
       // the playback element (scrubbing is inherently a foreground activity).
       if (window.MediaStreamTrackProcessor && window.MediaStreamTrackGenerator && window.VideoFrame) {
         try {
-          const liveTrack = mediaStream.getVideoTracks()[0];
+          // Clone the track per capture so concurrent recordings don't
+          // contend for the same processor
+          const liveTrack = mediaStream.getVideoTracks()[0].clone();
           const processor = new MediaStreamTrackProcessor({ track: liveTrack });
           const generator = new MediaStreamTrackGenerator({ kind: 'video' });
           const writer = generator.writable.getWriter();
@@ -7290,6 +7686,7 @@
             stopped = true;
             clearInterval(scrubPump);
             try { writer.close(); } catch (_) {}
+            try { liveTrack.stop(); } catch (_) {}
           };
         } catch (e) {
           console.warn('[screen-notes] insertable-streams capture unavailable — falling back to canvas', e);
@@ -7344,7 +7741,7 @@
       rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
       rec.onerror = (e) => console.warn('[screen-notes] movie recorder error', e?.error || e);
       rec.start(500);
-      videoCapture = {
+      videoCaptures.push({
         ...target, rec, chunks, mime, cleanup,
         // Players size themselves from these before the container's late metadata
         vw: recW, vh: recH,
@@ -7352,25 +7749,36 @@
         startedAt: Date.now(),
         capturedTimestampMs: currentCaptureTimestampMs(),
         timer: setInterval(updateVideoCaptureTimer, 250),
-      };
-      // Starting a capture on a paused scrubbed feed plays it so frames advance
-      if (scrubActive && !scrubPlaying) startScrubPlayback();
+      });
+      // Note: starting a capture never touches the scrubber's play state —
+      // a paused feed records paused (frozen frames) until the user hits play
       updateVideoCaptureTimer();
       updateSaveNoteButtonState();
       return true;
     }
 
     function updateVideoCaptureTimer() {
-      if (!videoCapture) return;
-      const t = formatDuration(Date.now() - videoCapture.startedAt);
+      if (!videoCaptures.length) return;
       const docs = [document];
       if (pipOpen()) { try { docs.push(pipWindow.document); } catch (_) {} }
-      docs.forEach(d => d.querySelectorAll('.video-stop-timer').forEach(el => { el.textContent = t; }));
+      videoCaptures.forEach(vc => {
+        const t = formatDuration(Date.now() - vc.startedAt);
+        if (vc.mode === 'composer') {
+          docs.forEach(d => d.querySelectorAll('.screenshot-preview .video-stop-timer')
+            .forEach(el => { el.textContent = t; }));
+        } else {
+          const idx = currentNotes.indexOf(vc.note);
+          if (idx < 0) return;
+          const key = noteKeyFor(vc.note, idx);
+          docs.forEach(d => d.querySelectorAll(`.note-card[data-note-key="${CSS.escape(key)}"] .video-stop-timer`)
+            .forEach(el => { el.textContent = t; }));
+        }
+      });
     }
 
     // Movie circle button (empty state) and the composer plus-menu both land here
     function startComposerVideoCapture(fromPlus = false) {
-      if (!isRecording || videoCapture) return;
+      if (!isRecording || composerVideoCapture()) return;
       let slot;
       if (fromPlus) {
         slot = { empty: true, userAdded: true, recordingVideo: true };
@@ -7397,9 +7805,9 @@
 
     // Plus-menu → Movie on a saved note card
     function startNoteVideoCapture(index) {
-      if (!isRecording || videoCapture) return;
+      if (!isRecording) return;
       const note = currentNotes[index];
-      if (!note) return;
+      if (!note || noteVideoCapture(note)) return;
       const shots = ensureNoteShotArray(note);
       const shot = { recordingVideo: true };
       const insertAt = shots.length ? focusedShotIndex(note, index) + 1 : 0;
@@ -7410,10 +7818,15 @@
       updateVideoCaptureTimer();
     }
 
-    async function stopVideoCapture() {
-      const vc = videoCapture;
+    // target: 'composer', a note index, a capture object, or undefined (first)
+    async function stopVideoCapture(target) {
+      let vc = null;
+      if (target === 'composer') vc = composerVideoCapture();
+      else if (typeof target === 'number') vc = noteVideoCapture(currentNotes[target]);
+      else if (target && typeof target === 'object') vc = videoCaptures.includes(target) ? target : null;
+      if (!vc) vc = videoCaptures[0] || null;
       if (!vc) return;
-      videoCapture = null;
+      videoCaptures = videoCaptures.filter(c => c !== vc);
       clearInterval(vc.timer);
       const stopped = new Promise(res => {
         vc.rec.onstop = res;
@@ -7422,8 +7835,7 @@
       try { vc.rec.stop(); } catch (_) {}
       await stopped;
       try { vc.cleanup?.(); } catch (_) {}
-      // Past-time captures drove the scrubbed playback — leave it paused where it ended
-      if (vc.fromScrub && scrubActive) pauseScrubPlayback();
+      // Stopping a capture never touches the scrubber's play state either
       const durationMs = Date.now() - vc.startedAt;
       const blob = new Blob(vc.chunks, { type: vc.mime });
       if (!blob.size) {
@@ -7531,14 +7943,44 @@
 
     // Discard an in-flight capture (session ended, etc.)
     function cancelVideoCapture() {
-      const vc = videoCapture;
-      if (!vc) return;
-      videoCapture = null;
-      clearInterval(vc.timer);
-      try { vc.cleanup?.(); } catch (_) {}
-      try { vc.rec.stop(); } catch (_) {}
-      removeVideoCapturePlaceholder(vc);
+      // Cancels ALL in-flight captures (used at session end)
+      const list = videoCaptures;
+      videoCaptures = [];
+      list.forEach(vc => {
+        clearInterval(vc.timer);
+        try { vc.cleanup?.(); } catch (_) {}
+        try { vc.rec.stop(); } catch (_) {}
+        removeVideoCapturePlaceholder(vc);
+      });
       updateSaveNoteButtonState();
+    }
+
+    // ── Voice prompts reference popover (hover on the animated hint) ──
+    let voicePromptsEl = null;
+    function showVoicePrompts(event) {
+      hideVoicePrompts();
+      const anchor = event.currentTarget;
+      const doc = anchor.ownerDocument;
+      const win = doc.defaultView || window;
+      const pop = doc.createElement('div');
+      pop.className = 'session-menu-popover voice-prompts-popover';
+      pop.innerHTML = `<div class="voice-prompts-title">Voice commands</div>`
+        + VOICE_PROMPT_REFERENCE.map(p =>
+            `<div class="voice-prompt-row"><span class="vp-cmd">“${p.cmd}”</span></div>`
+          ).join('');
+      doc.body.appendChild(pop);
+      const r = anchor.getBoundingClientRect();
+      let left = r.left;
+      let top = r.bottom + 8;
+      if (top + pop.offsetHeight > win.innerHeight - 8) top = r.top - pop.offsetHeight - 8;
+      if (left + pop.offsetWidth > win.innerWidth - 8) left = Math.max(8, win.innerWidth - 8 - pop.offsetWidth);
+      pop.style.left = `${left}px`;
+      pop.style.top = `${top}px`;
+      voicePromptsEl = pop;
+    }
+    function hideVoicePrompts() {
+      voicePromptsEl?.remove();
+      voicePromptsEl = null;
     }
 
     // ── Movie/Image plus-button popover ──
@@ -10525,6 +10967,7 @@
       // Empty state
       main.innerHTML = `
         <div class="grid-bg" id="gridBg">${renderHomeHiddenNotes()}<svg class="home-draw-svg" id="homeDrawSvg"></svg></div>
+        ${renderWhatsNewBanner()}
         <div class="empty-state" id="emptyState">
           <div class="empty-state-icon">${icon('camera', 'logo-icon')}</div>
           <h2>Screen Notes</h2>
@@ -10787,7 +11230,7 @@
                           <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="startComposerVideoCapture()" title="Record movie">${icon('movie', 'icon')}</button>
                           <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="retakeScreenshot()" title="Take screenshot">${icon('image', 'icon')}</button>
                         </div>
-                        <button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture()" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button>
+                        <button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture('composer')" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button>
                       </div>
                       <div class="screenshot-preview-timestamp" id="screenshotPreviewTimestamp"></div>
                     </div>
@@ -10818,9 +11261,11 @@
                       class="voice-listening-hint ${voiceCommandsVisualActive ? 'visible' : ''}"
                       id="voiceListeningHint"
                       aria-hidden="true"
-                    >Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></div>
+                     onmouseenter="showVoicePrompts(event)"
+                     onmouseleave="hideVoicePrompts()"
+                    ><span class="voice-hint-text">Say&nbsp;<span class="voice-listening-label" id="voiceListeningLabel"></span></span></div>
                     <div class="note-input-button-row">
-                      <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" title="Save note (⌘↩)" disabled>
+                      <button class="btn btn-primary save-note-inline" id="saveNoteBtn" onclick="addNote()" title="Save note (⌘↩)">
                         Save note <span style="opacity:0.6;font-size:11px;">⌘↵</span>
                       </button>
                       <button
@@ -10890,6 +11335,8 @@
             ? (focusedShot._mkPreview || focusedShot.url)
             : (note._mkPreview || note.screenshotUrl || note.screenshot);
         const hasMedia = !!(imgSrc || videoSrc || recordingShot);
+        // Asset-less notes show the standard empty-state capture buttons
+        const emptyMedia = !hasMedia && isRecording;
         const enterClass = note.createdAt && note.createdAt === enteringNoteCreatedAt ? ' note-card-entering' : '';
         const noteKey = note.createdAt || `note-${realIndex}`;
         const carousel = shots && shots.length > 1 ? `
@@ -10897,7 +11344,7 @@
               <button type="button" class="screenshot-preview-btn shot-nav-btn shot-nav-next note-shot-nav" onclick="event.stopPropagation(); navigateNoteShot(${realIndex}, 1)"${fIdx === shots.length - 1 ? ' style="display:none"' : ''} title="Next screenshot">${icon('chevron', 'icon icon-sm shot-chevron-right')}</button>
               <div class="shot-dots note-shot-dots"></div>` : '';
         const mediaHtml = recordingShot
-          ? `<div class="note-shot-recording"><button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture()" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button></div>`
+          ? `<div class="note-shot-recording"><button type="button" class="btn btn-ghost screenshot-empty-action video-stop-btn" onclick="stopVideoCapture(${realIndex})" title="Stop movie">${icon('stop', 'icon icon-sm')}<span class="video-stop-timer">00:00</span></button></div>`
           : isVideoShot
             ? `<video class="note-card-screenshot"
                  src="${videoSrc}"
@@ -10912,8 +11359,18 @@
                  alt="Screenshot"
                  onclick="openMarkupLightbox(${realIndex})"
                  loading="lazy">`;
+        const emptyMediaHtml = emptyMedia ? `
+            <div class="note-card-screenshot-wrap">
+              <div class="note-shot-empty">
+                <div class="capture-circle-row">
+                  <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="event.stopPropagation(); startNoteVideoCapture(${realIndex})" title="Record movie">${icon('movie', 'icon')}</button>
+                  <button type="button" class="screenshot-preview-btn capture-circle-btn" onclick="event.stopPropagation(); addNoteShot(${realIndex})" title="Take screenshot">${icon('image', 'icon')}</button>
+                </div>
+              </div>
+            </div>` : '';
         return `
-          <div class="note-card${hasMedia ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
+          <div class="note-card${hasMedia || emptyMedia ? '' : ' note-card-text-only'}${enterClass}" data-note-key="${escapeHtml(noteKey)}">
+            ${emptyMediaHtml}
             ${hasMedia ? `<div class="note-card-screenshot-wrap${recordingShot ? ' video-recording' : ''}">
               ${mediaHtml}
               <div class="screenshot-preview-timestamp note-shot-timestamp"><span>${escapeHtml(formatDuration((focusedShot ? focusedShot.timestamp : note.timestamp) || 0))}</span></div>
@@ -10926,6 +11383,7 @@
             </div>` : ''}
             <div class="note-card-body">
               <textarea class="recording-note-edit"
+                        placeholder="Add note"
                         rows="1"
                         oninput="autoGrowTextarea(this)"
                         onfocus="autoGrowTextarea(this)"
@@ -11661,6 +12119,8 @@
         const shots = noteShots(note);
         const shotCount = shots?.length || ((note.screenshotUrl || note.screenshot) ? 1 : 0);
         const hasScreenshot = shotCount > 0;
+        // Notes with no assets AND no text never land on the canvas
+        if (!hasScreenshot && !(note.text || '').trim()) return;
         // Estimated footprint. Movies with known dimensions estimate at their
         // real aspect; everything else assumes ~16:10 in cardH height.
         const shotW = (s) => (s?.kind === 'video' && s.vw && s.vh)
