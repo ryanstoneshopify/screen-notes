@@ -2490,6 +2490,7 @@
     }
     .gh-dialog-overlay.in { opacity: 1; }
     .gh-dialog {
+      position: relative;
       width: 380px;
       max-width: calc(100vw - 48px);
       background: var(--floating-bg);
@@ -2513,6 +2514,24 @@
       color: var(--ink-black);
       margin: 0;
     }
+    .gh-dialog-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: none;
+      color: var(--graphite);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+    .gh-dialog-close:hover { background: var(--surface-hover); color: var(--ink-black); }
+    .gh-dialog-close .icon { width: 15px; height: 15px; }
     .gh-dialog label {
       font-size: 12px;
       color: var(--graphite);
@@ -3579,6 +3598,8 @@
     .whats-new {
       position: absolute;
       top: 24px;
+      /* Animate repositioning (e.g. narrow viewports) instead of jumping */
+      transition: top 300ms var(--ease-out);
       left: 50%;
       transform: translateX(-50%);
       z-index: 30;
@@ -3611,6 +3632,30 @@
       pointer-events: none;
     }
     .whats-new > * { position: relative; z-index: 1; }
+    /* Toast-style enter/exit from the top of the screen, 400ms. Keyframes (not
+       transitions) so no lingering filter kills the glass backdrop blur. */
+    .whats-new.whats-new-hidden {
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 48px)) scale(0.8);
+      pointer-events: none;
+    }
+    @keyframes whatsNewIn {
+      from { transform: translate(-50%, calc(-100% - 48px)) scale(0.8); filter: blur(8px); opacity: 0; }
+      to { transform: translate(-50%, 0) scale(1); filter: blur(0); opacity: 1; }
+    }
+    @keyframes whatsNewOut {
+      from { transform: translate(-50%, 0) scale(1); filter: blur(0); opacity: 1; }
+      to { transform: translate(-50%, calc(-100% - 48px)) scale(0.8); filter: blur(8px); opacity: 0; }
+    }
+    .whats-new.entering { animation: whatsNewIn 400ms var(--ease-out-spring) backwards; }
+    /* Narrow viewports: drop below the floating top-bar elements */
+    @media (max-width: 900px) {
+      .whats-new { top: 72px; }
+    }
+    .whats-new.leaving {
+      animation: whatsNewOut 400ms var(--ease-out) forwards;
+      pointer-events: none;
+    }
     .whats-new-avatar {
       width: 44px;
       height: 44px;
@@ -4551,7 +4596,7 @@
         id: 'pr15',
         date: 'Sep 11',
         pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/15',
-        merged: false,
+        merged: true,
         text: 'Notes got more flexible and voice got smarter. Save empty notes and fill them with assets later, record movies in several places at once, and drive it all by voice.',
         bullets: [
           'Save note is always available — empty notes show movie/image buttons to fill later',
@@ -4588,7 +4633,7 @@
       const u = WHATS_NEW_UPDATES[0];
       const more = WHATS_NEW_UPDATES.length - 1;
       return `
-        <div class="whats-new" id="whatsNewBanner">
+        <div class="whats-new whats-new-hidden" id="whatsNewBanner">
           <img class="whats-new-avatar" src="notes/ryan-avatar.jpg" alt="Ryan">
           <div class="whats-new-body">
             <div class="whats-new-eyebrow">What’s new <span class="whats-new-dot">·</span> ${escapeHtml(u.date)} <span class="whats-new-dot">·</span> <a class="whats-new-pr" href="${u.pr}" target="_blank" rel="noopener">View PR</a></div>
@@ -4603,10 +4648,28 @@
       try { localStorage.setItem('sn-whatsnew-dismissed', WHATS_NEW_UPDATES[0]?.id || ''); } catch (_) {}
       const b = docById('whatsNewBanner');
       if (!b) return;
-      b.style.transition = 'opacity 220ms ease, transform 220ms ease';
-      b.style.opacity = '0';
-      b.style.transform = 'translate(-50%, -10px)';
-      setTimeout(() => b.remove(), 240);
+      b.classList.add('leaving');
+      setTimeout(() => b.remove(), 420);
+    }
+
+    // Slide the banner in from the top once the page has fully loaded
+    // (toast-style enter, 400ms). Only animates once per page load.
+    let whatsNewAnimated = false;
+    function requestWhatsNewEntrance() {
+      const banner = docById('whatsNewBanner');
+      if (!banner) return;
+      if (whatsNewAnimated) { banner.classList.remove('whats-new-hidden'); return; }
+      const start = () => {
+        if (whatsNewAnimated) return;
+        whatsNewAnimated = true;
+        const el = docById('whatsNewBanner');
+        if (!el) return;
+        el.classList.remove('whats-new-hidden');
+        el.classList.add('entering');
+        setTimeout(() => el.classList.remove('entering'), 450);
+      };
+      if (document.readyState === 'complete') setTimeout(start, 150);
+      else window.addEventListener('load', () => setTimeout(start, 150), { once: true });
     }
 
     function openWhatsNewModal() {
@@ -4616,6 +4679,7 @@
       overlay.id = 'whatsNewOverlay';
       overlay.innerHTML = `
         <div class="gh-dialog whats-new-dialog">
+          <button type="button" class="gh-dialog-close" onclick="closeWhatsNewModal()" title="Close" aria-label="Close">${icon('close', 'icon icon-sm')}</button>
           <h3>All updates</h3>
           <div class="whats-new-list">
             ${WHATS_NEW_UPDATES.map(u => `
@@ -10311,6 +10375,7 @@
       overlay.id = 'ghDialogOverlay';
       overlay.innerHTML = `
         <div class="gh-dialog">
+          <button type="button" class="gh-dialog-close" onclick="closeGithubExportDialog()" title="Close" aria-label="Close">${icon('close', 'icon icon-sm')}</button>
           <h3>Export ${totalCount} note${totalCount === 1 ? '' : 's'} to GitHub</h3>
           <div>
             <label>Resource owner</label>
@@ -10983,6 +11048,7 @@
         </div>
       `;
       renderHomeDrawSvg();
+      requestWhatsNewEntrance();
       updateTopBar(null);
     }
 
