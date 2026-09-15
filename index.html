@@ -12061,7 +12061,10 @@
             }
             const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20, C.text) : '';
             const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
-            const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imagesSvg}${noteText}<text x="${x + 14}" y="${timeY + 16}" fill="${C.badgeText}" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
+            // Timestamps only export when enabled in display settings (same rule as the UI)
+            const timeSvg = getDisplaySettings().showTimestamps
+              ? `<text x="${x + 14}" y="${timeY + 16}" fill="${C.badgeText}" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>` : '';
+            const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imagesSvg}${noteText}${timeSvg}`;
             parts.push(namedSvgGroup(item, content));
             continue;
           }
@@ -12076,7 +12079,9 @@
           });
           const noteText = note.text ? wrapSvgText(note.text, x + 14, y + item.h + 28, w - 28, 14, 20, C.text) : '';
           const timeY = y + item.h + 48 + (note.text ? Math.max(0, Math.ceil(String(note.text).length / Math.max(8, Math.floor((w - 28) / (14 * 0.55)))) - 1) * 20 : 0);
-          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imageSvg}${noteText}<text x="${x + 14}" y="${timeY + 16}" fill="${C.badgeText}" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>`;
+          const timeSvg = getDisplaySettings().showTimestamps
+            ? `<text x="${x + 14}" y="${timeY + 16}" fill="${C.badgeText}" font-family="Inter, Arial, sans-serif" font-size="12">${escapeXml(timestamp)}</text>` : '';
+          const content = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.cardBg}" stroke="${C.cardBorder}"/>${imageSvg}${noteText}${timeSvg}`;
           parts.push(namedSvgGroup(item, content));
         }
       }
