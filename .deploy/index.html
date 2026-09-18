@@ -2190,17 +2190,7 @@
       will-change: transform;
       z-index: 1;
     }
-    /* Invisible world-anchored hit tiles: QuickComments pins on empty canvas
-       anchor to the nearest tile (moves with pan/zoom, small offset lever).
-       Need pointer-events so elementsFromPoint finds them; canvas handlers are
-       unaffected since they resolve targets via closest(). */
-    .canvas-comment-tile {
-      position: absolute;
-      width: 1024px;
-      height: 1024px;
-      z-index: 0;
-      background: transparent;
-    }
+
 
     .canvas-item { position: absolute; cursor: pointer; box-sizing: border-box; }
     /* Multi-image note cards: images side by side, note spans below */
@@ -12478,44 +12468,11 @@
       if (!world) return;
       world.style.transform = `translate(${canvas.x}px, ${canvas.y}px) scale(${canvas.scale})`;
 
-      world.innerHTML = renderCommentTiles()
-        + canvas.items.map(item => renderCanvasItem(item)).join('')
-        + '<div class="group-selection-box" id="groupSelectionBox"><div class="resize-handle" data-group-handle="true"></div></div>';
+      world.innerHTML = canvas.items.map(item => renderCanvasItem(item)).join('') + '<div class="group-selection-box" id="groupSelectionBox"><div class="resize-handle" data-group-handle="true"></div></div>';
       updateZoomIndicator();
       updateCanvasGrid();
       updateGroupSelectionBox();
       renderRemoteCursors();
-    }
-
-    // ── QuickComments anchor tiles ──
-    // Pins dropped on empty canvas need a WORLD-anchored element (the world div
-    // is 0×0, so clicks fell through to the fixed viewport and ignored panning).
-    // QuickComments stores pins as pixel offsets from the anchor's top-left, so
-    // the anchor must be SMALL — one huge surface put its corner 100k px away
-    // and zooming flung bubbles around. A grid of 1024px tiles with stable
-    // world-coordinate ids keeps every pin within ~1 tile of its anchor, the
-    // same lever arm as a note card.
-    const COMMENT_TILE = 1024;
-    function renderCommentTiles() {
-      const M = 2048; // margin beyond content
-      let minX = -M, minY = -M, maxX = M * 2, maxY = M * 2;
-      canvas.items.forEach(it => {
-        minX = Math.min(minX, (it.x || 0) - M);
-        minY = Math.min(minY, (it.y || 0) - M);
-        maxX = Math.max(maxX, (it.x || 0) + (it.w || 960) + M);
-        maxY = Math.max(maxY, (it.y || 0) + (it.h || 640) + M);
-      });
-      const c0 = Math.floor(minX / COMMENT_TILE), c1 = Math.ceil(maxX / COMMENT_TILE);
-      const r0 = Math.floor(minY / COMMENT_TILE), r1 = Math.ceil(maxY / COMMENT_TILE);
-      // Safety cap — pathological spans skip tiling rather than flooding the DOM
-      if ((c1 - c0) * (r1 - r0) > 900) return '';
-      let html = '';
-      for (let r = r0; r < r1; r++) {
-        for (let c = c0; c < c1; c++) {
-          html += `<div class="canvas-comment-tile" id="cs_${c}_${r}" style="left:${c * COMMENT_TILE}px;top:${r * COMMENT_TILE}px;"></div>`;
-        }
-      }
-      return html;
     }
 
     function renderCanvasItem(item) {
