@@ -13606,45 +13606,66 @@
     // ── Frame-by-frame zoom (N / ⇧N) ──
     // Steps through canvas cards in reading order (top rows first, left to
     // right) and zooms each to fill the screen, Figma-style.
+    const FRAME_MEDIA_SELECTOR = '.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video, .ci-image-img-wrap img, .ci-image-img-wrap video';
+
     function zoomToFrame(delta) {
       const frames = canvas.items.filter(i => i.type !== 'stroke');
       if (!frames.length) return;
+      const viewport = docById('canvasViewport');
+      if (!viewport) return;
+      const rect = viewport.getBoundingClientRect();
       // Reading order: items whose vertical positions roughly overlap count as
       // one row (arranged canvases share exact y values)
       const ordered = [...frames].sort((a, b) =>
         Math.abs(a.y - b.y) < 100 ? a.x - b.x : a.y - b.y);
-      // A selected frame is the reference point — otherwise wherever we left off
+      // Flat list of stops: one per image/movie inside each frame (in order),
+      // or the frame itself when it holds no media — N steps image by image,
+      // flowing into the next frame after the last one
+      const stops = [];
+      ordered.forEach(f => {
+        const el = document.querySelector(`.canvas-item[data-id="${f.id}"]`);
+        const medias = el ? [...el.querySelectorAll(FRAME_MEDIA_SELECTOR)] : [];
+        if (medias.length) medias.forEach((_, mi) => stops.push({ item: f, mi }));
+        else stops.push({ item: f, mi: -1 });
+      });
+      if (!stops.length) return;
+      // A freshly selected frame becomes the reference: N enters at its first
+      // image, ⇧N exits backwards from it. Otherwise continue from the last stop.
       const selId = canvas.selectedIds?.length === 1 ? canvas.selectedIds[0] : null;
-      const refId = selId && ordered.some(i => i.id === selId) ? selId : canvas.zoomFrameId;
-      let idx = ordered.findIndex(i => i.id === refId);
-      idx = idx === -1
-        ? (delta > 0 ? 0 : ordered.length - 1)
-        : (idx + delta + ordered.length) % ordered.length;
-      const item = ordered[idx];
+      let cur = -1;
+      if (selId && selId !== canvas.zoomFrameId && stops.some(s => s.item.id === selId)) {
+        const firstIdx = stops.findIndex(s => s.item.id === selId);
+        cur = delta > 0 ? firstIdx - 1 : firstIdx;
+      } else {
+        cur = stops.findIndex(s => s.item.id === canvas.zoomFrameId && s.mi === (canvas.zoomShotIdx ?? -1));
+        if (cur === -1 && canvas.zoomFrameId) cur = stops.findIndex(s => s.item.id === canvas.zoomFrameId);
+      }
+      const nextIdx = cur === -1
+        ? (delta > 0 ? 0 : stops.length - 1)
+        : (cur + delta + stops.length) % stops.length;
+      const stop = stops[nextIdx];
+      const item = stop.item;
       canvas.zoomFrameId = item.id;
+      canvas.zoomShotIdx = stop.mi;
       setSelectedItems([item.id]);
-      const viewport = docById('canvasViewport');
-      if (!viewport) return;
-      const rect = viewport.getBoundingClientRect();
-      // Zoom to the frame's FIRST image/movie (frames can hold several), but
-      // keep the full note in view vertically — the target spans the first
-      // image's width and the card's full height (image + note text), zooming
-      // out as needed. Frames without media zoom as a whole.
+      // Target spans the stop's image width and the card's full height (image
+      // plus note text stays in view, zooming out as needed); no-media frames
+      // zoom as a whole
       const frameBounds = getRenderedItemBounds(item);
       let b = frameBounds;
-      const el = document.querySelector(`.canvas-item[data-id="${item.id}"]`);
-      const media = el?.querySelector('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video, .ci-image-img-wrap img, .ci-image-img-wrap video');
-      if (media) {
-        const mr = media.getBoundingClientRect();
-        if (mr.width > 4 && mr.height > 4) {
-          const mx1 = (mr.left - rect.left - canvas.x) / canvas.scale;
-          const mw = mr.width / canvas.scale;
-          b = {
-            x1: mx1,
-            y1: frameBounds.y1,
-            w: mw,
-            h: frameBounds.h,
-          };
+      if (stop.mi >= 0) {
+        const el = document.querySelector(`.canvas-item[data-id="${item.id}"]`);
+        const media = el ? el.querySelectorAll(FRAME_MEDIA_SELECTOR)[stop.mi] : null;
+        if (media) {
+          const mr = media.getBoundingClientRect();
+          if (mr.width > 4 && mr.height > 4) {
+            b = {
+              x1: (mr.left - rect.left - canvas.x) / canvas.scale,
+              y1: frameBounds.y1,
+              w: mr.width / canvas.scale,
+              h: frameBounds.h,
+            };
+          }
         }
       }
       const pad = 48;
