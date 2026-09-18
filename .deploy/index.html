@@ -2190,6 +2190,19 @@
       will-change: transform;
       z-index: 1;
     }
+    /* Invisible world-sized hit area: QuickComments pins on empty canvas
+       anchor here (moves with pan/zoom) instead of the fixed viewport.
+       Needs pointer-events so elementsFromPoint can find it; canvas handlers
+       are unaffected since they resolve targets via closest(). */
+    .canvas-comment-surface {
+      position: absolute;
+      left: -100000px;
+      top: -100000px;
+      width: 200000px;
+      height: 200000px;
+      z-index: 0;
+      background: transparent;
+    }
 
     .canvas-item { position: absolute; cursor: pointer; box-sizing: border-box; }
     /* Multi-image note cards: images side by side, note spans below */
@@ -12467,7 +12480,12 @@
       if (!world) return;
       world.style.transform = `translate(${canvas.x}px, ${canvas.y}px) scale(${canvas.scale})`;
 
-      world.innerHTML = canvas.items.map(item => renderCanvasItem(item)).join('') + '<div class="group-selection-box" id="groupSelectionBox"><div class="resize-handle" data-group-handle="true"></div></div>';
+      // The comment surface gives QuickComments a WORLD-anchored element for
+      // pins dropped on empty canvas — the world div itself is 0×0, so those
+      // clicks used to anchor to the fixed viewport and ignore panning
+      world.innerHTML = '<div class="canvas-comment-surface" id="canvasCommentSurface"></div>'
+        + canvas.items.map(item => renderCanvasItem(item)).join('')
+        + '<div class="group-selection-box" id="groupSelectionBox"><div class="resize-handle" data-group-handle="true"></div></div>';
       updateZoomIndicator();
       updateCanvasGrid();
       updateGroupSelectionBox();
