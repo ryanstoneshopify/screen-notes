@@ -13622,7 +13622,22 @@
       const viewport = docById('canvasViewport');
       if (!viewport) return;
       const rect = viewport.getBoundingClientRect();
-      const b = getRenderedItemBounds(item);
+      // Zoom to the frame's FIRST image/movie (frames can hold several);
+      // frames without media zoom as a whole
+      let b = getRenderedItemBounds(item);
+      const el = document.querySelector(`.canvas-item[data-id="${item.id}"]`);
+      const media = el?.querySelector('.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video, .ci-image-img-wrap img, .ci-image-img-wrap video');
+      if (media) {
+        const mr = media.getBoundingClientRect();
+        if (mr.width > 4 && mr.height > 4) {
+          b = {
+            x1: (mr.left - rect.left - canvas.x) / canvas.scale,
+            y1: (mr.top - rect.top - canvas.y) / canvas.scale,
+            w: mr.width / canvas.scale,
+            h: mr.height / canvas.scale,
+          };
+        }
+      }
       const pad = 48;
       const scale = Math.min(4,
         (rect.width - pad * 2) / Math.max(1, b.w),
