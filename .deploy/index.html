@@ -688,10 +688,7 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background-image:
-        linear-gradient(var(--border-soft) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
-      background-size: 32px 32px;
+      /* Grid texture removed — the mask still drives the hidden-note reveal */
       -webkit-mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0.99) 10%, rgba(0,0,0,0.96) 20%, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.48) 60%, rgba(0,0,0,0.31) 70%, rgba(0,0,0,0.16) 80%, rgba(0,0,0,0.05) 90%, rgba(0,0,0,0) 100%);
       mask-image: radial-gradient(375px circle at var(--mx, 50%) var(--my, 50%), rgba(0,0,0,1) 0%, rgba(0,0,0,0.99) 10%, rgba(0,0,0,0.96) 20%, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.48) 60%, rgba(0,0,0,0.31) 70%, rgba(0,0,0,0.16) 80%, rgba(0,0,0,0.05) 90%, rgba(0,0,0,0) 100%);
     }
@@ -11716,6 +11713,8 @@
               <div class="ch-row"><span>Select</span><span class="ch-keys"><kbd>drag empty</kbd></span></div>
               <div class="ch-row"><span>Multi-select</span><span class="ch-keys"><kbd>shift</kbd> <kbd>click</kbd></span></div>
               <div class="ch-row"><span>Nudge layers</span><span class="ch-keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div>
+              <div class="ch-row"><span>Zoom to next frame</span><span class="ch-keys"><kbd>N</kbd></span></div>
+              <div class="ch-row"><span>Zoom to previous frame</span><span class="ch-keys"><kbd>⇧</kbd> <kbd>N</kbd></span></div>
               <div class="ch-row"><span>Copy layers</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>C</kbd></span></div>
               <div class="ch-row"><span>Paste layers</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>V</kbd></span></div>
               <div class="ch-row"><span>Undo</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>Z</kbd></span></div>
@@ -13120,6 +13119,13 @@
         return;
       }
 
+      // N / ⇧N — zoom to the next / previous frame in reading order
+      if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        zoomToFrame(e.shiftKey ? -1 : 1);
+        e.preventDefault();
+        return;
+      }
+
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && canvas.selectedIds.length && !canvasReadOnly()) {
         pushUndoState();
         const step = e.shiftKey ? 10 : 1;
@@ -13594,6 +13600,38 @@
 
       renderCanvas();
       fitToScreen(false);
+      saveCanvasDebounced();
+    }
+
+    // ── Frame-by-frame zoom (N / ⇧N) ──
+    // Steps through canvas cards in reading order (top rows first, left to
+    // right) and zooms each to fill the screen, Figma-style.
+    function zoomToFrame(delta) {
+      const frames = canvas.items.filter(i => i.type !== 'stroke');
+      if (!frames.length) return;
+      // Reading order: items whose vertical positions roughly overlap count as
+      // one row (arranged canvases share exact y values)
+      const ordered = [...frames].sort((a, b) =>
+        Math.abs(a.y - b.y) < 100 ? a.x - b.x : a.y - b.y);
+      let idx = ordered.findIndex(i => i.id === canvas.zoomFrameId);
+      idx = idx === -1
+        ? (delta > 0 ? 0 : ordered.length - 1)
+        : (idx + delta + ordered.length) % ordered.length;
+      const item = ordered[idx];
+      canvas.zoomFrameId = item.id;
+      const viewport = docById('canvasViewport');
+      if (!viewport) return;
+      const rect = viewport.getBoundingClientRect();
+      const b = getRenderedItemBounds(item);
+      const pad = 48;
+      const scale = Math.min(4,
+        (rect.width - pad * 2) / Math.max(1, b.w),
+        (rect.height - pad * 2) / Math.max(1, b.h));
+      canvas.scale = scale;
+      canvas.x = (rect.width - b.w * scale) / 2 - b.x1 * scale;
+      canvas.y = (rect.height - b.h * scale) / 2 - b.y1 * scale;
+      applyTransform();
+      updateZoomIndicator();
       saveCanvasDebounced();
     }
 
