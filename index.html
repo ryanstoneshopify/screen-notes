@@ -4649,6 +4649,18 @@
     // it lands on main — only merged entries ever render.
     const WHATS_NEW_ALL = [
       {
+        id: 'pr16',
+        date: 'Sep 18',
+        pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/16',
+        merged: false,
+        text: 'Walk your canvas like Figma frames: press N to zoom to the next image, ⇧N for the previous. Multi-asset notes step image by image before flowing into the next card.',
+        bullets: [
+          'Reading order — top rows first, left to right, wrapping at the ends',
+          'Each stop keeps the full note (image + text) in view',
+          'Select a frame to start stepping from it',
+        ],
+      },
+      {
         id: 'pr15',
         date: 'Sep 11',
         pr: 'https://github.com/ryanstoneshopify/screen-notes/pull/15',
@@ -11713,6 +11725,8 @@
               <div class="ch-row"><span>Select</span><span class="ch-keys"><kbd>drag empty</kbd></span></div>
               <div class="ch-row"><span>Multi-select</span><span class="ch-keys"><kbd>shift</kbd> <kbd>click</kbd></span></div>
               <div class="ch-row"><span>Nudge layers</span><span class="ch-keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></div>
+              <div class="ch-row"><span>Zoom to next frame</span><span class="ch-keys"><kbd>N</kbd></span></div>
+              <div class="ch-row"><span>Zoom to previous frame</span><span class="ch-keys"><kbd>⇧</kbd> <kbd>N</kbd></span></div>
               <div class="ch-row"><span>Copy layers</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>C</kbd></span></div>
               <div class="ch-row"><span>Paste layers</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>V</kbd></span></div>
               <div class="ch-row"><span>Undo</span><span class="ch-keys"><kbd>⌘</kbd> <kbd>Z</kbd></span></div>
@@ -13117,6 +13131,13 @@
         return;
       }
 
+      // N / ⇧N — zoom to the next / previous frame in reading order
+      if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        zoomToFrame(e.shiftKey ? -1 : 1);
+        e.preventDefault();
+        return;
+      }
+
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && canvas.selectedIds.length && !canvasReadOnly()) {
         pushUndoState();
         const step = e.shiftKey ? 10 : 1;
@@ -13591,6 +13612,83 @@
 
       renderCanvas();
       fitToScreen(false);
+      saveCanvasDebounced();
+    }
+
+    // ── Frame-by-frame zoom (N / ⇧N) ──
+    // Steps through canvas cards in reading order (top rows first, left to
+    // right) and zooms each to fill the screen, Figma-style.
+    const FRAME_MEDIA_SELECTOR = '.ci-screenshot-img-wrap img, .ci-screenshot-img-wrap video, .ci-image-img-wrap img, .ci-image-img-wrap video';
+
+    function zoomToFrame(delta) {
+      const frames = canvas.items.filter(i => i.type !== 'stroke');
+      if (!frames.length) return;
+      const viewport = docById('canvasViewport');
+      if (!viewport) return;
+      const rect = viewport.getBoundingClientRect();
+      // Reading order: items whose vertical positions roughly overlap count as
+      // one row (arranged canvases share exact y values)
+      const ordered = [...frames].sort((a, b) =>
+        Math.abs(a.y - b.y) < 100 ? a.x - b.x : a.y - b.y);
+      // Flat list of stops: one per image/movie inside each frame (in order),
+      // or the frame itself when it holds no media — N steps image by image,
+      // flowing into the next frame after the last one
+      const stops = [];
+      ordered.forEach(f => {
+        const el = document.querySelector(`.canvas-item[data-id="${f.id}"]`);
+        const medias = el ? [...el.querySelectorAll(FRAME_MEDIA_SELECTOR)] : [];
+        if (medias.length) medias.forEach((_, mi) => stops.push({ item: f, mi }));
+        else stops.push({ item: f, mi: -1 });
+      });
+      if (!stops.length) return;
+      // A freshly selected frame becomes the reference: N enters at its first
+      // image, ⇧N exits backwards from it. Otherwise continue from the last stop.
+      const selId = canvas.selectedIds?.length === 1 ? canvas.selectedIds[0] : null;
+      let cur = -1;
+      if (selId && selId !== canvas.zoomFrameId && stops.some(s => s.item.id === selId)) {
+        const firstIdx = stops.findIndex(s => s.item.id === selId);
+        cur = delta > 0 ? firstIdx - 1 : firstIdx;
+      } else {
+        cur = stops.findIndex(s => s.item.id === canvas.zoomFrameId && s.mi === (canvas.zoomShotIdx ?? -1));
+        if (cur === -1 && canvas.zoomFrameId) cur = stops.findIndex(s => s.item.id === canvas.zoomFrameId);
+      }
+      const nextIdx = cur === -1
+        ? (delta > 0 ? 0 : stops.length - 1)
+        : (cur + delta + stops.length) % stops.length;
+      const stop = stops[nextIdx];
+      const item = stop.item;
+      canvas.zoomFrameId = item.id;
+      canvas.zoomShotIdx = stop.mi;
+      setSelectedItems([item.id]);
+      // Target spans the stop's image width and the card's full height (image
+      // plus note text stays in view, zooming out as needed); no-media frames
+      // zoom as a whole
+      const frameBounds = getRenderedItemBounds(item);
+      let b = frameBounds;
+      if (stop.mi >= 0) {
+        const el = document.querySelector(`.canvas-item[data-id="${item.id}"]`);
+        const media = el ? el.querySelectorAll(FRAME_MEDIA_SELECTOR)[stop.mi] : null;
+        if (media) {
+          const mr = media.getBoundingClientRect();
+          if (mr.width > 4 && mr.height > 4) {
+            b = {
+              x1: (mr.left - rect.left - canvas.x) / canvas.scale,
+              y1: frameBounds.y1,
+              w: mr.width / canvas.scale,
+              h: frameBounds.h,
+            };
+          }
+        }
+      }
+      const pad = 48;
+      const scale = Math.min(4,
+        (rect.width - pad * 2) / Math.max(1, b.w),
+        (rect.height - pad * 2) / Math.max(1, b.h));
+      canvas.scale = scale;
+      canvas.x = (rect.width - b.w * scale) / 2 - b.x1 * scale;
+      canvas.y = (rect.height - b.h * scale) / 2 - b.y1 * scale;
+      applyTransform();
+      updateZoomIndicator();
       saveCanvasDebounced();
     }
 
