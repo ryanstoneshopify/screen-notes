@@ -2197,17 +2197,17 @@
     /* Must outrank .ci-screenshot's width:min-content (declared later) —
        otherwise the grouped card collapses and crops trailing movies */
     .ci-screenshot.ci-screenshot-multi { width: max-content; }
-    .ci-screenshot-multi .ci-screenshot-img-wrap.shot-selected {
+    .ci-screenshot-multi .ci-screenshot-img-wrap.is-shot-selected {
       outline: 2px solid var(--terra-cotta);
       outline-offset: -2px;
     }
-    .canvas-item.selected {
+    .canvas-item.is-selected {
       outline: 2px solid var(--terra-cotta);
       outline-offset: 0;
       border-radius: 9.6px;
     }
-    .canvas-item.ci-screenshot.selected,
-    .canvas-item.ci-image.selected { border-radius: 24px; }
+    .canvas-item.ci-screenshot.is-selected,
+    .canvas-item.ci-image.is-selected { border-radius: 24px; }
 
     .ci-screenshot {
       background: var(--vellum-white);
@@ -2335,8 +2335,8 @@
 
     /* Let selected resize handles render outside the card instead of being clipped,
        while inner corners stay rounded so the card never "un-crops". */
-    .ci-screenshot.selected,
-    .ci-image.selected {
+    .ci-screenshot.is-selected,
+    .ci-image.is-selected {
       overflow: visible;
     }
     .ci-screenshot .ci-screenshot-img-wrap {
@@ -2898,7 +2898,7 @@
     .canvas-item.ci-stroke path { pointer-events: stroke; cursor: grab; }
     .canvas-item.ci-stroke .resize-handle { pointer-events: auto; }
     /* Once selected, the whole bounding box is draggable, not just the line */
-    .canvas-item.ci-stroke.selected { pointer-events: auto; cursor: grab; }
+    .canvas-item.ci-stroke.is-selected { pointer-events: auto; cursor: grab; }
     .canvas-viewport.markup-mode .canvas-item.ci-stroke { pointer-events: none; }
     .canvas-viewport.markup-mode { cursor: crosshair; }
     .canvas-viewport.markup-mode .canvas-item.ci-stroke path { pointer-events: none; }
@@ -12148,12 +12148,12 @@
     }
 
     function updateShotSelHighlights() {
-      document.querySelectorAll('.ci-screenshot-img-wrap.shot-selected').forEach(el => el.classList.remove('shot-selected'));
+      document.querySelectorAll('.ci-screenshot-img-wrap.is-shot-selected').forEach(el => el.classList.remove('is-shot-selected'));
       if (!canvas.shotSel) return;
       const el = document.querySelector(`.canvas-item[data-id="${canvas.shotSel.itemId}"]`);
       el?.querySelectorAll('.ci-screenshot-img-wrap').forEach(w => {
         if ((canvas.shotSel.shotIndexes || []).includes(parseInt(w.dataset.shotIndex, 10))) {
-          w.classList.add('shot-selected');
+          w.classList.add('is-shot-selected');
         }
       });
     }
@@ -12476,7 +12476,7 @@
 
     function renderCanvasItem(item) {
       const selected = isItemSelected(item.id);
-      const sel = selected ? 'selected' : '';
+      const sel = selected ? 'is-selected' : '';
       const baseStyle = `left:${item.x}px;top:${item.y}px;width:${item.w}px;height:${item.h}px;`;
       const handle = !canvasReadOnly() && selected && canvas.selectedIds.length <= 1 ? `<div class="resize-handle" data-handle="${item.id}"></div>` : '';
 
@@ -12493,11 +12493,11 @@
             const inner = sVid
               ? `<video src="${s._localUrl || s.url}" muted playsinline preload="metadata" style="${ciVideoSizeStyle(s, item.h)}" data-trim-start="${s.trimStartMs || 0}" data-trim-end="${s.trimEndMs || ''}" data-duration="${s.durationMs || 0}" data-vw="${s.vw || ''}" data-vh="${s.vh || ''}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>${ciVideoControlsHTML()}`
               : `<img src="${s._mkPreview || s.url}" alt="" draggable="false" style="max-height:${item.h}px;">`;
-            return `<div class="ci-screenshot-img-wrap${sVid ? ' ci-video-wrap' : ''}${shotSelIdxs.includes(si) ? ' shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;">${inner}</div>`;
+            return `<div class="ci-screenshot-img-wrap${sVid ? ' ci-video-wrap' : ''}${shotSelIdxs.includes(si) ? ' is-shot-selected' : ''}" data-shot-index="${si}" style="max-height:${item.h}px;">${inner}</div>`;
           }).join('');
           const cardStyle = `left:${item.x}px;top:${item.y}px;`;
           return `
-            <div class="canvas-item ci-screenshot ci-screenshot-multi ${sel}" data-id="${item.id}" style="${cardStyle}">
+            <div class="canvas-item ci-screenshot ci-screenshot-multi ${sel}" id="ci-${item.id}" data-id="${item.id}" style="${cardStyle}">
               <div class="ci-shot-row">${imgs}</div>
               <div class="ci-note">
                 <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text)}</div>
@@ -12522,7 +12522,7 @@
           });
           const cardStyle = `left:${item.x}px;top:${item.y}px;max-width:${item.w}px;`;
           return `
-            <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
+            <div class="canvas-item ci-screenshot ${sel}" id="ci-${item.id}" data-id="${item.id}" style="${cardStyle}">
               <div class="ci-screenshot-img-wrap ci-video-wrap" style="max-width:${item.w}px;max-height:${item.h}px;">
                 <video src="${shot0._localUrl || shot0.url}" muted playsinline preload="metadata" style="${ciVideoSizeStyle(shot0, item.h, item.w)}" data-trim-start="${shot0.trimStartMs || 0}" data-trim-end="${shot0.trimEndMs || ''}" data-duration="${shot0.durationMs || 0}" data-vw="${shot0.vw || ''}" data-vh="${shot0.vh || ''}" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>
                 ${ciVideoControlsHTML()}
@@ -12543,7 +12543,7 @@
           const textW = estimateTextNoteWidth(note.text || '');
           const textStyle = `left:${item.x}px;top:${item.y}px;width:${textW}px;`;
           return `
-            <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
+            <div class="canvas-item ${sel}" id="ci-${item.id}" data-id="${item.id}" style="${textStyle}">
               <div class="ci-text ci-text-note" style="font-size:${fontSize}px;">
                 <div class="ci-note-text" data-note-index="${item.noteIndex}">${escapeHtml(note.text || 'Text')}</div>
                 <div class="ci-note-time">${formatDuration(note.timestamp)}</div>
@@ -12557,7 +12557,7 @@
         // image width instead of stretching across any empty contain space.
         const cardStyle = `left:${item.x}px;top:${item.y}px;max-width:${item.w}px;`;
         return `
-          <div class="canvas-item ci-screenshot ${sel}" data-id="${item.id}" style="${cardStyle}">
+          <div class="canvas-item ci-screenshot ${sel}" id="ci-${item.id}" data-id="${item.id}" style="${cardStyle}">
             <div class="ci-screenshot-img-wrap" style="max-width:${item.w}px;max-height:${item.h}px;">
               <img src="${src}" alt="" draggable="false" style="max-width:${item.w}px;max-height:${item.h}px;">
             </div>
@@ -12572,7 +12572,7 @@
       if (item.type === 'stroke') {
         const pts = item.points || [];
         return `
-          <div class="canvas-item ci-stroke ${sel}" data-id="${item.id}" style="${baseStyle}">
+          <div class="canvas-item ci-stroke ${sel}" id="ci-${item.id}" data-id="${item.id}" style="${baseStyle}">
             <svg viewBox="0 0 ${item.vw || item.w} ${item.vh || item.h}" preserveAspectRatio="none"><path d="${strokePathD(pts)}" fill="none" stroke="${item.color}" stroke-width="${item.width}" stroke-linecap="round" stroke-linejoin="round"${strokeDashAttr(item)}/></svg>
             ${handle}
           </div>
@@ -12587,7 +12587,7 @@
         const textW = note ? estimateTextNoteWidth(note.text || '') : item.w;
         const textStyle = `left:${item.x}px;top:${item.y}px;width:${textW}px;`;
         return `
-          <div class="canvas-item ${sel}" data-id="${item.id}" style="${textStyle}">
+          <div class="canvas-item ${sel}" id="ci-${item.id}" data-id="${item.id}" style="${textStyle}">
             ${note ? `<div class="ci-text ci-text-note" style="font-size:${fontSize}px;">
               <div class="ci-note-text" data-note-index="${noteIndex}">${escapeHtml(note.text || 'Text')}</div>
               <div class="ci-note-time">${formatDuration(note.timestamp)}</div>
@@ -12604,7 +12604,7 @@
           ? `<video src="${item.url}" muted playsinline preload="metadata" style="max-width:100%;max-height:100%;" onloadedmetadata="ciVideoInit(this)" ontimeupdate="ciVideoTime(this)"></video>${ciVideoControlsHTML()}`
           : `<img src="${item.url}" alt="" draggable="false">`;
         return `
-          <div class="canvas-item ci-image ${sel}" data-id="${item.id}" style="${imageStyle}">
+          <div class="canvas-item ci-image ${sel}" id="ci-${item.id}" data-id="${item.id}" style="${imageStyle}">
             <div class="ci-image-img-wrap${mediaUrlIsVideo(item.url) ? ' ci-video-wrap' : ''}" style="height:${item.h}px;">
               ${imgInner}
             </div>
